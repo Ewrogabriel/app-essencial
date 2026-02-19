@@ -1,29 +1,154 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AgendamentoForm } from "@/components/agenda/AgendamentoForm";
+import { DailyView, WeeklyView, MonthlyView, type Agendamento } from "@/components/agenda/AgendaViews";
+
+type ViewMode = "diario" | "semanal" | "mensal";
 
 const Agenda = () => {
+  const [viewMode, setViewMode] = useState<ViewMode>("semanal");
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [loading, setLoading] = useState(false);
+
+  const fetchAgendamentos = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("agendamentos")
+        .select("*, pacientes(nome), profiles!agendamentos_profissional_id_fkey(nome)")
+        .order("data_horario", { ascending: true });
+
+      if (!error && data) {
+        // Map the joined data
+        const mapped = data.map((item: any) => ({
+          ...item,
+          pacientes: item.pacientes,
+          profiles: item.profiles,
+        }));
+        setAgendamentos(mapped);
+      }
+    } catch {
+      // Table may not exist yet
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchAgendamentos();
+  }, [fetchAgendamentos]);
+
+  const handleSlotClick = (date: Date) => {
+    setSelectedDate(date);
+    setFormOpen(true);
+  };
+
+  const handleNewAgendamento = () => {
+    setSelectedDate(new Date());
+    setFormOpen(true);
+  };
+
+  const navigatePrev = () => {
+    if (viewMode === "diario") setCurrentDate((d) => subDays(d, 1));
+    else if (viewMode === "semanal") setCurrentDate((d) => subWeeks(d, 1));
+    else setCurrentDate((d) => subMonths(d, 1));
+  };
+
+  const navigateNext = () => {
+    if (viewMode === "diario") setCurrentDate((d) => addDays(d, 1));
+    else if (viewMode === "semanal") setCurrentDate((d) => addWeeks(d, 1));
+    else setCurrentDate((d) => addMonths(d, 1));
+  };
+
+  const goToToday = () => setCurrentDate(new Date());
+
+  const getTitle = () => {
+    if (viewMode === "diario") return format(currentDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    if (viewMode === "semanal") return format(currentDate, "MMMM yyyy", { locale: ptBR });
+    return format(currentDate, "MMMM yyyy", { locale: ptBR });
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">
-          Agenda
-        </h1>
-        <p className="text-muted-foreground">
-          Gerencie os agendamentos da clínica
-        </p>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">
+            Agenda
+          </h1>
+          <p className="text-muted-foreground">
+            Gerencie os agendamentos da clínica
+          </p>
+        </div>
+        <Button onClick={handleNewAgendamento}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Agendamento
+        </Button>
       </div>
 
-      <Card>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <Calendar className="h-12 w-12 mb-4 opacity-40" />
-            <p className="text-lg font-medium">Agenda em desenvolvimento</p>
-            <p className="text-sm mt-1">
-              Esta funcionalidade será implementada na Fase 2
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Navigation and View Toggle */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={navigatePrev}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={goToToday}>
+            Hoje
+          </Button>
+          <Button variant="outline" size="icon" onClick={navigateNext}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <span className="text-lg font-semibold capitalize ml-2">
+            {getTitle()}
+          </span>
+        </div>
+
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+          <TabsList>
+            <TabsTrigger value="diario">Diário</TabsTrigger>
+            <TabsTrigger value="semanal">Semanal</TabsTrigger>
+            <TabsTrigger value="mensal">Mensal</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Calendar View */}
+      <div>
+        {viewMode === "diario" && (
+          <DailyView
+            agendamentos={agendamentos}
+            currentDate={currentDate}
+            onSlotClick={handleSlotClick}
+          />
+        )}
+        {viewMode === "semanal" && (
+          <WeeklyView
+            agendamentos={agendamentos}
+            currentDate={currentDate}
+            onSlotClick={handleSlotClick}
+          />
+        )}
+        {viewMode === "mensal" && (
+          <MonthlyView
+            agendamentos={agendamentos}
+            currentDate={currentDate}
+            onSlotClick={handleSlotClick}
+          />
+        )}
+      </div>
+
+      <AgendamentoForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        onSuccess={fetchAgendamentos}
+        defaultDate={selectedDate}
+      />
     </div>
   );
 };
