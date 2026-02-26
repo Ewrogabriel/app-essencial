@@ -120,7 +120,7 @@ const PacienteForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user || !clinicId) return;
+    if (!user) return;
 
     setLoading(true);
 
@@ -148,12 +148,17 @@ const PacienteForm = () => {
     if (isEditing) {
       ({ error } = await supabase.from("pacientes").update(payload).eq("id", id));
     } else {
-      const { data, error: insertError } = await supabase.from("pacientes").insert({
+      const insertData = {
         ...payload,
         created_by: user.id,
         profissional_id: user.id,
-        clinic_id: clinicId,
-      }).select("id").single();
+      };
+      
+      if (clinicId) {
+        Object.assign(insertData, { clinic_id: clinicId });
+      }
+
+      const { data, error: insertError } = await supabase.from("pacientes").insert(insertData).select("id").single();
       
       error = insertError;
       if (data) savedPatientId = data.id;
