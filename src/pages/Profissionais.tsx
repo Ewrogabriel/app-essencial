@@ -14,6 +14,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -53,7 +60,7 @@ const Profissionais = () => {
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("user_id, role")
-        .in("role", ["profissional", "admin"]);
+        .in("role", ["profissional", "admin", "gestor"]);
 
       const userIds = roleData?.map(r => r.user_id) ?? [];
 
