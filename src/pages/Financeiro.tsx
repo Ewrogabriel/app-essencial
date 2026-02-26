@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -57,7 +57,7 @@ const Financeiro = () => {
     queryFn: async () => {
       let query = supabase
         .from("pagamentos")
-        .select("*, pacientes(nome)");
+        .select("*, pacientes(nome)") as any;
 
       if (isPatient) {
         const { data: p } = await supabase.from("pacientes").select("id").eq("user_id", user?.id).single();
@@ -92,12 +92,12 @@ const Financeiro = () => {
         valor: parseFloat(formData.valor) || 0,
         data_pagamento: formData.data_pagamento,
         data_vencimento: formData.data_vencimento || null,
-        forma_pagamento: formData.forma_pagamento || null,
-        status: formData.status,
+        forma_pagamento: formData.forma_pagamento as any,
+        status: formData.status as any,
         descricao: formData.descricao || null,
         observacoes: formData.observacoes || null,
         created_by: user.id,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -188,8 +188,8 @@ const Financeiro = () => {
                   <TableHead>Descrição</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Forma</TableHead>
-                  <TableHead>Data Pgto</TableHead>
                   <TableHead>Vencimento</TableHead>
+                  <TableHead>Data Pgto</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -202,7 +202,10 @@ const Financeiro = () => {
                       <TableCell>R$ {Number(pagamento.valor).toFixed(2)}</TableCell>
                       <TableCell>{pagamento.forma_pagamento ? formaLabel[pagamento.forma_pagamento] || pagamento.forma_pagamento : "—"}</TableCell>
                       <TableCell>
-                        {format(new Date(pagamento.data_pagamento), "dd/MM/yyyy")}
+                        {pagamento.data_vencimento ? format(new Date(pagamento.data_vencimento), "dd/MM/yyyy") : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {pagamento.status === 'pago' ? format(new Date(pagamento.data_pagamento), "dd/MM/yyyy") : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge variant={pagamento.status === 'pago' ? 'default' : 'destructive'}>

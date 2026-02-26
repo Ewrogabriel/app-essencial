@@ -50,7 +50,8 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, roles, signOut, isAdmin, isGestor, isPatient } = useAuth();
+  const { user, profile, roles, signOut, isAdmin, isGestor, isPatient, isProfissional } = useAuth();
+  const isStaff = isAdmin || isGestor || isProfissional;
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -83,7 +84,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuPrincipal
-                .filter(item => !isPatient || item.url === "/agenda")
+                .filter(item => isStaff || item.url === "/agenda")
                 .map((item) => {
                   const title = isPatient && item.url === "/agenda" ? "Minha Agenda" : item.title;
                   return (
@@ -109,7 +110,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {!isPatient && (
+        {isStaff && (
           <SidebarGroup>
             <SidebarGroupLabel>Profissional</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -141,7 +142,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuGestao
-                .filter(item => (!isPatient || isGestor || isAdmin) || item.url === "/financeiro")
+                .filter(item => isStaff || item.url === "/financeiro")
                 .map((item) => {
                   const title = isPatient && item.url === "/financeiro" ? "Meus Pagamentos" : item.title;
                   return (

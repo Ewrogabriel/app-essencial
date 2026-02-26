@@ -33,6 +33,8 @@ interface ViewProps {
   agendamentos: Agendamento[];
   currentDate: Date;
   onSlotClick?: (date: Date) => void;
+  isPatient?: boolean;
+  onCancel?: (id: string) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -49,14 +51,14 @@ const tipoColors: Record<string, string> = {
   rpg: "border-l-warning",
 };
 
-function AppointmentCard({ ag }: { ag: Agendamento }) {
+function AppointmentCard({ ag, isPatient, onCancel }: { ag: Agendamento, isPatient?: boolean, onCancel?: (id: string) => void }) {
   const time = format(new Date(ag.data_horario), "HH:mm");
   const pacienteNome = ag.pacientes?.nome ?? "Paciente";
 
   return (
     <div
       className={cn(
-        "rounded-md border-l-4 bg-card p-2 text-xs shadow-sm",
+        "rounded-md border-l-4 bg-card p-2 text-xs shadow-sm relative group",
         tipoColors[ag.tipo_atendimento] ?? "border-l-muted"
       )}
     >
@@ -66,9 +68,19 @@ function AppointmentCard({ ag }: { ag: Agendamento }) {
         <span>·</span>
         <span>{ag.duracao_minutos}min</span>
       </div>
-      <Badge variant="secondary" className={cn("mt-1 text-[10px]", statusColors[ag.status])}>
-        {ag.status}
-      </Badge>
+      <div className="flex items-center justify-between mt-1">
+        <Badge variant="secondary" className={cn("text-[10px]", statusColors[ag.status])}>
+          {ag.status}
+        </Badge>
+        {isPatient && ag.status !== 'cancelado' && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onCancel?.(ag.id); }}
+            className="text-[10px] text-destructive hover:underline font-medium"
+          >
+            Cancelar
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -76,7 +88,7 @@ function AppointmentCard({ ag }: { ag: Agendamento }) {
 // ─── Daily View ──────────────────────────────────────────────
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 6); // 6h-19h
 
-export function DailyView({ agendamentos, currentDate, onSlotClick }: ViewProps) {
+export function DailyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel }: ViewProps) {
   const dayAgendamentos = agendamentos.filter((ag) =>
     isSameDay(new Date(ag.data_horario), currentDate)
   );
@@ -108,7 +120,7 @@ export function DailyView({ agendamentos, currentDate, onSlotClick }: ViewProps)
               </div>
               <div className="flex-1 p-1 flex flex-col gap-1">
                 {hourAgs.map((ag) => (
-                  <AppointmentCard key={ag.id} ag={ag} />
+                  <AppointmentCard key={ag.id} ag={ag} isPatient={isPatient} onCancel={onCancel} />
                 ))}
               </div>
             </div>
@@ -120,7 +132,7 @@ export function DailyView({ agendamentos, currentDate, onSlotClick }: ViewProps)
 }
 
 // ─── Weekly View ─────────────────────────────────────────────
-export function WeeklyView({ agendamentos, currentDate, onSlotClick }: ViewProps) {
+export function WeeklyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel }: ViewProps) {
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });
     const end = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -159,7 +171,7 @@ export function WeeklyView({ agendamentos, currentDate, onSlotClick }: ViewProps
             </div>
             <div className="space-y-1">
               {dayAgs.slice(0, 4).map((ag) => (
-                <AppointmentCard key={ag.id} ag={ag} />
+                <AppointmentCard key={ag.id} ag={ag} isPatient={isPatient} onCancel={onCancel} />
               ))}
               {dayAgs.length > 4 && (
                 <div className="text-[10px] text-muted-foreground text-center">
@@ -175,7 +187,7 @@ export function WeeklyView({ agendamentos, currentDate, onSlotClick }: ViewProps
 }
 
 // ─── Monthly View ────────────────────────────────────────────
-export function MonthlyView({ agendamentos, currentDate, onSlotClick }: ViewProps) {
+export function MonthlyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel }: ViewProps) {
   const monthDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
     const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
@@ -223,11 +235,19 @@ export function MonthlyView({ agendamentos, currentDate, onSlotClick }: ViewProp
                 <div
                   key={ag.id}
                   className={cn(
-                    "truncate rounded px-1 py-0.5 mb-0.5 text-[10px] border-l-2",
+                    "truncate rounded px-1 py-0.5 mb-0.5 text-[10px] border-l-2 flex justify-between items-center",
                     tipoColors[ag.tipo_atendimento]
                   )}
                 >
-                  {format(new Date(ag.data_horario), "HH:mm")} {ag.pacientes?.nome?.split(" ")[0]}
+                  <span className="truncate">{format(new Date(ag.data_horario), "HH:mm")} {ag.pacientes?.nome?.split(" ")[0]}</span>
+                  {isPatient && ag.status !== 'cancelado' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onCancel?.(ag.id); }}
+                      className="ml-1 text-[8px] text-destructive font-bold"
+                    >
+                      X
+                    </button>
+                  )}
                 </div>
               ))}
               {dayAgs.length > 2 && (

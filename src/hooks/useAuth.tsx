@@ -15,6 +15,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isGestor: boolean;
   isPatient: boolean;
+  isProfissional: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string, nome: string) => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
@@ -117,10 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = roles.includes("admin");
   const isGestor = roles.includes("gestor");
   const isPatient = roles.includes("paciente");
+  const isProfissional = roles.includes("profissional");
 
   return (
     <AuthContext.Provider
-      value={{ user, session, profile, roles, loading, isAdmin, isGestor, isPatient, signIn, signUp, resetPassword, signOut }}
+      value={{ user, session, profile, roles, loading, isAdmin, isGestor, isPatient, isProfissional, signIn, signUp, resetPassword, signOut }}
     >
       {children}
     </AuthContext.Provider>

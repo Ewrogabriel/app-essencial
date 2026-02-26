@@ -27,7 +27,11 @@ const Agenda = () => {
     try {
       let query = supabase
         .from("agendamentos")
-        .select("*, pacientes(nome, telefone), profiles(nome)");
+        .select(`
+          *,
+          pacientes (id, nome, telefone),
+          profiles (nome)
+        `);
 
       if (isPatient) {
         // Find the patient linked to this user
@@ -70,7 +74,6 @@ const Agenda = () => {
       }
     } catch (e) {
       console.error("Unexpected error in fetchAgendamentos:", e);
-      // Table may not exist yet or other unexpected error
     }
     setLoading(false);
   }, [isPatient, user?.id]); // Added dependencies for useCallback
@@ -110,6 +113,21 @@ const Agenda = () => {
     if (viewMode === "diario") setCurrentDate((d) => addDays(d, 1));
     else if (viewMode === "semanal") setCurrentDate((d) => addWeeks(d, 1));
     else setCurrentDate((d) => addMonths(d, 1));
+  };
+
+  const handleCancelAppointment = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("agendamentos")
+        .update({ status: "cancelado" })
+        .eq("id", id);
+
+      if (error) throw error;
+      toast({ title: "Agendamento cancelado" });
+      fetchAgendamentos();
+    } catch (err) {
+      toast({ title: "Erro ao cancelar", variant: "destructive" });
+    }
   };
 
   const goToToday = () => setCurrentDate(new Date());
@@ -173,8 +191,8 @@ const Agenda = () => {
             agendamentos={agendamentos}
             currentDate={currentDate}
             onSlotClick={handleSlotClick}
-            isPatient={isPatient} // Pass isPatient to views
-          // Additional props for patient actions would be passed here if views supported them
+            isPatient={isPatient}
+            onCancel={handleCancelAppointment}
           />
         )}
         {viewMode === "semanal" && (
@@ -182,8 +200,8 @@ const Agenda = () => {
             agendamentos={agendamentos}
             currentDate={currentDate}
             onSlotClick={handleSlotClick}
-            isPatient={isPatient} // Pass isPatient to views
-          // Additional props for patient actions would be passed here if views supported them
+            isPatient={isPatient}
+            onCancel={handleCancelAppointment}
           />
         )}
         {viewMode === "mensal" && (
@@ -191,8 +209,8 @@ const Agenda = () => {
             agendamentos={agendamentos}
             currentDate={currentDate}
             onSlotClick={handleSlotClick}
-            isPatient={isPatient} // Pass isPatient to views
-          // Additional props for patient actions would be passed here if views supported them
+            isPatient={isPatient}
+            onCancel={handleCancelAppointment}
           />
         )}
       </div>
