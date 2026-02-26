@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Link as LinkIcon, Copy } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +22,7 @@ import type { Enums } from "@/integrations/supabase/types";
 const PacienteForm = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, clinicId } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
@@ -33,7 +33,16 @@ const PacienteForm = () => {
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
-  const [endereco, setEndereco] = useState("");
+  
+  // Separated address fields
+  const [cep, setCep] = useState("");
+  const [rua, setRua] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+
   const [tipoAtendimento, setTipoAtendimento] = useState<Enums<"tipo_atendimento">>("fisioterapia");
   const [status, setStatus] = useState<Enums<"status_paciente">>("ativo");
   const [observacoes, setObservacoes] = useState("");
@@ -54,10 +63,16 @@ const PacienteForm = () => {
           }
           setNome(data.nome);
           setCpf(data.cpf || "");
-          setTelefone(data.telefone);
+          setTelefone(data.telefone || "");
           setEmail(data.email || "");
           setDataNascimento(data.data_nascimento || "");
-          setEndereco(data.endereco || "");
+          setCep(data.cep || "");
+          setRua(data.rua || "");
+          setNumero(data.numero || "");
+          setComplemento(data.complemento || "");
+          setBairro(data.bairro || "");
+          setCidade(data.cidade || "");
+          setEstado(data.estado || "");
           setTipoAtendimento(data.tipo_atendimento);
           setStatus(data.status);
           setObservacoes(data.observacoes || "");
@@ -66,43 +81,108 @@ const PacienteForm = () => {
     }
   }, [id, navigate]);
 
+  const fetchAddress = async (cepCode: string) => {
+    const cleanCep = cepCode.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setRua(data.logradouro || "");
+        setBairro(data.bairro || "");
+        setCidade(data.localidade || "");
+        setEstado(data.uf || "");
+      }
+    } catch (err) {
+      console.error("Erro ao buscar CEP", err);
+    }
+  };
+
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCep = e.target.value;
+    setCep(newCep);
+    fetchAddress(newCep);
+  };
+
+  const generateInviteLink = () => {
+    if (!id) return;
+    const link = `${window.location.origin}/onboarding/${id}`;
+    const text = `Olá ${nome.split(' ')[0]}! Complete seu cadastro no Essencial FisioPilates através deste link: ${link}`;
+    navigator.clipboard.writeText(text).then(() => {
+      toast({ 
+        title: "Link Copiado! 🔗", 
+        description: "Enviaremos o link pelo WhatsApp para o paciente." 
+      });
+    }).catch(() => {
+        toast({ title: "Erro ao copiar o link.", variant: "destructive" });
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !clinicId) return;
 
     setLoading(true);
 
     const payload = {
       nome,
       cpf: cpf || null,
-      telefone,
+      telefone: telefone || null,
       email: email || null,
       data_nascimento: dataNascimento || null,
-      endereco: endereco || null,
+      cep: cep || null,
+      rua: rua || null,
+      numero: numero || null,
+      complemento: complemento || null,
+      bairro: bairro || null,
+      cidade: cidade || null,
+      estado: estado || null,
       tipo_atendimento: tipoAtendimento,
       status,
       observacoes: observacoes || null,
     };
 
     let error;
+    let savedPatientId = id;
+
     if (isEditing) {
       ({ error } = await supabase.from("pacientes").update(payload).eq("id", id));
     } else {
-      ({ error } = await supabase.from("pacientes").insert({
+      const { data, error: insertError } = await supabase.from("pacientes").insert({
         ...payload,
         created_by: user.id,
         profissional_id: user.id,
-      }));
+        clinic_id: clinicId,
+      }).select("id").single();
+      
+      error = insertError;
+      if (data) savedPatientId = data.id;
     }
 
     if (error) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } else {
-      toast({
-        title: isEditing ? "Paciente atualizado!" : "Paciente cadastrado!",
-        description: `${nome} foi ${isEditing ? "atualizado(a)" : "cadastrado(a)"} com sucesso.`,
-      });
       queryClient.invalidateQueries({ queryKey: ["pacientes"] });
+      
+      if (!isEditing && savedPatientId) {
+          toast({
+            title: "Paciente cadastrado! 🎉",
+            description: "Clique no botão para copiar o link de convite.",
+            action: (
+              <Button variant="outline" size="sm" onClick={() => {
+                const link = `${window.location.origin}/onboarding/${savedPatientId}`;
+                const text = `Olá ${nome.split(' ')[0]}! Complete seu cadastro neste link: ${link}`;
+                navigator.clipboard.writeText(text);
+                toast({ title: "Copiado!" });
+              }}>
+                <Copy className="h-4 w-4 mr-2" /> Copiar Convite
+              </Button>
+            ),
+          });
+      } else {
+          toast({ title: "Paciente atualizado com sucesso!" });
+      }
+      
       navigate("/pacientes");
     }
 
@@ -115,18 +195,25 @@ const PacienteForm = () => {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/pacientes")}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">
-            {isEditing ? "Editar Paciente" : "Novo Paciente"}
-          </h1>
-          <p className="text-muted-foreground">
-            {isEditing ? "Atualize os dados do paciente" : "Preencha os dados do paciente"}
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/pacientes")}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">
+              {isEditing ? "Editar Paciente" : "Novo Paciente"}
+            </h1>
+            <p className="text-muted-foreground">
+              {isEditing ? "Atualize os dados do paciente" : "Preencha os dados básicos e convide o paciente"}
+            </p>
+          </div>
         </div>
+        {isEditing && (
+          <Button variant="outline" className="gap-2" onClick={generateInviteLink}>
+            <LinkIcon className="h-4 w-4" /> Enviar Convite
+          </Button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -149,8 +236,8 @@ const PacienteForm = () => {
               <Input id="data_nascimento" type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone / WhatsApp *</Label>
-              <Input id="telefone" placeholder="(00) 00000-0000" value={telefone} onChange={(e) => setTelefone(e.target.value)} required />
+              <Label htmlFor="telefone">Telefone / WhatsApp</Label>
+              <Input id="telefone" placeholder="(00) 00000-0000" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
@@ -162,11 +249,36 @@ const PacienteForm = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Endereço</CardTitle>
+            <CardDescription>O endereço é autocompletado ao digitar o CEP.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="endereco">Endereço Completo</Label>
-              <Input id="endereco" placeholder="Rua, número, bairro, cidade - UF" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
+              <Label htmlFor="cep">CEP</Label>
+              <Input id="cep" placeholder="00000-000" value={cep} onChange={handleCepChange} />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="rua">Rua / Logradouro</Label>
+              <Input id="rua" placeholder="Nome da rua" value={rua} onChange={(e) => setRua(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="numero">Número</Label>
+              <Input id="numero" placeholder="123" value={numero} onChange={(e) => setNumero(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="complemento">Complemento</Label>
+              <Input id="complemento" placeholder="Apto, Bloco, etc." value={complemento} onChange={(e) => setComplemento(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bairro">Bairro</Label>
+              <Input id="bairro" placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input id="cidade" placeholder="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado (UF)</Label>
+              <Input id="estado" placeholder="SP" value={estado} onChange={(e) => setEstado(e.target.value)} maxLength={2} />
             </div>
           </CardContent>
         </Card>
@@ -209,10 +321,10 @@ const PacienteForm = () => {
           </CardContent>
         </Card>
 
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-end pb-12">
           <Button type="button" variant="outline" onClick={() => navigate("/pacientes")}>Cancelar</Button>
           <Button type="submit" disabled={loading}>
-            {loading ? "Salvando..." : isEditing ? "Atualizar Paciente" : "Salvar Paciente"}
+            {loading ? "Salvando..." : isEditing ? "Atualizar Paciente" : "Salvar e Gerar Convite"}
           </Button>
         </div>
       </form>

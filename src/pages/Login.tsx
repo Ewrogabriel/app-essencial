@@ -27,7 +27,13 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signIn(loginEmail, loginSenha);
+    let authEmail = loginEmail.trim();
+    const cleanCpf = authEmail.replace(/\D/g, "");
+    if (cleanCpf.length === 11 && /^\d+$/.test(cleanCpf)) {
+       authEmail = `${cleanCpf}@paciente.essencial.com`;
+    }
+
+    const { error } = await signIn(authEmail, loginSenha);
 
     if (error) {
       toast({
@@ -74,6 +80,16 @@ const Login = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    const cleanCpf = loginEmail.replace(/\D/g, "");
+    if (cleanCpf.length === 11 && /^\d+$/.test(cleanCpf)) {
+       toast({
+         title: "Acesso de Paciente",
+         description: "Para redefinir a senha da sua conta via CPF, entre em contato com a recepção da clínica.",
+         variant: "destructive",
+       });
+       return;
     }
 
     setLoading(true);
@@ -124,11 +140,11 @@ const Login = () => {
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">E-mail</Label>
+                    <Label htmlFor="login-email">CPF ou E-mail</Label>
                     <Input
                       id="login-email"
-                      type="email"
-                      placeholder="seu@email.com"
+                      type="text"
+                      placeholder="000.000.000-00 ou seu@email.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required

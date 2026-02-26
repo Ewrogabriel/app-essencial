@@ -27,6 +27,7 @@ import MinhaAgenda from "./pages/MinhaAgenda";
 import MeusPagamentos from "./pages/MeusPagamentos";
 import Inteligencia from "./pages/Inteligencia";
 import Automacoes from "./pages/Automacoes";
+import PatientOnboarding from "./pages/PatientOnboarding";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/onboarding/:id" element={<PatientOnboarding />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<Index />} />
             <Route
