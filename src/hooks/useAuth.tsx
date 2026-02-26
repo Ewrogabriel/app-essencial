@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
-type AppRole = "admin" | "profissional" | "paciente";
+type AppRole = "admin" | "profissional" | "paciente" | "gestor";
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +13,7 @@ interface AuthContextType {
   roles: AppRole[];
   loading: boolean;
   isAdmin: boolean;
+  isGestor: boolean;
   isPatient: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string, nome: string) => Promise<{ error: AuthError | null }>;
@@ -114,11 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isAdmin = roles.includes("admin");
+  const isGestor = roles.includes("gestor");
   const isPatient = roles.includes("paciente");
 
   return (
     <AuthContext.Provider
-      value={{ user, session, profile, roles, loading, isAdmin, isPatient, signIn, signUp, resetPassword, signOut }}
+      value={{ user, session, profile, roles, loading, isAdmin, isGestor, isPatient, signIn, signUp, resetPassword, signOut }}
     >
       {children}
     </AuthContext.Provider>

@@ -108,7 +108,7 @@ const UserRoleManager = () => {
                                         <div className="text-xs text-muted-foreground">{u.email}</div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={currentRole === 'admin' ? 'default' : currentRole === 'profissional' ? 'secondary' : 'outline'}>
+                                        <Badge variant={(currentRole as any) === 'admin' ? 'default' : (currentRole as any) === 'gestor' ? 'secondary' : (currentRole as any) === 'profissional' ? 'outline' : 'outline'}>
                                             {currentRole}
                                         </Badge>
                                     </TableCell>
@@ -123,6 +123,7 @@ const UserRoleManager = () => {
                                             <SelectContent>
                                                 <SelectItem value="paciente">Paciente</SelectItem>
                                                 <SelectItem value="profissional">Profissional</SelectItem>
+                                                <SelectItem value="gestor">Gestor / Gerente</SelectItem>
                                                 <SelectItem value="admin">Administrador</SelectItem>
                                             </SelectContent>
                                         </Select>

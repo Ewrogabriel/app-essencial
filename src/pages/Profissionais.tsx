@@ -32,6 +32,7 @@ interface Profissional {
   email: string | null;
   telefone: string | null;
   role?: string;
+  especialidade?: string | null;
 }
 
 const Profissionais = () => {
@@ -42,6 +43,7 @@ const Profissionais = () => {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [especialidade, setEspecialidade] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const { data: profissionais = [], isLoading } = useQuery({
@@ -78,6 +80,7 @@ const Profissionais = () => {
     setNome(p.nome);
     setEmail(p.email || "");
     setTelefone(p.telefone || "");
+    setEspecialidade(p.especialidade || null);
     setDialogOpen(true);
   };
 
@@ -88,7 +91,12 @@ const Profissionais = () => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ nome: nome.trim(), email: email || null, telefone: telefone || null })
+        .update({
+          nome: nome.trim(),
+          email: email || null,
+          telefone: telefone || null,
+          especialidade: especialidade
+        })
         .eq("id", editingId);
       if (error) throw error;
       toast({ title: "Profissional atualizado!" });
@@ -125,6 +133,7 @@ const Profissionais = () => {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead className="hidden sm:table-cell">Cargo</TableHead>
+                  <TableHead className="hidden sm:table-cell">Especialidade</TableHead>
                   <TableHead className="hidden sm:table-cell">E-mail</TableHead>
                   <TableHead className="hidden sm:table-cell">Telefone</TableHead>
                   <TableHead className="w-[80px]">Ações</TableHead>
@@ -139,6 +148,13 @@ const Profissionais = () => {
                         {p.role === 'admin' ? <Shield className="h-3 w-3 mr-1 inline" /> : <UserCheck className="h-3 w-3 mr-1 inline" />}
                         {p.role}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {p.especialidade ? (
+                        <Badge variant="outline" className="capitalize">
+                          {p.especialidade}
+                        </Badge>
+                      ) : "—"}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground">{p.email || "—"}</TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground">{p.telefone || "—"}</TableCell>
@@ -195,6 +211,20 @@ const Profissionais = () => {
             <div className="space-y-2">
               <Label>Telefone</Label>
               <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(00) 00000-0000" />
+            </div>
+            <div className="space-y-2">
+              <Label>Especialidade / Tipo de Atendimento</Label>
+              <Select value={especialidade || "none"} onValueChange={(val) => setEspecialidade(val === "none" ? null : val)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a especialidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Selecione uma opção</SelectItem>
+                  <SelectItem value="fisioterapia">Fisioterapia</SelectItem>
+                  <SelectItem value="pilates">Pilates</SelectItem>
+                  <SelectItem value="rpg">RPG</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
