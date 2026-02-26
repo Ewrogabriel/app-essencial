@@ -21,7 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pencil, UserCog } from "lucide-react";
+import { Pencil, UserCog, UserCheck, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import UserRoleManager from "@/components/profissionais/UserRoleManager";
 
 interface Profissional {
   id: string;
@@ -29,10 +31,11 @@ interface Profissional {
   nome: string;
   email: string | null;
   telefone: string | null;
+  role?: string;
 }
 
 const Profissionais = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,12 +47,29 @@ const Profissionais = () => {
   const { data: profissionais = [], isLoading } = useQuery({
     queryKey: ["profissionais"],
     queryFn: async () => {
+      // Fetch user IDs with professional or admin roles
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["profissional", "admin"]);
+
+      const userIds = roleData?.map(r => r.user_id) ?? [];
+
+      if (userIds.length === 0) return [];
+
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
+        .in("id", userIds)
         .order("nome");
+
       if (error) throw error;
-      return data as Profissional[];
+
+      // Attach roles to profiles
+      return (data as any[]).map(p => ({
+        ...p,
+        role: roleData?.find(r => r.user_id === p.id)?.role
+      })) as Profissional[];
     },
   });
 
@@ -104,6 +124,7 @@ const Profissionais = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead className="hidden sm:table-cell">Cargo</TableHead>
                   <TableHead className="hidden sm:table-cell">E-mail</TableHead>
                   <TableHead className="hidden sm:table-cell">Telefone</TableHead>
                   <TableHead className="w-[80px]">Ações</TableHead>
@@ -113,6 +134,12 @@ const Profissionais = () => {
                 {profissionais.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.nome}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={p.role === 'admin' ? 'default' : 'secondary'}>
+                        {p.role === 'admin' ? <Shield className="h-3 w-3 mr-1 inline" /> : <UserCheck className="h-3 w-3 mr-1 inline" />}
+                        {p.role}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground">{p.email || "—"}</TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground">{p.telefone || "—"}</TableCell>
                     <TableCell>
@@ -127,6 +154,29 @@ const Profissionais = () => {
           )}
         </CardContent>
       </Card>
+
+      {isAdmin && (
+        <div className="mt-12 space-y-6">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">Gestão de Usuários</h2>
+            <p className="text-muted-foreground text-sm">Apenas administradores podem ver esta seção</p>
+          </div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center py-8 text-center space-y-4">
+                <UserCog className="h-10 w-10 text-primary opacity-80" />
+                <div>
+                  <h3 className="font-semibold">Gerenciar Acessos Internos</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    Para criar um novo Profissional ou Gestor, peça que ele se cadastre normalmente como Paciente e depois utilize a ferramenta abaixo para elevar o cargo dele.
+                  </p>
+                </div>
+                <UserRoleManager />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[420px]">

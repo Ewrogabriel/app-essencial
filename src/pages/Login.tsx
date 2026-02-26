@@ -166,9 +166,9 @@ const Login = () => {
 
             <TabsContent value="cadastro">
               <CardHeader className="text-center pt-4">
-                <CardTitle className="text-xl">Cadastrar</CardTitle>
+                <CardTitle className="text-xl">Cadastro de Paciente</CardTitle>
                 <CardDescription>
-                  Crie uma conta para acessar o sistema
+                  Crie sua conta para acompanhar sua agenda e pagamentos.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -208,8 +208,11 @@ const Login = () => {
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     <UserPlus className="h-4 w-4 mr-2" />
-                    {loading ? "Cadastrando..." : "Cadastrar"}
+                    {loading ? "Cadastrando..." : "Cadastrar como Paciente"}
                   </Button>
+                  <p className="text-center text-xs text-muted-foreground pt-4">
+                    Profissional? Entre em contato com a clínica para obter seu acesso.
+                  </p>
                 </form>
               </CardContent>
             </TabsContent>
