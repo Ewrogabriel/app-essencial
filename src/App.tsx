@@ -31,8 +31,9 @@ import Automacoes from "./pages/Automacoes";
 const queryClient = new QueryClient();
 
 const DashboardToggle = () => {
-  const { isPatient } = useAuth();
-  return isPatient ? <PatientDashboard /> : <Dashboard />;
+  const { isPatient, isAdmin, isGestor, isProfissional } = useAuth();
+  const isStaff = isAdmin || isGestor || isProfissional;
+  return isStaff ? <Dashboard /> : <PatientDashboard />;
 };
 
 const App = () => (

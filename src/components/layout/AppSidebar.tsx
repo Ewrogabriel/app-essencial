@@ -96,10 +96,10 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isPatient ? "Meu Portal" : "Principal"}</SidebarGroupLabel>
+          <SidebarGroupLabel>{isStaff ? "Principal" : "Meu Portal"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {(isPatient ? menuPatient : menuPrincipal).map((item) => (
+              {(isStaff ? menuPrincipal : menuPatient).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -154,6 +154,33 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {menuGestao.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <NavLink
+                        to={item.url}
+                        activeClassName="bg-sidebar-accent text-sidebar-primary"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {isStaff && (
+          <SidebarGroup>
+            <SidebarGroupLabel>IA & Automação</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {menuIA.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
