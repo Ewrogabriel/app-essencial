@@ -1,14 +1,32 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { MessageSquare, Mail, Bell, UserPlus, FileCheck, Send, Users } from "lucide-react";
+import { MessageSquare, Mail, Bell, UserPlus, FileCheck, Send, Users, FileText, Download, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const Automacoes = () => {
   const { clinicId } = useAuth();
+
+  const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<any>(null);
+
+  const [docDialogOpen, setDocDialogOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<any>(null);
 
   const { data: patients = [] } = useQuery({
     queryKey: ["automation-patients", clinicId],
@@ -26,33 +44,73 @@ const Automacoes = () => {
 
   const sendWhatsApp = (phone: string, message: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
+    if (!cleanPhone) {
+        toast.error("Número de telefone inválido.");
+        return;
+    }
     const url = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
 
-  const triggers = [
+  const [triggers, setTriggers] = useState([
     {
+      id: 1,
       title: "Lembrete de Consulta",
       description: "Mensagem para confirmar presença 24h antes.",
       icon: MessageSquare,
       color: "bg-green-100 text-green-700",
+      delay: "24",
       message: "Olá! Confirmamos sua sessão amanhã no Essencial FisioPilates. Podemos contar com sua presença?",
     },
     {
+      id: 2,
       title: "Recuperação de Paciente",
       description: "Para pacientes sumidos há mais de 30 dias.",
       icon: UserPlus,
       color: "bg-blue-100 text-blue-700",
+      delay: "30",
       message: "Olá! Sentimos sua falta aqui no Essencial FisioPilates. Como você está? Vamos agendar sua próxima sessão?",
     },
     {
+      id: 3,
       title: "Aviso de Pendência",
       description: "Cobrança amigável de pagamentos atrasados.",
       icon: Bell,
       color: "bg-amber-100 text-amber-700",
+      delay: "3",
       message: "Olá! Consta uma pendência em aberto no seu cadastro. Poderia nos enviar o comprovante ou regularizar?",
     },
+  ]);
+
+  const docs = [
+      { id: 1, title: "Recibo de Pagamento - PDF", desc: "Recibo padrão para reembolso de guias e impostos." },
+      { id: 2, title: "Termo de Alta Clínica", desc: "Documento oficial de conclusão e encerramento clínico." },
+      { id: 3, title: "Recomendações de Exercícios Home", desc: "Papeleta com instruções para fazer em casa." },
   ];
+
+  const handleOpenRule = (trigger: any) => {
+      setSelectedRule({ ...trigger });
+      setRuleDialogOpen(true);
+  };
+
+  const saveRule = () => {
+      setTriggers(triggers.map(t => t.id === selectedRule.id ? selectedRule : t));
+      setRuleDialogOpen(false);
+      toast.success("Regra de automação atualizada com sucesso!");
+  };
+
+  const handleOpenDoc = (doc: any) => {
+      setSelectedDoc(doc);
+      setDocDialogOpen(true);
+  };
+
+  const simulateDownload = () => {
+      setDocDialogOpen(false);
+      toast.success(`Baixando documento: ${selectedDoc?.title}`);
+      setTimeout(() => {
+          toast.info("Download concluído (Simulação).");
+      }, 1500);
+  };
 
   return (
     <div className="space-y-6">
@@ -62,13 +120,13 @@ const Automacoes = () => {
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">Centro de Automações</h1>
-          <p className="text-muted-foreground">Dispare comunicações inteligentes para seus pacientes.</p>
+          <p className="text-muted-foreground">Dispare comunicações inteligentes e acesse templates automáticos.</p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {triggers.map((trigger) => (
-          <Card key={trigger.title} className="hover:shadow-md transition-shadow">
+          <Card key={trigger.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-2 ${trigger.color}`}>
                 <trigger.icon className="h-5 w-5" />
@@ -77,10 +135,10 @@ const Automacoes = () => {
               <CardDescription>{trigger.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="p-3 bg-muted rounded-md text-xs mb-4 italic">
+              <div className="p-3 bg-muted rounded-md text-xs mb-4 italic line-clamp-3 h-16">
                 "{trigger.message}"
               </div>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" variant="outline" onClick={() => handleOpenRule(trigger)}>
                 Configurar Regra
               </Button>
             </CardContent>
@@ -112,7 +170,7 @@ const Automacoes = () => {
                         size="sm" 
                         variant="ghost" 
                         className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        onClick={() => sendWhatsApp(p.telefone, `Oi ${p.nome.split(' ')[0]}, tudo bem? Passando para lembrar da sua sessão!`)}
+                        onClick={() => sendWhatsApp(p.telefone || "", `Oi ${p.nome?.split(' ')[0] || "Paciente"}, tudo bem? Passando para lembrar da sua sessão!`)}
                       >
                         <MessageSquare className="h-4 w-4 mr-1" /> WhatsApp
                       </Button>
@@ -120,6 +178,7 @@ const Automacoes = () => {
                         size="sm" 
                         variant="ghost" 
                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => toast.info("Serviço de e-mail integrado em breve.")}
                       >
                         <Mail className="h-4 w-4 mr-1" /> E-mail
                       </Button>
@@ -144,22 +203,88 @@ const Automacoes = () => {
               <FileCheck className="h-5 w-5 text-primary" />
               Templates de Documentos
             </CardTitle>
+            <CardDescription>Acesso rápido aos documentos mais utilizados na clínica.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button variant="ghost" className="w-full justify-start text-sm">
-              📄 Recibo de Pagamento - PDF
-            </Button>
-            <Button variant="ghost" className="w-full justify-start text-sm">
-              📄 Termo de Alta Clínica
-            </Button>
-            <Button variant="ghost" className="w-full justify-start text-sm">
-              📄 Recomendações de Exercícios Home
-            </Button>
+              {docs.map(doc => (
+                  <Button 
+                    key={doc.id} 
+                    variant="outline" 
+                    className="w-full justify-between group"
+                    onClick={() => handleOpenDoc(doc)}
+                  >
+                    <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <span className="text-sm font-medium">{doc.title}</span>
+                    </div>
+                    <Download className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Button>
+              ))}
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog for Editing Rules */}
+      <Dialog open={ruleDialogOpen} onOpenChange={setRuleDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Configurar: {selectedRule?.title}</DialogTitle>
+            <DialogDescription>
+              Ajuste as condições de disparo e a mensagem que o paciente receberá.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="delay">Tempo de Gatilho (Dias/Horas)</Label>
+              <Input 
+                id="delay" 
+                value={selectedRule?.delay || ""} 
+                onChange={(e) => setSelectedRule({ ...selectedRule, delay: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="message">Mensagem Padrão</Label>
+              <Textarea
+                id="message"
+                className="min-h-[100px]"
+                value={selectedRule?.message || ""}
+                onChange={(e) => setSelectedRule({ ...selectedRule, message: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRuleDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={saveRule}><Save className="mr-2 h-4 w-4" /> Salvar Regra</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for Documents */}
+      <Dialog open={docDialogOpen} onOpenChange={setDocDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{selectedDoc?.title}</DialogTitle>
+            <DialogDescription>
+              {selectedDoc?.desc}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6 flex justify-center">
+              <div className="p-8 border-2 border-dashed border-muted-foreground/20 rounded-xl bg-muted/10 flex flex-col items-center text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm text-muted-foreground">O documento será gerado com os dados preenchidos automaticamente pelo sistema.</p>
+              </div>
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button variant="outline" onClick={() => setDocDialogOpen(false)}>Fechar</Button>
+            <Button onClick={simulateDownload} className="gap-2">
+                <Download className="h-4 w-4"/> Gerar PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 export default Automacoes;
+
