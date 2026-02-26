@@ -60,7 +60,7 @@ const Profissionais = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .in("id", userIds)
+        .in("user_id", userIds)
         .order("nome");
 
       if (error) throw error;

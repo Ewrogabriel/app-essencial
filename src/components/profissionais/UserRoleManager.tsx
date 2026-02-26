@@ -43,7 +43,7 @@ const UserRoleManager = () => {
 
             return profiles.map(p => ({
                 ...p,
-                roles: roles.filter(r => r.user_id === p.id).map(r => r.role)
+                roles: roles.filter(r => r.user_id === p.user_id).map(r => r.role)
             }));
         }
     });
@@ -102,7 +102,7 @@ const UserRoleManager = () => {
                         {filteredUsers.map((u) => {
                             const currentRole = u.roles[0] || "Sem cargo";
                             return (
-                                <TableRow key={u.id}>
+                                <TableRow key={u.user_id}>
                                     <TableCell>
                                         <div className="font-medium">{u.nome || "Sem nome"}</div>
                                         <div className="text-xs text-muted-foreground">{u.email}</div>
@@ -114,7 +114,7 @@ const UserRoleManager = () => {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Select
-                                            onValueChange={(val) => handleRoleChange(u.id, val, u.roles)}
+                                            onValueChange={(val) => handleRoleChange(u.user_id, val, u.roles)}
                                             defaultValue={currentRole}
                                         >
                                             <SelectTrigger className="w-[140px] ml-auto">
