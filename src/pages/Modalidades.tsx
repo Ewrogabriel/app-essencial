@@ -47,7 +47,7 @@ const Modalidades = () => {
   const { data: modalidades = [], isLoading } = useQuery({
     queryKey: ["modalidades"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("modalidades")
         .select("*")
         .order("nome");
@@ -78,14 +78,14 @@ const Modalidades = () => {
 
     try {
       if (editingId) {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from("modalidades")
           .update({ nome: nome.trim(), descricao: descricao || null, ativo })
           .eq("id", editingId);
         if (error) throw error;
         toast({ title: "Modalidade atualizada!" });
       } else {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from("modalidades")
           .insert({ nome: nome.trim(), descricao: descricao || null, ativo, created_by: user.id });
         if (error) throw error;
@@ -93,8 +93,9 @@ const Modalidades = () => {
       }
       queryClient.invalidateQueries({ queryKey: ["modalidades"] });
       setDialogOpen(false);
-    } catch (error: any) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" });
     }
 
     setLoading(false);

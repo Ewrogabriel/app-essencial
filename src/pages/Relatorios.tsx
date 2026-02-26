@@ -12,7 +12,7 @@ const Relatorios = () => {
   const { data: agendamentos = [] } = useQuery({
     queryKey: ["relatorio-agendamentos"],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("agendamentos")
         .select("id, data_horario, tipo_atendimento, tipo_sessao, status, profissional_id, profiles!agendamentos_profissional_id_fkey(nome)")
         .gte("data_horario", subMonths(new Date(), 6).toISOString())
@@ -24,7 +24,7 @@ const Relatorios = () => {
   const { data: pagamentos = [] } = useQuery({
     queryKey: ["relatorio-pagamentos"],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("pagamentos")
         .select("id, valor, data_pagamento, status, forma_pagamento")
         .gte("data_pagamento", format(subMonths(new Date(), 6), "yyyy-MM-dd"))
@@ -49,7 +49,7 @@ const Relatorios = () => {
       const key = format(m, "MMM/yy", { locale: ptBR });
       months[key] = 0;
     }
-    pagamentos.filter((p: any) => p.status === "pago").forEach((p: any) => {
+    (pagamentos as any[]).filter((p) => p.status === "pago").forEach((p) => {
       const key = format(new Date(p.data_pagamento), "MMM/yy", { locale: ptBR });
       if (key in months) months[key] += Number(p.valor);
     });
@@ -59,20 +59,20 @@ const Relatorios = () => {
   // Appointments by type
   const byType = () => {
     const counts: Record<string, number> = { fisioterapia: 0, pilates: 0, rpg: 0 };
-    agendamentos.forEach((a: any) => { if (a.tipo_atendimento in counts) counts[a.tipo_atendimento]++; });
+    (agendamentos as any[]).forEach((a) => { if (a.tipo_atendimento in counts) counts[a.tipo_atendimento]++; });
     return Object.entries(counts).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
   };
 
   // Appointments by status
   const byStatus = () => {
     const counts: Record<string, number> = {};
-    agendamentos.forEach((a: any) => { counts[a.status] = (counts[a.status] || 0) + 1; });
+    (agendamentos as any[]).forEach((a) => { counts[a.status] = (counts[a.status] || 0) + 1; });
     const labels: Record<string, string> = { agendado: "Agendado", confirmado: "Confirmado", realizado: "Realizado", cancelado: "Cancelado", falta: "Falta" };
     return Object.entries(counts).map(([key, value]) => ({ name: labels[key] || key, value }));
   };
 
-  const totalRecebido = pagamentos.filter((p: any) => p.status === "pago").reduce((s: number, p: any) => s + Number(p.valor), 0);
-  const totalAtendimentos = agendamentos.filter((a: any) => a.status === "realizado").length;
+  const totalRecebido = (pagamentos as any[]).filter((p) => p.status === "pago").reduce((s: number, p) => s + Number(p.valor), 0);
+  const totalAtendimentos = (agendamentos as any[]).filter((a) => a.status === "realizado").length;
 
   return (
     <div className="space-y-6">

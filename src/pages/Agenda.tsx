@@ -24,13 +24,13 @@ const Agenda = () => {
   const fetchAgendamentos = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("agendamentos")
         .select("*, pacientes(nome, telefone)")
         .order("data_horario", { ascending: true });
 
       if (!error && data) {
-        const mapped = data.map((item: any) => ({
+        const mapped = (data as any[]).map((item) => ({
           ...item,
           pacientes: item.pacientes,
           profiles: item.profiles,
@@ -39,7 +39,7 @@ const Agenda = () => {
 
         // Build telefone map
         const telMap: Record<string, string> = {};
-        data.forEach((item: any) => {
+        (data as any[]).forEach((item) => {
           if (item.paciente_id && item.pacientes?.telefone) {
             telMap[item.paciente_id] = item.pacientes.telefone;
           }

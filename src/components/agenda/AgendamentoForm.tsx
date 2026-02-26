@@ -175,11 +175,11 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
       for (const dia of values.dias_semana) {
         const diaHorario = values.horarios_por_dia[String(dia)] || "08:00";
         const [hours, minutes] = diaHorario.split(":").map(Number);
-        
+
         const weekStart = addWeeks(startDate, week);
         const dayOffset = (dia - weekStart.getDay() + 7) % 7;
         const targetDate = addDays(weekStart, dayOffset);
-        
+
         if (targetDate >= new Date(new Date().setHours(0, 0, 0, 0))) {
           const dt = setM(setH(targetDate, hours), minutes);
           dates.push(dt);
@@ -235,7 +235,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
           valor_mensal: values.valor_mensal || null,
         }));
 
-        const { error } = await (supabase as any).from("agendamentos").insert(records);
+        const { error } = await supabase.from("agendamentos").insert(records);
         if (error) throw error;
 
         toast({
@@ -247,7 +247,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
         const dataHorario = new Date(values.data);
         dataHorario.setHours(hours, minutes, 0, 0);
 
-        const { error } = await (supabase as any).from("agendamentos").insert({
+        const { error } = await supabase.from("agendamentos").insert({
           paciente_id: values.paciente_id,
           profissional_id: values.profissional_id,
           data_horario: dataHorario.toISOString(),
@@ -266,8 +266,9 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
       form.reset();
       onOpenChange(false);
       onSuccess();
-    } catch (error: any) {
-      toast({ title: "Erro ao criar agendamento", description: error.message, variant: "destructive" });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      toast({ title: "Erro ao criar agendamento", description: errorMessage, variant: "destructive" });
     }
 
     setLoading(false);

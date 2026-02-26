@@ -55,7 +55,7 @@ const Financeiro = () => {
   const { data: pagamentos = [], isLoading } = useQuery({
     queryKey: ["pagamentos"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("pagamentos")
         .select("*, pacientes(nome)")
         .order("created_at", { ascending: false });
@@ -75,7 +75,7 @@ const Financeiro = () => {
   const createPagamento = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
-      const { error } = await (supabase as any).from("pagamentos").insert({
+      const { error } = await supabase.from("pagamentos").insert({
         paciente_id: formData.paciente_id,
         profissional_id: user.id,
         plano_id: formData.plano_id || null,
@@ -96,13 +96,13 @@ const Financeiro = () => {
       setFormData({ paciente_id: "", plano_id: "", valor: "", data_pagamento: format(new Date(), "yyyy-MM-dd"), data_vencimento: "", forma_pagamento: "", status: "pendente", descricao: "", observacoes: "" });
       toast({ title: "Pagamento registrado!" });
     },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+    onError: (e: Error | any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  const totalRecebido = pagamentos.filter((p: any) => p.status === "pago").reduce((sum: number, p: any) => sum + Number(p.valor), 0);
-  const totalPendente = pagamentos.filter((p: any) => p.status === "pendente").reduce((sum: number, p: any) => sum + Number(p.valor), 0);
-  const countPagos = pagamentos.filter((p: any) => p.status === "pago").length;
-  const countPendentes = pagamentos.filter((p: any) => p.status === "pendente").length;
+  const totalRecebido = (pagamentos as any[]).filter((p) => p.status === "pago").reduce((sum: number, p) => sum + Number(p.valor), 0);
+  const totalPendente = (pagamentos as any[]).filter((p) => p.status === "pendente").reduce((sum: number, p) => sum + Number(p.valor), 0);
+  const countPagos = (pagamentos as any[]).filter((p) => p.status === "pago").length;
+  const countPendentes = (pagamentos as any[]).filter((p) => p.status === "pendente").length;
 
   return (
     <div className="space-y-6">
@@ -175,7 +175,7 @@ const Financeiro = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pagamentos.map((pag: any) => {
+                {(pagamentos as any[]).map((pag) => {
                   const st = statusBadge[pag.status] || statusBadge.pendente;
                   return (
                     <TableRow key={pag.id}>
@@ -207,7 +207,7 @@ const Financeiro = () => {
               <Select value={formData.paciente_id} onValueChange={(v) => setFormData(p => ({ ...p, paciente_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {pacientes.map((p: any) => (
+                  {(pacientes as any[]).map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
                   ))}
                 </SelectContent>

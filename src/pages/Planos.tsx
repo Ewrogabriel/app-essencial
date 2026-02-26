@@ -47,7 +47,7 @@ const Planos = () => {
   const { data: planos = [], isLoading } = useQuery({
     queryKey: ["planos"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("planos")
         .select("*, pacientes(nome)")
         .order("created_at", { ascending: false });
@@ -71,7 +71,7 @@ const Planos = () => {
   const createPlano = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
-      const { error } = await (supabase as any).from("planos").insert({
+      const { data: plano, error: planoError } = await supabase.from("planos").insert({
         paciente_id: formData.paciente_id,
         profissional_id: user.id,
         tipo_atendimento: formData.tipo_atendimento,
@@ -81,8 +81,23 @@ const Planos = () => {
         data_vencimento: formData.data_vencimento || null,
         observacoes: formData.observacoes || null,
         created_by: user.id,
+      }).select().single();
+
+      if (planoError) throw planoError;
+
+      // Auto-create pending payment
+      const { error: pgtoError } = await supabase.from("pagamentos").insert({
+        paciente_id: formData.paciente_id,
+        profissional_id: user.id,
+        plano_id: plano.id,
+        valor: parseFloat(formData.valor) || 0,
+        data_vencimento: formData.data_vencimento || null,
+        status: "pendente",
+        descricao: `Plano ${formData.tipo_atendimento} - ${formData.total_sessoes} sessões`,
+        created_by: user.id,
       });
-      if (error) throw error;
+
+      if (pgtoError) throw pgtoError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planos"] });
@@ -90,16 +105,33 @@ const Planos = () => {
       setFormData({ paciente_id: "", tipo_atendimento: "fisioterapia", total_sessoes: 10, valor: "", data_inicio: format(new Date(), "yyyy-MM-dd"), data_vencimento: "", observacoes: "" });
       toast({ title: "Plano criado com sucesso!" });
     },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+    onError: (e: Error | any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  const planosAtivos = planos.filter((p: any) => p.status === "ativo");
-  const planosVencendo = planosAtivos.filter((p: any) => {
+  const confirmPayment = useMutation({
+    mutationFn: async (planoId: string) => {
+      const { error } = await supabase
+        .from("pagamentos")
+        .update({ status: "pago", data_pagamento: new Date().toISOString() })
+        .eq("plano_id", planoId)
+        .eq("status", "pendente");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["planos"] });
+      queryClient.invalidateQueries({ queryKey: ["pagamentos"] });
+      toast({ title: "Pagamento confirmado!" });
+    },
+    onError: (e: any) => toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" }),
+  });
+
+  const planosAtivos = (planos as any[]).filter((p) => p.status === "ativo");
+  const planosVencendo = planosAtivos.filter((p) => {
     if (!p.data_vencimento) return false;
     const diff = new Date(p.data_vencimento).getTime() - Date.now();
     return diff > 0 && diff < 15 * 24 * 60 * 60 * 1000;
   });
-  const planosEsgotando = planosAtivos.filter((p: any) => {
+  const planosEsgotando = planosAtivos.filter((p) => {
     const restante = p.total_sessoes - p.sessoes_utilizadas;
     return restante > 0 && restante <= 3;
   });
@@ -172,15 +204,19 @@ const Planos = () => {
                   <TableHead>Valor</TableHead>
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {planos.map((plano: any) => {
+                {(planos as any[]).map((plano) => {
                   const pct = plano.total_sessoes > 0 ? (plano.sessoes_utilizadas / plano.total_sessoes) * 100 : 0;
                   const restante = plano.total_sessoes - plano.sessoes_utilizadas;
                   const st = statusConfig[plano.status] || statusConfig.ativo;
                   return (
-                    <TableRow key={plano.id}>
+                    <TableRow
+                      key={plano.id}
+                      className={plano.status === "vencido" ? "bg-destructive/10 hover:bg-destructive/20" : ""}
+                    >
                       <TableCell className="font-medium">{plano.pacientes?.nome ?? "—"}</TableCell>
                       <TableCell className="capitalize">{plano.tipo_atendimento}</TableCell>
                       <TableCell>{plano.sessoes_utilizadas}/{plano.total_sessoes} <span className="text-xs text-muted-foreground">({restante} restantes)</span></TableCell>
@@ -188,8 +224,21 @@ const Planos = () => {
                         <Progress value={pct} className="h-2" />
                       </TableCell>
                       <TableCell>R$ {Number(plano.valor).toFixed(2)}</TableCell>
-                      <TableCell>{plano.data_vencimento ? format(new Date(plano.data_vencimento), "dd/MM/yyyy") : "—"}</TableCell>
+                      <TableCell className={plano.status === "vencido" ? "text-destructive font-bold" : ""}>
+                        {plano.data_vencimento ? format(new Date(plano.data_vencimento), "dd/MM/yyyy") : "—"}
+                      </TableCell>
                       <TableCell><Badge variant={st.variant}>{st.label}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8"
+                          onClick={() => confirmPayment.mutate(plano.id)}
+                          disabled={confirmPayment.isPending}
+                        >
+                          Confirmar Pagamento
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -211,7 +260,7 @@ const Planos = () => {
               <Select value={formData.paciente_id} onValueChange={(v) => setFormData(p => ({ ...p, paciente_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {pacientes.map((p: any) => (
+                  {(pacientes as any[]).map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
                   ))}
                 </SelectContent>

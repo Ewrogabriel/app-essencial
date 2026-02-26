@@ -74,8 +74,9 @@ const Profissionais = () => {
       toast({ title: "Profissional atualizado!" });
       queryClient.invalidateQueries({ queryKey: ["profissionais"] });
       setDialogOpen(false);
-    } catch (error: any) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" });
     }
 
     setLoading(false);

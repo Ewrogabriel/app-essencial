@@ -34,9 +34,9 @@ const menuPrincipal = [
   { title: "Agenda", url: "/agenda", icon: Calendar },
 ];
 
-const menuCadastros = [
-  { title: "Modalidades", url: "/modalidades", icon: Layers },
-  { title: "Profissionais", url: "/profissionais", icon: UserCog },
+const menuProfissional = [
+  { title: "Cadastro", url: "/modalidades", icon: Layers },
+  { title: "Profissional", url: "/profissionais", icon: UserCog },
 ];
 
 const menuGestao = [
@@ -105,10 +105,10 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Cadastros</SidebarGroupLabel>
+          <SidebarGroupLabel>Profissional</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuCadastros.map((item) => (
+              {menuProfissional.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
