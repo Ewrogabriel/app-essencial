@@ -1,44 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BarChart3, Users, DollarSign, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const COLORS = ["hsl(168, 65%, 38%)", "hsl(199, 89%, 48%)", "hsl(38, 92%, 50%)", "hsl(0, 72%, 51%)", "hsl(142, 71%, 45%)"];
 
 const Relatorios = () => {
+  const { clinicId } = useAuth();
+
   const { data: agendamentos = [] } = useQuery({
-    queryKey: ["relatorio-agendamentos"],
+    queryKey: ["relatorio-agendamentos", clinicId],
     queryFn: async () => {
+      if (!clinicId) return [];
       const { data } = await supabase
         .from("agendamentos")
         .select("id, data_horario, tipo_atendimento, tipo_sessao, status, profissional_id, profiles!agendamentos_profissional_id_fkey(nome)")
+        .eq("clinic_id", clinicId)
         .gte("data_horario", subMonths(new Date(), 6).toISOString())
         .order("data_horario", { ascending: true });
       return data ?? [];
     },
+    enabled: !!clinicId,
   });
 
   const { data: pagamentos = [] } = useQuery({
-    queryKey: ["relatorio-pagamentos"],
+    queryKey: ["relatorio-pagamentos", clinicId],
     queryFn: async () => {
+      if (!clinicId) return [];
       const { data } = await supabase
         .from("pagamentos")
         .select("id, valor, data_pagamento, status, forma_pagamento")
+        .eq("clinic_id", clinicId)
         .gte("data_pagamento", format(subMonths(new Date(), 6), "yyyy-MM-dd"))
         .order("data_pagamento", { ascending: true });
       return data ?? [];
     },
+    enabled: !!clinicId,
   });
 
   const { data: pacientesCount = 0 } = useQuery({
-    queryKey: ["relatorio-pacientes"],
+    queryKey: ["relatorio-pacientes", clinicId],
     queryFn: async () => {
-      const { count } = await supabase.from("pacientes").select("id", { count: "exact", head: true }).eq("status", "ativo");
+      if (!clinicId) return 0;
+      const { count } = await supabase.from("pacientes").select("id", { count: "exact", head: true }).eq("status", "ativo").eq("clinic_id", clinicId);
       return count ?? 0;
     },
+    enabled: !!clinicId,
   });
 
   // Monthly revenue chart
@@ -56,10 +67,13 @@ const Relatorios = () => {
     return Object.entries(months).map(([name, valor]) => ({ name, valor }));
   };
 
-  // Appointments by type
+  // Appointments by type — dynamic (works with any modality)
   const byType = () => {
-    const counts: Record<string, number> = { fisioterapia: 0, pilates: 0, rpg: 0 };
-    (agendamentos as any[]).forEach((a) => { if (a.tipo_atendimento in counts) counts[a.tipo_atendimento]++; });
+    const counts: Record<string, number> = {};
+    (agendamentos as any[]).forEach((a) => {
+      const tipo = a.tipo_atendimento || "Outros";
+      counts[tipo] = (counts[tipo] || 0) + 1;
+    });
     return Object.entries(counts).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
   };
 

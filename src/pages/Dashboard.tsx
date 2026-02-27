@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -38,12 +38,16 @@ const Dashboard = () => {
     enabled: !!clinicId,
   });
 
+  const hoje = new Date();
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+
   const { data: financeData } = useQuery({
-    queryKey: ["dashboard-finance", clinicId],
+    queryKey: ["dashboard-finance", clinicId, inicioMes],
     queryFn: async () => {
       if (!clinicId) return { receita: 0, custos: 0, repasses: 0, lucro: 0 };
 
-      const { data: pagamentos } = await supabase.from("pagamentos").select("valor, status").eq("clinic_id", clinicId);
+      const { data: pagamentos } = await supabase.from("pagamentos").select("valor, status").eq("clinic_id", clinicId).gte("data_pagamento", inicioMes).lte("data_pagamento", fimMes);
       const { data: despesas } = await (supabase.from("expenses") as any).select("valor, status").eq("clinic_id", clinicId);
       const { data: comissoes } = await (supabase.from("commissions") as any).select("valor").eq("clinic_id", clinicId);
 
@@ -56,10 +60,25 @@ const Dashboard = () => {
     enabled: !!clinicId,
   });
 
+  const { data: alertCount = 0 } = useQuery({
+    queryKey: ["dashboard-alerts", clinicId],
+    queryFn: async () => {
+      if (!clinicId) return 0;
+      // Count overdue pending payments
+      const { count } = await supabase
+        .from("pagamentos")
+        .select("id", { count: "exact", head: true })
+        .eq("clinic_id", clinicId)
+        .eq("status", "pendente")
+        .lte("data_vencimento", new Date().toISOString().split("T")[0]);
+      return count ?? 0;
+    },
+    enabled: !!clinicId,
+  });
+
   const ativos = (pacientes || []).filter((p) => p.status === "ativo");
   const recentes = (pacientes || []).slice(0, 5);
 
-  const hoje = new Date();
   const saudacao =
     hoje.getHours() < 12 ? "Bom dia" : hoje.getHours() < 18 ? "Boa tarde" : "Boa noite";
 
@@ -87,10 +106,10 @@ const Dashboard = () => {
     },
     {
       title: "Alertas",
-      value: "0",
+      value: String(alertCount),
       icon: AlertTriangle,
-      description: "Nenhum atraso crítico",
-      color: "text-amber-600 bg-amber-50",
+      description: alertCount === 0 ? "Nenhum atraso" : `${alertCount} pagamento(s) em atraso`,
+      color: alertCount > 0 ? "text-red-600 bg-red-50" : "text-amber-600 bg-amber-50",
     },
   ];
 

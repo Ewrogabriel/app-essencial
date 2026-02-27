@@ -19,6 +19,44 @@ import { MessageSquare, Mail, Bell, UserPlus, FileCheck, Send, Users, FileText, 
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
+// Sub-component so that useState is not called inside a .map()
+const PatientDispatchRow = ({ p, triggers, sendWhatsApp }: { p: any; triggers: any[]; sendWhatsApp: (phone: string, msg: string) => void }) => {
+  const [selectedMsgId, setSelectedMsgId] = useState<number>(triggers[0]?.id ?? 1);
+  const selectedMsg = triggers.find(t => t.id === selectedMsgId);
+  const firstName = p.nome?.split(' ')[0] || 'paciente';
+  const personalizedMsg = selectedMsg
+    ? `Olá, ${firstName}! ${selectedMsg.message.replace(/^Olá[!,]?\s*/i, '')}`
+    : "";
+
+  return (
+    <div className="flex flex-col gap-2 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+      <div>
+        <p className="text-sm font-medium">{p.nome}</p>
+        <p className="text-xs text-muted-foreground">{p.telefone}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <select
+          className="flex-1 text-sm border rounded-md px-3 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          value={selectedMsgId}
+          onChange={(e) => setSelectedMsgId(Number(e.target.value))}
+        >
+          {triggers.map(t => (
+            <option key={t.id} value={t.id}>{t.title}</option>
+          ))}
+        </select>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-green-600 hover:text-green-700 hover:bg-green-50 shrink-0"
+          onClick={() => sendWhatsApp(p.telefone || "", personalizedMsg)}
+        >
+          <MessageSquare className="h-4 w-4 mr-1" /> WhatsApp
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const Automacoes = () => {
   const { clinicId } = useAuth();
 
@@ -45,8 +83,8 @@ const Automacoes = () => {
   const sendWhatsApp = (phone: string, message: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
     if (!cleanPhone) {
-        toast.error("Número de telefone inválido.");
-        return;
+      toast.error("Número de telefone inválido.");
+      return;
     }
     const url = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
@@ -83,33 +121,33 @@ const Automacoes = () => {
   ]);
 
   const docs = [
-      { id: 1, title: "Recibo de Pagamento - PDF", desc: "Recibo padrão para reembolso de guias e impostos." },
-      { id: 2, title: "Termo de Alta Clínica", desc: "Documento oficial de conclusão e encerramento clínico." },
-      { id: 3, title: "Recomendações de Exercícios Home", desc: "Papeleta com instruções para fazer em casa." },
+    { id: 1, title: "Recibo de Pagamento - PDF", desc: "Recibo padrão para reembolso de guias e impostos." },
+    { id: 2, title: "Termo de Alta Clínica", desc: "Documento oficial de conclusão e encerramento clínico." },
+    { id: 3, title: "Recomendações de Exercícios Home", desc: "Papeleta com instruções para fazer em casa." },
   ];
 
   const handleOpenRule = (trigger: any) => {
-      setSelectedRule({ ...trigger });
-      setRuleDialogOpen(true);
+    setSelectedRule({ ...trigger });
+    setRuleDialogOpen(true);
   };
 
   const saveRule = () => {
-      setTriggers(triggers.map(t => t.id === selectedRule.id ? selectedRule : t));
-      setRuleDialogOpen(false);
-      toast.success("Regra de automação atualizada com sucesso!");
+    setTriggers(triggers.map(t => t.id === selectedRule.id ? selectedRule : t));
+    setRuleDialogOpen(false);
+    toast.success("Regra de automação atualizada com sucesso!");
   };
 
   const handleOpenDoc = (doc: any) => {
-      setSelectedDoc(doc);
-      setDocDialogOpen(true);
+    setSelectedDoc(doc);
+    setDocDialogOpen(true);
   };
 
   const simulateDownload = () => {
-      setDocDialogOpen(false);
-      toast.success(`Baixando documento: ${selectedDoc?.title}`);
-      setTimeout(() => {
-          toast.info("Download concluído (Simulação).");
-      }, 1500);
+    setDocDialogOpen(false);
+    toast.success(`Baixando documento: ${selectedDoc?.title}`);
+    setTimeout(() => {
+      toast.info("Download concluído (Simulação).");
+    }, 1500);
   };
 
   return (
@@ -160,30 +198,7 @@ const Automacoes = () => {
             ) : (
               <div className="grid gap-3">
                 {patients.slice(0, 5).map((p: any) => (
-                  <div key={p.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium">{p.nome}</p>
-                      <p className="text-xs text-muted-foreground">{p.telefone}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        onClick={() => sendWhatsApp(p.telefone || "", `Oi ${p.nome?.split(' ')[0] || "Paciente"}, tudo bem? Passando para lembrar da sua sessão!`)}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-1" /> WhatsApp
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={() => toast.info("Serviço de e-mail integrado em breve.")}
-                      >
-                        <Mail className="h-4 w-4 mr-1" /> E-mail
-                      </Button>
-                    </div>
-                  </div>
+                  <PatientDispatchRow key={p.id} p={p} triggers={triggers} sendWhatsApp={sendWhatsApp} />
                 ))}
               </div>
             )}
@@ -206,20 +221,20 @@ const Automacoes = () => {
             <CardDescription>Acesso rápido aos documentos mais utilizados na clínica.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-              {docs.map(doc => (
-                  <Button 
-                    key={doc.id} 
-                    variant="outline" 
-                    className="w-full justify-between group"
-                    onClick={() => handleOpenDoc(doc)}
-                  >
-                    <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                        <span className="text-sm font-medium">{doc.title}</span>
-                    </div>
-                    <Download className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Button>
-              ))}
+            {docs.map(doc => (
+              <Button
+                key={doc.id}
+                variant="outline"
+                className="w-full justify-between group"
+                onClick={() => handleOpenDoc(doc)}
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="text-sm font-medium">{doc.title}</span>
+                </div>
+                <Download className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Button>
+            ))}
           </CardContent>
         </Card>
       </div>
@@ -236,9 +251,9 @@ const Automacoes = () => {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="delay">Tempo de Gatilho (Dias/Horas)</Label>
-              <Input 
-                id="delay" 
-                value={selectedRule?.delay || ""} 
+              <Input
+                id="delay"
+                value={selectedRule?.delay || ""}
                 onChange={(e) => setSelectedRule({ ...selectedRule, delay: e.target.value })}
               />
             </div>
@@ -269,15 +284,15 @@ const Automacoes = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="py-6 flex justify-center">
-              <div className="p-8 border-2 border-dashed border-muted-foreground/20 rounded-xl bg-muted/10 flex flex-col items-center text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground/40 mb-3" />
-                  <p className="text-sm text-muted-foreground">O documento será gerado com os dados preenchidos automaticamente pelo sistema.</p>
-              </div>
+            <div className="p-8 border-2 border-dashed border-muted-foreground/20 rounded-xl bg-muted/10 flex flex-col items-center text-center">
+              <FileText className="h-12 w-12 text-muted-foreground/40 mb-3" />
+              <p className="text-sm text-muted-foreground">O documento será gerado com os dados preenchidos automaticamente pelo sistema.</p>
+            </div>
           </div>
           <DialogFooter className="sm:justify-between">
             <Button variant="outline" onClick={() => setDocDialogOpen(false)}>Fechar</Button>
             <Button onClick={simulateDownload} className="gap-2">
-                <Download className="h-4 w-4"/> Gerar PDF
+              <Download className="h-4 w-4" /> Gerar PDF
             </Button>
           </DialogFooter>
         </DialogContent>

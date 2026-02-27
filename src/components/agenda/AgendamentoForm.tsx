@@ -58,7 +58,7 @@ const formSchema = z.object({
   data: z.date({ required_error: "Selecione a data" }),
   horario: z.string().min(1, "Informe o horário"),
   duracao_minutos: z.number().min(15).max(120),
-  tipo_atendimento: z.enum(["fisioterapia", "pilates", "rpg"]),
+  tipo_atendimento: z.string().min(1, "Selecione a modalidade"),
   tipo_sessao: z.enum(["individual", "grupo"]),
   observacoes: z.string().optional(),
   frequencia: z.enum(["none", "daily", "weekly", "biweekly", "monthly"]).default("none"),
@@ -83,6 +83,11 @@ interface Profissional {
   nome: string;
 }
 
+interface Modalidade {
+  id: string;
+  nome: string;
+}
+
 interface AgendamentoFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -94,13 +99,14 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
   const { user, clinicId } = useAuth();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
+  const [modalidades, setModalidades] = useState<Modalidade[]>([]);
   const [loading, setLoading] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       duracao_minutos: 50,
-      tipo_atendimento: "fisioterapia",
+      tipo_atendimento: "",
       tipo_sessao: "individual",
       horario: "08:00",
       observacoes: "",
@@ -130,6 +136,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
     if (open) {
       fetchPacientes();
       fetchProfissionais();
+      fetchModalidades();
     }
   }, [open]);
 
@@ -154,6 +161,15 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
       .eq("clinic_id", clinicId)
       .order("nome");
     setProfissionais(data ?? []);
+  };
+
+  const fetchModalidades = async () => {
+    const { data } = await supabase
+      .from("modalidades")
+      .select("id, nome")
+      .eq("ativo", true)
+      .order("nome");
+    setModalidades(data ?? []);
   };
 
   const toggleDia = (dia: number) => {
@@ -370,9 +386,9 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="fisioterapia">Fisioterapia</SelectItem>
-                        <SelectItem value="pilates">Pilates</SelectItem>
-                        <SelectItem value="rpg">RPG</SelectItem>
+                        {modalidades.map((mod) => (
+                          <SelectItem key={mod.id} value={mod.nome}>{mod.nome}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -556,7 +572,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
                         <FormLabel>
                           Quantidade por semana
                           <span className="ml-2 text-xs text-muted-foreground">
-                            (ex: {tipoAtendimento === "pilates" ? "Pilates" : tipoAtendimento === "rpg" ? "RPG" : "Fisio"} {freqLabel}/semana)
+                            (ex: {tipoAtendimento || "Sessão"} {freqLabel}/semana)
                           </span>
                         </FormLabel>
                         <Select

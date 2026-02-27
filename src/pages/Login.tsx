@@ -28,9 +28,22 @@ const Login = () => {
     setLoading(true);
 
     let authEmail = loginEmail.trim();
-    const cleanCpf = authEmail.replace(/\D/g, "");
-    if (cleanCpf.length === 11 && /^\d+$/.test(cleanCpf)) {
-       authEmail = `${cleanCpf}@paciente.essencial.com`;
+
+    // Check if it's an email or a CPF
+    if (!authEmail.includes("@")) {
+      // It's likely a CPF, so we strip everything that is not a number
+      const cleanCpf = authEmail.replace(/\D/g, "");
+      if (cleanCpf.length === 11) {
+        authEmail = `${cleanCpf}@paciente.essencial.com`;
+      } else {
+        toast({
+          title: "Formato inválido",
+          description: "CPF deve conter 11 dígitos ou informe um e-mail válido.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
     }
 
     const { error } = await signIn(authEmail, loginSenha);
@@ -82,18 +95,29 @@ const Login = () => {
       return;
     }
 
-    const cleanCpf = loginEmail.replace(/\D/g, "");
-    if (cleanCpf.length === 11 && /^\d+$/.test(cleanCpf)) {
-       toast({
-         title: "Acesso de Paciente",
-         description: "Para redefinir a senha da sua conta via CPF, entre em contato com a recepção da clínica.",
-         variant: "destructive",
-       });
-       return;
+    let resetEmail = loginEmail.trim();
+
+    if (!resetEmail.includes("@")) {
+      const cleanCpf = resetEmail.replace(/\D/g, "");
+      if (cleanCpf.length === 11) {
+        toast({
+          title: "Acesso de Paciente",
+          description: "Para redefinir a senha da sua conta via CPF, entre em contato com a recepção da clínica.",
+          variant: "destructive",
+        });
+        return;
+      } else {
+        toast({
+          title: "Formato inválido",
+          description: "CPF deve conter 11 dígitos ou informe um e-mail válido.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setLoading(true);
-    const { error } = await resetPassword(loginEmail);
+    const { error } = await resetPassword(resetEmail);
 
     if (error) {
       toast({
