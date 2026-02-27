@@ -46,6 +46,19 @@ const PatientDashboard = () => {
     enabled: !!patientId,
   });
 
+  const { data: avisos = [] } = useQuery({
+    queryKey: ["avisos-ativos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("avisos")
+        .select("*")
+        .eq("ativo", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const hoje = new Date();
   const saudacao = hoje.getHours() < 12 ? "Bom dia" : hoje.getHours() < 18 ? "Boa tarde" : "Boa noite";
 
@@ -145,16 +158,23 @@ const PatientDashboard = () => {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-primary" />
-              Aviso Importante
+              Mural de Avisos
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm space-y-3">
-            <p>
-              Caso precise desmarcar sua sessão, por favor faça com pelo menos <strong>24 horas de antecedência</strong>.
-            </p>
-            <p>
-              Sessões desmarcadas em cima da hora poderão ser contabilizadas normalmente.
-            </p>
+          <CardContent className="text-sm space-y-4">
+            {avisos.length === 0 ? (
+               <p className="text-muted-foreground text-center py-4">Nenhum aviso no momento.</p>
+            ) : (
+               avisos.map((aviso) => (
+                 <div key={aviso.id} className="bg-white p-3 rounded-md border shadow-sm">
+                   <h4 className="font-semibold text-primary">{aviso.titulo}</h4>
+                   <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{aviso.mensagem}</p>
+                   <span className="text-[10px] text-muted-foreground mt-2 block">
+                     {format(new Date(aviso.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                   </span>
+                 </div>
+               ))
+            )}
           </CardContent>
         </Card>
       </div>

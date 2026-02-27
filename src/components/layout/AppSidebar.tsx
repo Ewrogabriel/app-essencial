@@ -51,7 +51,7 @@ const menuGestao = [
 ];
 
 const menuPatient = [
-  { title: "Início", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Minha Agenda", url: "/minha-agenda", icon: Calendar },
   { title: "Meus Pagamentos", url: "/meus-pagamentos", icon: DollarSign },
 ];

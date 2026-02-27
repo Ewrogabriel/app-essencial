@@ -28,6 +28,7 @@ import MeusPagamentos from "./pages/MeusPagamentos";
 import Inteligencia from "./pages/Inteligencia";
 import Automacoes from "./pages/Automacoes";
 import PatientOnboarding from "./pages/PatientOnboarding";
+import AvisosAdmin from "./pages/AvisosAdmin";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/profissionais" element={<Profissionais />} />
               <Route path="/inteligencia" element={<Inteligencia />} />
               <Route path="/automacoes" element={<Automacoes />} />
+              <Route path="/avisos" element={<AvisosAdmin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
