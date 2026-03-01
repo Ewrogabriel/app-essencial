@@ -143,20 +143,16 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
   const freqLabel = freqSemanal === 1 ? "1x" : freqSemanal === 2 ? "2x" : freqSemanal === 3 ? "3x" : `${freqSemanal}x`;
 
   const fetchPacientes = async () => {
-    if (!clinicId) return;
     const { data } = await (supabase.from("pacientes") as any)
       .select("id, nome")
       .eq("status", "ativo")
-      .eq("clinic_id", clinicId)
       .order("nome");
     setPacientes(data ?? []);
   };
 
   const fetchProfissionais = async () => {
-    if (!clinicId) return;
     const { data } = await (supabase.from("profiles") as any)
       .select("id, user_id, nome")
-      .eq("clinic_id", clinicId)
       .order("nome");
     setProfissionais(data ?? []);
   };
@@ -256,7 +252,6 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
 
         const grupoId = crypto.randomUUID();
         const records = dates.map((dt) => ({
-          clinic_id: clinicId,
           paciente_id: values.paciente_id,
           profissional_id: values.profissional_id,
           data_horario: dt.toISOString(),
@@ -285,7 +280,6 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
         dataHorario.setHours(hours, minutes, 0, 0);
 
         const { error } = await (supabase.from("agendamentos") as any).insert({
-          clinic_id: clinicId,
           paciente_id: values.paciente_id,
           profissional_id: values.profissional_id,
           data_horario: dataHorario.toISOString(),

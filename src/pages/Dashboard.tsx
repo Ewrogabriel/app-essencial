@@ -21,20 +21,17 @@ const tipoLabels: Record<string, string> = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { profile, clinicId } = useAuth();
+  const { profile } = useAuth();
 
   const { data: pacientes = [] } = useQuery({
-    queryKey: ["pacientes", clinicId],
+    queryKey: ["pacientes"],
     queryFn: async () => {
-      if (!clinicId) return [];
       const { data, error } = await (supabase.from("pacientes") as any)
         .select("*")
-        .eq("clinic_id", clinicId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!clinicId,
   });
 
   const hoje = new Date();
@@ -42,39 +39,32 @@ const Dashboard = () => {
   const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
 
   const { data: financeData } = useQuery({
-    queryKey: ["dashboard-finance", clinicId, inicioMes],
+    queryKey: ["dashboard-finance", inicioMes],
     queryFn: async () => {
-      if (!clinicId) return { receita: 0, custos: 0, repasses: 0, lucro: 0 };
+      const { data: pagamentos } = await (supabase.from("pagamentos") as any).select("valor, status").gte("data_pagamento", inicioMes).lte("data_pagamento", fimMes);
+      const { data: despesas } = await (supabase.from("expenses") as any).select("valor, status");
+      const { data: comissoes } = await (supabase.from("commissions") as any).select("valor");
 
-      const { data: pagamentos } = await (supabase.from("pagamentos") as any).select("valor, status").eq("clinic_id", clinicId).gte("data_pagamento", inicioMes).lte("data_pagamento", fimMes);
-      const { data: despesas } = await (supabase.from("expenses") as any).select("valor, status").eq("clinic_id", clinicId);
-      const { data: comissoes } = await (supabase.from("commissions") as any).select("valor").eq("clinic_id", clinicId);
-
-      const receita = (pagamentos || [])?.filter((p: any) => p.status === 'pago').reduce((acc, p) => acc + Number(p.valor), 0) || 0;
-      const custos = (despesas || [])?.filter((d: any) => d.status === 'pago').reduce((acc, d) => acc + Number(d.valor), 0) || 0;
-      const repasses = (comissoes || [])?.reduce((acc, c) => acc + Number(c.valor), 0) || 0;
+      const receita = (pagamentos || [])?.filter((p: any) => p.status === 'pago').reduce((acc: number, p: any) => acc + Number(p.valor), 0) || 0;
+      const custos = (despesas || [])?.filter((d: any) => d.status === 'pago').reduce((acc: number, d: any) => acc + Number(d.valor), 0) || 0;
+      const repasses = (comissoes || [])?.reduce((acc: number, c: any) => acc + Number(c.valor), 0) || 0;
 
       return { receita, custos, repasses, lucro: receita - custos - repasses };
     },
-    enabled: !!clinicId,
   });
 
   const { data: alertCount = 0 } = useQuery({
-    queryKey: ["dashboard-alerts", clinicId],
+    queryKey: ["dashboard-alerts"],
     queryFn: async () => {
-      if (!clinicId) return 0;
-      // Count overdue pending payments
       const { count } = await (supabase.from("pagamentos") as any)
         .select("id", { count: "exact", head: true })
-        .eq("clinic_id", clinicId)
         .eq("status", "pendente")
         .lte("data_vencimento", new Date().toISOString().split("T")[0]);
       return count ?? 0;
     },
-    enabled: !!clinicId,
   });
 
-  const ativos = (pacientes || []).filter((p) => p.status === "ativo");
+  const ativos = (pacientes || []).filter((p: any) => p.status === "ativo");
   const recentes = (pacientes || []).slice(0, 5);
 
   const saudacao =
@@ -199,7 +189,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {recentes.map((p) => (
+                {recentes.map((p: any) => (
                   <div
                     key={p.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"

@@ -28,10 +28,10 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
 
     const evolutionMutation = useMutation({
         mutationFn: async () => {
-            if (!user || !clinicId) throw new Error("Usuário não autenticado");
+            if (!user) throw new Error("Usuário não autenticado");
 
             const { error } = await (supabase.from("evolutions") as any).insert({
-                clinic_id: clinicId,
+                clinic_id: user.id,
                 paciente_id: pacienteId,
                 profissional_id: user.id,
                 descricao,

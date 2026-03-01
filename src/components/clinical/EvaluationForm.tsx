@@ -36,10 +36,10 @@ export const EvaluationForm = ({ open, onOpenChange, pacienteId }: EvaluationFor
 
     const evaluationMutation = useMutation({
         mutationFn: async () => {
-            if (!user || !clinicId) throw new Error("Usuário não autenticado");
+            if (!user) throw new Error("Usuário não autenticado");
 
             const { error } = await (supabase.from("evaluations") as any).insert({
-                clinic_id: clinicId,
+                clinic_id: user.id,
                 paciente_id: pacienteId,
                 profissional_id: user.id,
                 ...formData,

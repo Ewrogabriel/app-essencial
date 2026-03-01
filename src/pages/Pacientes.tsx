@@ -63,23 +63,20 @@ const Pacientes = () => {
       toast({ title: "Erro ao inativar", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Paciente inativado com sucesso." });
-      queryClient.invalidateQueries({ queryKey: ["pacientes", clinicId] });
+      queryClient.invalidateQueries({ queryKey: ["pacientes"] });
     }
     setDeleteId(null);
   };
 
   const { data: pacientes = [], isLoading } = useQuery({
-    queryKey: ["pacientes", clinicId],
+    queryKey: ["pacientes"],
     queryFn: async () => {
-      if (!clinicId) return [];
       const { data, error } = await (supabase.from("pacientes") as any)
         .select("*")
-        .eq("clinic_id", clinicId)
         .order("nome");
       if (error) throw error;
       return data as Paciente[];
     },
-    enabled: !!clinicId,
   });
 
   const filtrados = pacientes.filter((p) => {

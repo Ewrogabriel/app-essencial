@@ -15,18 +15,16 @@ const Inteligencia = () => {
   const { clinicId } = useAuth();
 
   const { data: insights, isLoading } = useQuery({
-    queryKey: ["ai-insights", clinicId],
+    queryKey: ["ai-insights"],
     queryFn: async () => {
-      if (!clinicId) return null;
 
       // Fetch last 6 months of payments for forecasting
       const sixMonthsAgo = subMonths(new Date(), 6).toISOString();
-      const { data: payments } = await supabase
+      const { data: payments } = await (supabase
         .from("pagamentos")
         .select("valor, data_pagamento, status")
-        .eq("clinic_id", clinicId)
         .eq("status", "pago")
-        .gte("data_pagamento", sixMonthsAgo);
+        .gte("data_pagamento", sixMonthsAgo) as any);
 
       // Group payments by month
       const monthlyData: Record<string, number> = {};
@@ -56,18 +54,16 @@ const Inteligencia = () => {
 
       // Churn Risk: Active patients with no sessions in 30 days
       const thirtyDaysAgo = subMonths(new Date(), 1).toISOString();
-      const { data: patients } = await supabase
+      const { data: patients } = await (supabase
         .from("pacientes")
         .select("id, nome, status")
-        .eq("clinic_id", clinicId)
-        .eq("status", "ativo");
+        .eq("status", "ativo") as any);
 
-      const { data: recentSessions } = await supabase
+      const { data: recentSessions } = await (supabase
         .from("agendamentos")
         .select("paciente_id")
-        .eq("clinic_id", clinicId)
         .eq("status", "realizado")
-        .gte("data_horario", thirtyDaysAgo);
+        .gte("data_horario", thirtyDaysAgo) as any);
 
       const activeInSessionIds = new Set(recentSessions?.map(s => s.paciente_id));
       const churnRisk = patients?.filter(p => !activeInSessionIds.has(p.id)) || [];
@@ -78,7 +74,7 @@ const Inteligencia = () => {
         conversionRate: 65, // Placeholder for conversion logic
       };
     },
-    enabled: !!clinicId,
+    enabled: true,
   });
 
   return (
