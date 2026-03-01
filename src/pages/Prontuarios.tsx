@@ -23,26 +23,16 @@ const Prontuarios = () => {
     const [busca, setBusca] = useState("");
 
     const { data: pacientes = [], isLoading } = useQuery({
-        queryKey: ["prontuarios-list", clinicId],
+        queryKey: ["prontuarios-list"],
         queryFn: async () => {
-            if (!clinicId) return [];
-            // Fetch patients and their last evaluation date
             const { data, error } = await (supabase
                 .from("pacientes")
-                .select(`
-          id, 
-          nome, 
-          tipo_atendimento,
-          status,
-          evaluations (data_avaliacao)
-        `)
-                .eq("clinic_id", clinicId)
+                .select("id, nome, tipo_atendimento, status")
                 .order("nome") as any);
 
             if (error) throw error;
             return data;
         },
-        enabled: !!clinicId,
     });
 
     const filtrados = pacientes.filter((p: any) =>

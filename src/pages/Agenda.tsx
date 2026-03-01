@@ -24,15 +24,13 @@ const Agenda = () => {
   const [loading, setLoading] = useState(false);
 
   const fetchAgendamentos = useCallback(async () => {
-    if (!clinicId) return;
     setLoading(true);
     try {
       let query = (supabase.from("agendamentos") as any)
         .select(`
           *,
           pacientes (id, nome, telefone)
-        `)
-        .eq("clinic_id", clinicId);
+        `);
 
       if (isPatient) {
         // Find the patient linked to this user

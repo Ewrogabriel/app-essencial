@@ -3,54 +3,42 @@ import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BarChart3, Users, DollarSign, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const COLORS = ["hsl(168, 65%, 38%)", "hsl(199, 89%, 48%)", "hsl(38, 92%, 50%)", "hsl(0, 72%, 51%)", "hsl(142, 71%, 45%)"];
 
 const Relatorios = () => {
-  const { clinicId } = useAuth();
-
   const { data: agendamentos = [] } = useQuery({
-    queryKey: ["relatorio-agendamentos", clinicId],
+    queryKey: ["relatorio-agendamentos"],
     queryFn: async () => {
-      if (!clinicId) return [];
       const { data } = await (supabase.from("agendamentos") as any)
         .select("id, data_horario, tipo_atendimento, tipo_sessao, status, profissional_id")
-        .eq("clinic_id", clinicId)
         .gte("data_horario", subMonths(new Date(), 6).toISOString())
         .order("data_horario", { ascending: true });
       return data ?? [];
     },
-    enabled: !!clinicId,
   });
 
   const { data: pagamentos = [] } = useQuery({
-    queryKey: ["relatorio-pagamentos", clinicId],
+    queryKey: ["relatorio-pagamentos"],
     queryFn: async () => {
-      if (!clinicId) return [];
       const { data } = await (supabase.from("pagamentos") as any)
         .select("id, valor, data_pagamento, status, forma_pagamento")
-        .eq("clinic_id", clinicId)
         .gte("data_pagamento", format(subMonths(new Date(), 6), "yyyy-MM-dd"))
         .order("data_pagamento", { ascending: true });
       return data ?? [];
     },
-    enabled: !!clinicId,
   });
 
   const { data: pacientesCount = 0 } = useQuery({
-    queryKey: ["relatorio-pacientes", clinicId],
+    queryKey: ["relatorio-pacientes"],
     queryFn: async () => {
-      if (!clinicId) return 0;
-      const { count } = await (supabase.from("pacientes") as any).select("id", { count: "exact", head: true }).eq("status", "ativo").eq("clinic_id", clinicId);
+      const { count } = await (supabase.from("pacientes") as any).select("id", { count: "exact", head: true }).eq("status", "ativo");
       return count ?? 0;
     },
-    enabled: !!clinicId,
   });
 
-  // Monthly revenue chart
   const monthlyRevenue = () => {
     const months: Record<string, number> = {};
     for (let i = 5; i >= 0; i--) {
@@ -65,7 +53,6 @@ const Relatorios = () => {
     return Object.entries(months).map(([name, valor]) => ({ name, valor }));
   };
 
-  // Appointments by type — dynamic (works with any modality)
   const byType = () => {
     const counts: Record<string, number> = {};
     (agendamentos as any[]).forEach((a) => {
@@ -75,7 +62,6 @@ const Relatorios = () => {
     return Object.entries(counts).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
   };
 
-  // Appointments by status
   const byStatus = () => {
     const counts: Record<string, number> = {};
     (agendamentos as any[]).forEach((a) => { counts[a.status] = (counts[a.status] || 0) + 1; });
@@ -93,7 +79,6 @@ const Relatorios = () => {
         <p className="text-muted-foreground">Análises de produtividade e faturamento</p>
       </div>
 
-      {/* Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -125,13 +110,9 @@ const Relatorios = () => {
         </Card>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Revenue */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Faturamento Mensal</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Faturamento Mensal</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={monthlyRevenue()}>
@@ -145,41 +126,29 @@ const Relatorios = () => {
           </CardContent>
         </Card>
 
-        {/* By Type */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Atendimentos por Tipo</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Atendimentos por Tipo</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie data={byType()} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {byType().map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
+                  {byType().map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
                 </Pie>
-                <Legend />
-                <Tooltip />
+                <Legend /><Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* By Status */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Status dos Agendamentos</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Status dos Agendamentos</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie data={byStatus()} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {byStatus().map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
+                  {byStatus().map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
                 </Pie>
-                <Legend />
-                <Tooltip />
+                <Legend /><Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

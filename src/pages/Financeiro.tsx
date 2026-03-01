@@ -54,21 +54,10 @@ const Financeiro = () => {
   });
 
   const { data: pagamentos = [], isLoading } = useQuery({
-    queryKey: ["pagamentos", clinicId],
+    queryKey: ["pagamentos"],
     queryFn: async () => {
-      if (!clinicId) return [];
       let query = (supabase.from("pagamentos") as any)
-        .select("*, pacientes(nome)")
-        .eq("clinic_id", clinicId);
-
-      if (isPatient) {
-        const { data: p } = await (supabase.from("pacientes") as any).select("id").eq("user_id", user?.id).single();
-        if (p) {
-          query = query.eq("paciente_id", p.id);
-        } else {
-          return [];
-        }
-      }
+        .select("*, pacientes(nome)");
 
       const { data, error } = await query.order("data_pagamento", { ascending: false });
       if (error) throw error;
@@ -77,43 +66,38 @@ const Financeiro = () => {
   });
 
   const { data: pacientes = [] } = useQuery({
-    queryKey: ["pacientes-ativos", clinicId],
+    queryKey: ["pacientes-ativos"],
     queryFn: async () => {
-      if (!clinicId) return [];
-      const { data } = await (supabase.from("pacientes") as any).select("id, nome").eq("status", "ativo").eq("clinic_id", clinicId).order("nome");
+      const { data } = await (supabase.from("pacientes") as any).select("id, nome").eq("status", "ativo").order("nome");
       return data ?? [];
     },
   });
 
   const { data: despesas = [] } = useQuery({
-    queryKey: ["despesas", clinicId],
+    queryKey: ["despesas"],
     queryFn: async () => {
-      if (!clinicId) return [];
-      const { data, error } = await (supabase.from("expenses") as any).select("*").eq("clinic_id", clinicId);
+      const { data, error } = await (supabase.from("expenses") as any).select("*");
       if (error) throw error;
       return data;
     },
-    enabled: !!clinicId && !isPatient,
+    enabled: !isPatient,
   });
 
   const { data: comissoes = [] } = useQuery({
-    queryKey: ["comissoes", clinicId],
+    queryKey: ["comissoes"],
     queryFn: async () => {
-      if (!clinicId) return [];
       const { data, error } = await (supabase.from("commissions") as any)
-        .select("*, profiles:professional_id(nome), agendamentos(pacientes(nome))")
-        .eq("clinic_id", clinicId);
+        .select("*");
       if (error) throw error;
       return data;
     },
-    enabled: !!clinicId && !isPatient,
+    enabled: !isPatient,
   });
 
   const createPagamento = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
-      const { error } = await supabase.from("pagamentos").insert({
-        clinic_id: clinicId,
+      const { error } = await (supabase.from("pagamentos") as any).insert({
         paciente_id: formData.paciente_id,
         profissional_id: user.id,
         plano_id: formData.plano_id || null,
@@ -125,7 +109,7 @@ const Financeiro = () => {
         descricao: formData.descricao || null,
         observacoes: formData.observacoes || null,
         created_by: user.id,
-      } as any);
+      });
       if (error) throw error;
     },
     onSuccess: () => {

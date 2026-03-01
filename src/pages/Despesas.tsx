@@ -51,25 +51,21 @@ const Despesas = () => {
     });
 
     const { data: despesas = [], isLoading } = useQuery({
-        queryKey: ["despesas", clinicId],
+        queryKey: ["despesas"],
         queryFn: async () => {
-            if (!clinicId) return [];
             const { data, error } = await (supabase
                 .from("expenses")
                 .select("*")
-                .eq("clinic_id", clinicId)
                 .order("data_vencimento", { ascending: false }) as any);
             if (error) throw error;
             return data;
         },
-        enabled: !!clinicId,
     });
 
     const createMutation = useMutation({
         mutationFn: async () => {
-            if (!clinicId) throw new Error("Clinic ID not found");
             const { error } = await (supabase.from("expenses") as any).insert({
-                clinic_id: clinicId,
+                clinic_id: crypto.randomUUID(),
                 descricao: formData.descricao,
                 valor: parseFloat(formData.valor),
                 data_vencimento: formData.data_vencimento,
