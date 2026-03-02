@@ -248,12 +248,23 @@ const DisponibilidadeProfissional = () => {
       hora_fim: bloqueioDiaInteiro ? null : bloqueioHoraFim,
       motivo: bloqueioMotivo || null,
     });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Bloqueio adicionado! ✅" });
-      setBloqueioData(""); setBloqueioMotivo("");
-      refetchBloqueios();
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    // Broadcast block notification to all users
+    const horarioTxt = bloqueioDiaInteiro ? "dia inteiro" : `${bloqueioHoraInicio}-${bloqueioHoraFim}`;
+    const { data: allUsers } = await supabase.from("profiles").select("user_id");
+    if (allUsers) {
+      const notifs = allUsers.map((u: any) => ({
+        user_id: u.user_id,
+        tipo: "bloqueio",
+        titulo: `Bloqueio de agenda — ${currentProfName}`,
+        resumo: `${bloqueioData} (${horarioTxt})`,
+        conteudo: `${currentProfName} bloqueou a agenda no dia ${bloqueioData} (${horarioTxt}).\n${bloqueioMotivo ? `Motivo: ${bloqueioMotivo}` : "Sem motivo informado."}`,
+      }));
+      await (supabase.from("notificacoes").insert(notifs) as any);
     }
+    toast({ title: "Bloqueio adicionado! ✅" });
+    setBloqueioData(""); setBloqueioMotivo("");
+    refetchBloqueios();
   };
 
   const handleDeleteBloqueio = async (id: string) => {
@@ -266,8 +277,20 @@ const DisponibilidadeProfissional = () => {
     const { error } = await (supabase.from("feriados") as any).insert({
       data: feriadoData, descricao: feriadoDescricao.trim(), created_by: user?.id,
     });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else { toast({ title: "Feriado cadastrado! ✅" }); setFeriadoData(""); setFeriadoDescricao(""); refetchFeriados(); }
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    // Broadcast notification to all users
+    const { data: allUsers } = await supabase.from("profiles").select("user_id");
+    if (allUsers) {
+      const notifs = allUsers.map((u: any) => ({
+        user_id: u.user_id,
+        tipo: "feriado",
+        titulo: `Feriado: ${feriadoDescricao.trim()}`,
+        resumo: `Feriado em ${feriadoData}`,
+        conteudo: `Foi cadastrado um feriado no dia ${feriadoData}:\n${feriadoDescricao.trim()}\n\nA agenda estará bloqueada neste dia.`,
+      }));
+      await (supabase.from("notificacoes").insert(notifs) as any);
+    }
+    toast({ title: "Feriado cadastrado! ✅" }); setFeriadoData(""); setFeriadoDescricao(""); refetchFeriados();
   };
 
   const handleDeleteFeriado = async (id: string) => {
