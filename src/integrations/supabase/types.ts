@@ -171,6 +171,57 @@ export type Database = {
           },
         ]
       }
+      descontos_pacientes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string
+          id: string
+          motivo: string | null
+          paciente_id: string
+          percentual_desconto: number
+          preco_plano_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by: string
+          id?: string
+          motivo?: string | null
+          paciente_id: string
+          percentual_desconto?: number
+          preco_plano_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string
+          id?: string
+          motivo?: string | null
+          paciente_id?: string
+          percentual_desconto?: number
+          preco_plano_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "descontos_pacientes_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "descontos_pacientes_preco_plano_id_fkey"
+            columns: ["preco_plano_id"]
+            isOneToOne: false
+            referencedRelation: "precos_planos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disponibilidade_profissional: {
         Row: {
           ativo: boolean
@@ -391,6 +442,7 @@ export type Database = {
           numero: string | null
           observacoes: string | null
           profissional_id: string | null
+          rg: string | null
           rua: string | null
           status: Database["public"]["Enums"]["status_paciente"]
           telefone: string
@@ -415,6 +467,7 @@ export type Database = {
           numero?: string | null
           observacoes?: string | null
           profissional_id?: string | null
+          rg?: string | null
           rua?: string | null
           status?: Database["public"]["Enums"]["status_paciente"]
           telefone: string
@@ -439,6 +492,7 @@ export type Database = {
           numero?: string | null
           observacoes?: string | null
           profissional_id?: string | null
+          rg?: string | null
           rua?: string | null
           status?: Database["public"]["Enums"]["status_paciente"]
           telefone?: string
@@ -620,6 +674,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      precos_planos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string
+          descricao: string | null
+          frequencia_semanal: number
+          id: string
+          modalidade: string
+          nome: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by: string
+          descricao?: string | null
+          frequencia_semanal?: number
+          id?: string
+          modalidade?: string
+          nome: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string
+          descricao?: string | null
+          frequencia_semanal?: number
+          id?: string
+          modalidade?: string
+          nome?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

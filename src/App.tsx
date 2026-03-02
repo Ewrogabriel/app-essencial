@@ -32,6 +32,8 @@ import AvisosAdmin from "./pages/AvisosAdmin";
 import DisponibilidadeProfissional from "./pages/DisponibilidadeProfissional";
 import MeuPerfil from "./pages/MeuPerfil";
 import MeuHistorico from "./pages/MeuHistorico";
+import Contratos from "./pages/Contratos";
+import PrecosPlanos from "./pages/PrecosPlanos";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +83,8 @@ const App = () => (
               <Route path="/automacoes" element={<Automacoes />} />
               <Route path="/avisos" element={<AvisosAdmin />} />
               <Route path="/disponibilidade" element={<DisponibilidadeProfissional />} />
+              <Route path="/contratos" element={<Contratos />} />
+              <Route path="/precos-planos" element={<PrecosPlanos />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

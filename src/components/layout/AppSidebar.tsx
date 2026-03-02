@@ -15,6 +15,8 @@ import {
   Send,
   Megaphone,
   Clock,
+  FileText,
+  Tag,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -48,6 +50,8 @@ const menuProfissional = [
 
 const menuGestao = [
   { title: "Planos", url: "/planos", icon: ClipboardList },
+  { title: "Preços", url: "/precos-planos", icon: Tag },
+  { title: "Contratos", url: "/contratos", icon: FileText },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Despesas", url: "/despesas", icon: Receipt },
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
@@ -58,6 +62,7 @@ const menuPatient = [
   { title: "Minha Agenda", url: "/minha-agenda", icon: Calendar },
   { title: "Histórico", url: "/meu-historico", icon: ClipboardList },
   { title: "Pagamentos", url: "/meus-pagamentos", icon: DollarSign },
+  { title: "Meu Contrato", url: "/contratos", icon: FileText },
   { title: "Meu Perfil", url: "/meu-perfil", icon: Users },
 ];
 
