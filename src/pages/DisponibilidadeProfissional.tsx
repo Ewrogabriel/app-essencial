@@ -86,6 +86,7 @@ const DisponibilidadeProfissional = () => {
   // Vacancy grid dialog
   const [showVacancyGrid, setShowVacancyGrid] = useState(false);
   const [vacancyWeek, setVacancyWeek] = useState<Date>(new Date());
+  const [vacancyProfId, setVacancyProfId] = useState<string>("");
 
   const profId = canManage ? selectedProfissional : (user?.id || "");
 
@@ -95,12 +96,14 @@ const DisponibilidadeProfissional = () => {
       const { data } = await (supabase.from("profiles") as any).select("id, user_id, nome").order("nome");
       return data ?? [];
     },
-    enabled: canManage,
   });
 
   const currentProfName = canManage
     ? (profissionais as any[]).find((p: any) => p.user_id === profId)?.nome || "Profissional"
     : "Minha Grade";
+
+  const effectiveVacancyProfId = vacancyProfId || profId;
+  const vacancyProfName = (profissionais as any[]).find((p: any) => p.user_id === effectiveVacancyProfId)?.nome || "Profissional";
 
   const { data: slots = [], refetch } = useQuery({
     queryKey: ["disponibilidade", profId],
@@ -140,19 +143,31 @@ const DisponibilidadeProfissional = () => {
   const vacancyWeekEnd = endOfWeek(vacancyWeek, { weekStartsOn: 1 });
   const vacancyDays = eachDayOfInterval({ start: vacancyWeekStart, end: vacancyWeekEnd });
 
+  // Vacancy-specific slots query
+  const { data: vacancySlots = [] } = useQuery({
+    queryKey: ["disponibilidade-vagas", effectiveVacancyProfId],
+    queryFn: async () => {
+      const { data } = await (supabase.from("disponibilidade_profissional") as any)
+        .select("*").eq("profissional_id", effectiveVacancyProfId).eq("ativo", true)
+        .order("dia_semana").order("hora_inicio");
+      return (data ?? []) as Slot[];
+    },
+    enabled: !!effectiveVacancyProfId && showVacancyGrid,
+  });
+
   // Agendamentos for vacancy grid - scoped to selected week
   const { data: agendamentos = [] } = useQuery({
-    queryKey: ["agendamentos-vagas", profId, vacancyWeekStart.toISOString()],
+    queryKey: ["agendamentos-vagas", effectiveVacancyProfId, vacancyWeekStart.toISOString()],
     queryFn: async () => {
       const { data } = await (supabase.from("agendamentos") as any)
         .select("data_horario, status")
-        .eq("profissional_id", profId)
+        .eq("profissional_id", effectiveVacancyProfId)
         .in("status", ["agendado", "confirmado"])
         .gte("data_horario", vacancyWeekStart.toISOString())
         .lte("data_horario", vacancyWeekEnd.toISOString());
       return data ?? [];
     },
-    enabled: !!profId && showVacancyGrid,
+    enabled: !!effectiveVacancyProfId && showVacancyGrid,
   });
 
   const handleAddSlot = async () => {
@@ -236,7 +251,9 @@ const DisponibilidadeProfissional = () => {
     toast({ title: "PDF da grade semanal exportado!" });
   };
 
-  // Vacancy calculation for specific day
+  // Vacancy-specific derived data
+  const vacancyTimeRanges = [...new Set(vacancySlots.map(s => `${s.hora_inicio.slice(0, 5)}-${s.hora_fim.slice(0, 5)}`))].sort();
+
   const getVacancyForSlotOnDate = (slot: Slot, date: Date) => {
     const dayAgendamentos = agendamentos.filter((a: any) => {
       const d = new Date(a.data_horario);
@@ -247,7 +264,6 @@ const DisponibilidadeProfissional = () => {
     return Math.max(0, slot.max_pacientes - dayAgendamentos.length);
   };
 
-  // Collect all unique time ranges across all days
   const allTimeRanges = [...new Set(slots.map(s => `${s.hora_inicio.slice(0, 5)}-${s.hora_fim.slice(0, 5)}`))].sort();
 
   const totalSlots = slots.length;
@@ -551,8 +567,21 @@ const DisponibilidadeProfissional = () => {
       <Dialog open={showVacancyGrid} onOpenChange={setShowVacancyGrid}>
         <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Vagas Disponíveis – {currentProfName}</DialogTitle>
+            <DialogTitle>Vagas Disponíveis – {vacancyProfName}</DialogTitle>
           </DialogHeader>
+
+          {/* Professional selector */}
+          <div className="mb-4">
+            <Label className="text-xs mb-1 block">Profissional</Label>
+            <Select value={effectiveVacancyProfId} onValueChange={setVacancyProfId}>
+              <SelectTrigger><SelectValue placeholder="Selecione o profissional" /></SelectTrigger>
+              <SelectContent>
+                {(profissionais as any[]).map((p: any) => (
+                  <SelectItem key={p.id} value={p.user_id}>{p.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Week navigation */}
           <div className="flex items-center justify-between gap-2 mb-4">
@@ -598,17 +627,17 @@ const DisponibilidadeProfissional = () => {
                 </tr>
               </thead>
               <tbody>
-                {allTimeRanges.length === 0 ? (
-                  <tr><td colSpan={8} className="border p-8 text-center text-muted-foreground">Nenhum horário configurado</td></tr>
+                {vacancyTimeRanges.length === 0 ? (
+                  <tr><td colSpan={8} className="border p-8 text-center text-muted-foreground">Nenhum horário configurado para este profissional</td></tr>
                 ) : (
-                  allTimeRanges.map((range) => {
+                  vacancyTimeRanges.map((range) => {
                     const [inicio, fim] = range.split("-");
                     return (
                       <tr key={range}>
                         <td className="border p-2 font-medium text-center bg-muted/30">{inicio} — {fim}</td>
                         {vacancyDays.map((day) => {
                           const dayOfWeek = day.getDay();
-                          const slot = slots.find(s => s.dia_semana === dayOfWeek && s.hora_inicio.slice(0, 5) === inicio && s.hora_fim.slice(0, 5) === fim);
+                          const slot = vacancySlots.find(s => s.dia_semana === dayOfWeek && s.hora_inicio.slice(0, 5) === inicio && s.hora_fim.slice(0, 5) === fim);
                           if (!slot) return <td key={day.toISOString()} className="border p-2 text-center text-muted-foreground">—</td>;
                           const vacancy = getVacancyForSlotOnDate(slot, day);
                           const occupied = slot.max_pacientes - vacancy;
