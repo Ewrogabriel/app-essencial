@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Activity, AlertCircle, Phone, TrendingUp, Clock } from "lucide-react";
+import { Calendar, DollarSign, Activity, AlertCircle, Phone, TrendingUp, Clock, PartyPopper } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -90,6 +90,20 @@ const PatientDashboard = () => {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: feriados = [] } = useQuery({
+    queryKey: ["feriados-patient"],
+    queryFn: async () => {
+      const { data, error } = await (supabase
+        .from("feriados")
+        .select("*")
+        .gte("data", new Date().toISOString().split("T")[0])
+        .order("data")
+        .limit(10) as any);
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -236,6 +250,29 @@ const PatientDashboard = () => {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Feriados Alert */}
+      {feriados.length > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PartyPopper className="h-5 w-5 text-primary" />
+              Feriados – Clínica Fechada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {feriados.map((f: any) => (
+                <div key={f.id} className="flex items-center justify-between p-2 rounded-md bg-background border text-sm">
+                  <span className="font-medium">{f.descricao}</span>
+                  <Badge variant="outline">{format(new Date(f.data + "T12:00:00"), "dd/MM/yyyy (EEE)", { locale: ptBR })}</Badge>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">⚠️ Não haverá atendimentos nestas datas. Aulas não serão repostas.</p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Next sessions & Notices */}
