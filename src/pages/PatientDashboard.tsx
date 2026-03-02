@@ -1,16 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Activity, AlertCircle, Phone, TrendingUp, Clock, PartyPopper } from "lucide-react";
+import { Calendar, DollarSign, Activity, AlertCircle, Phone, TrendingUp, Clock, PartyPopper, Building2, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Progress } from "@/components/ui/progress";
+import { useClinicSettings } from "@/hooks/useClinicSettings";
 
 const PatientDashboard = () => {
   const { profile, patientId } = useAuth();
+  const { data: clinicSettings } = useClinicSettings();
 
   const { data: paciente } = useQuery({
     queryKey: ["patient-self", patientId],
@@ -133,8 +135,14 @@ const PatientDashboard = () => {
   const diasParaVencer = planoVencimento ? differenceInDays(planoVencimento, hoje) : null;
 
   const openWhatsAppClinic = () => {
-    // Default clinic phone - can be configured
-    window.open("https://wa.me/55", "_blank");
+    const whatsapp = clinicSettings?.whatsapp?.replace(/\D/g, "") || "";
+    if (whatsapp) window.open(`https://wa.me/${whatsapp}`, "_blank");
+  };
+
+  const openWhatsAppProfissional = (telefone: string) => {
+    const phone = telefone.replace(/\D/g, "");
+    const fullPhone = phone.startsWith("55") ? phone : `55${phone}`;
+    window.open(`https://wa.me/${fullPhone}`, "_blank");
   };
 
   return (
@@ -147,7 +155,7 @@ const PatientDashboard = () => {
           <p className="text-muted-foreground">Bem-vindo ao seu portal de saúde.</p>
         </div>
         <Button variant="outline" onClick={openWhatsAppClinic} className="gap-2">
-          <Phone className="h-4 w-4" /> Falar com a Clínica
+          <MessageCircle className="h-4 w-4" /> Falar com a Clínica
         </Button>
       </div>
 
@@ -346,18 +354,55 @@ const PatientDashboard = () => {
                 <p className="text-2xl font-bold">{frequencyStats.total}</p>
                 <p className="text-xs text-muted-foreground">Total de sessões</p>
               </div>
-              <div className="p-3 rounded-lg bg-green-50">
-                <p className="text-2xl font-bold text-green-700">{frequencyStats.realizados}</p>
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-2xl font-bold text-primary">{frequencyStats.realizados}</p>
                 <p className="text-xs text-muted-foreground">Realizadas</p>
               </div>
-              <div className="p-3 rounded-lg bg-amber-50">
-                <p className="text-2xl font-bold text-amber-700">{frequencyStats.cancelados}</p>
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-2xl font-bold text-destructive">{frequencyStats.cancelados}</p>
                 <p className="text-xs text-muted-foreground">Canceladas</p>
               </div>
-              <div className="p-3 rounded-lg bg-red-50">
-                <p className="text-2xl font-bold text-red-700">{frequencyStats.faltas}</p>
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-2xl font-bold text-destructive">{frequencyStats.faltas}</p>
                 <p className="text-xs text-muted-foreground">Faltas</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Clinic Info */}
+      {clinicSettings && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              Sobre a Clínica
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-start gap-4">
+              {clinicSettings.logo_url && (
+                <img src={clinicSettings.logo_url} alt="Logo" className="h-16 w-16 rounded-lg object-cover border shrink-0" />
+              )}
+              <div className="space-y-1 text-sm">
+                <p className="font-semibold text-base">{clinicSettings.nome}</p>
+                {clinicSettings.cnpj && <p className="text-muted-foreground">CNPJ: {clinicSettings.cnpj}</p>}
+                {clinicSettings.endereco && (
+                  <p className="text-muted-foreground">
+                    {[clinicSettings.endereco, clinicSettings.numero ? `nº ${clinicSettings.numero}` : "", clinicSettings.bairro, clinicSettings.cidade, clinicSettings.estado].filter(Boolean).join(", ")}
+                  </p>
+                )}
+                {clinicSettings.telefone && <p className="text-muted-foreground">Tel: {clinicSettings.telefone}</p>}
+                {clinicSettings.instagram && <p className="text-muted-foreground">Instagram: {clinicSettings.instagram}</p>}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              {clinicSettings.whatsapp && (
+                <Button variant="outline" size="sm" onClick={openWhatsAppClinic} className="gap-2">
+                  <MessageCircle className="h-4 w-4" /> WhatsApp Clínica
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

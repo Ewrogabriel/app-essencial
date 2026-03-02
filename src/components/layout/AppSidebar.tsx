@@ -63,6 +63,7 @@ const menuFinanceiro = [
 
 const menuComunicacao = [
   { title: "Mural de Avisos", url: "/avisos", icon: Megaphone },
+  { title: "Dados da Clínica", url: "/clinica", icon: Activity },
 ];
 
 const menuIA = [

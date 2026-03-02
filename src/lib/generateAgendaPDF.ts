@@ -53,11 +53,10 @@ export function generateWeeklyPDF(
 
       return dayAgs
         .map((ag) => {
-          const time = format(new Date(ag.data_horario), "HH:mm");
           const name = ag.pacientes?.nome ? formatPatientName(ag.pacientes.nome) : "—";
           const tel = ag.paciente_telefone || "";
           const prof = !professionalName && ag.profiles?.nome ? `[${formatPatientName(ag.profiles.nome)}]` : "";
-          return `${time} ${name}${prof ? " " + prof : ""}${tel ? "\n" + tel : ""}`;
+          return `${name}${prof ? " " + prof : ""}${tel ? "\n" + tel : ""}`;
         })
         .join("\n\n");
     });
