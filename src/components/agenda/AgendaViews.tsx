@@ -30,7 +30,7 @@ export interface Agendamento {
   checkin_profissional?: boolean;
   checkin_paciente_at?: string | null;
   checkin_profissional_at?: string | null;
-  pacientes?: { nome: string } | null;
+  pacientes?: { nome: string; telefone?: string } | null;
   profiles?: { nome: string } | null;
 }
 
@@ -42,6 +42,7 @@ interface ViewProps {
   onCancel?: (id: string) => void;
   onCheckin?: (id: string, type: "paciente" | "profissional") => void;
   onReschedule?: (ag: Agendamento) => void;
+  onAppointmentClick?: (ag: Agendamento) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -58,7 +59,7 @@ const tipoColors: Record<string, string> = {
   rpg: "border-l-warning",
 };
 
-function AppointmentCard({ ag, isPatient, onCancel, onCheckin, onReschedule }: { ag: Agendamento, isPatient?: boolean, onCancel?: (id: string) => void, onCheckin?: (id: string, type: "paciente" | "profissional") => void, onReschedule?: (ag: Agendamento) => void }) {
+function AppointmentCard({ ag, isPatient, onCancel, onCheckin, onReschedule, onAppointmentClick }: { ag: Agendamento, isPatient?: boolean, onCancel?: (id: string) => void, onCheckin?: (id: string, type: "paciente" | "profissional") => void, onReschedule?: (ag: Agendamento) => void, onAppointmentClick?: (ag: Agendamento) => void }) {
   const time = format(new Date(ag.data_horario), "HH:mm");
   const pacienteNome = ag.pacientes?.nome ?? "Paciente";
   const checkedIn = isPatient ? ag.checkin_paciente : ag.checkin_profissional;
@@ -67,9 +68,10 @@ function AppointmentCard({ ag, isPatient, onCancel, onCheckin, onReschedule }: {
   return (
     <div
       className={cn(
-        "rounded-md border-l-4 bg-card p-2 text-xs shadow-sm relative group",
+        "rounded-md border-l-4 bg-card p-2 text-xs shadow-sm relative group cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all",
         tipoColors[ag.tipo_atendimento] ?? "border-l-muted"
       )}
+      onClick={(e) => { e.stopPropagation(); onAppointmentClick?.(ag); }}
     >
       <div className="font-semibold text-foreground truncate flex items-center gap-1">
         {pacienteNome}
@@ -119,7 +121,7 @@ function AppointmentCard({ ag, isPatient, onCancel, onCheckin, onReschedule }: {
 // ─── Daily View ──────────────────────────────────────────────
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 6); // 6h-19h
 
-export function DailyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel, onCheckin, onReschedule }: ViewProps) {
+export function DailyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel, onCheckin, onReschedule, onAppointmentClick }: ViewProps) {
   const dayAgendamentos = agendamentos.filter((ag) =>
     isSameDay(new Date(ag.data_horario), currentDate)
   );
@@ -151,7 +153,7 @@ export function DailyView({ agendamentos, currentDate, onSlotClick, isPatient, o
               </div>
               <div className="flex-1 p-1 flex flex-col gap-1">
                 {hourAgs.map((ag) => (
-                  <AppointmentCard key={ag.id} ag={ag} isPatient={isPatient} onCancel={onCancel} onCheckin={onCheckin} onReschedule={onReschedule} />
+                  <AppointmentCard key={ag.id} ag={ag} isPatient={isPatient} onCancel={onCancel} onCheckin={onCheckin} onReschedule={onReschedule} onAppointmentClick={onAppointmentClick} />
                 ))}
               </div>
             </div>
@@ -163,7 +165,7 @@ export function DailyView({ agendamentos, currentDate, onSlotClick, isPatient, o
 }
 
 // ─── Weekly View ─────────────────────────────────────────────
-export function WeeklyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel, onCheckin, onReschedule }: ViewProps) {
+export function WeeklyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel, onCheckin, onReschedule, onAppointmentClick }: ViewProps) {
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });
     const end = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -202,7 +204,7 @@ export function WeeklyView({ agendamentos, currentDate, onSlotClick, isPatient, 
             </div>
             <div className="space-y-1">
               {dayAgs.slice(0, 4).map((ag) => (
-                <AppointmentCard key={ag.id} ag={ag} isPatient={isPatient} onCancel={onCancel} onCheckin={onCheckin} onReschedule={onReschedule} />
+                <AppointmentCard key={ag.id} ag={ag} isPatient={isPatient} onCancel={onCancel} onCheckin={onCheckin} onReschedule={onReschedule} onAppointmentClick={onAppointmentClick} />
               ))}
               {dayAgs.length > 4 && (
                 <div className="text-[10px] text-muted-foreground text-center">
@@ -218,7 +220,7 @@ export function WeeklyView({ agendamentos, currentDate, onSlotClick, isPatient, 
 }
 
 // ─── Monthly View ────────────────────────────────────────────
-export function MonthlyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel, onCheckin, onReschedule }: ViewProps) {
+export function MonthlyView({ agendamentos, currentDate, onSlotClick, isPatient, onCancel, onCheckin, onReschedule, onAppointmentClick }: ViewProps) {
   const monthDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
     const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });

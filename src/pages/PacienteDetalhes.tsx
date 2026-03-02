@@ -242,7 +242,7 @@ const PacienteDetalhes = () => {
                 </TabsContent>
 
                 <TabsContent value="atendimentos" className="space-y-4">
-                    <PatientScheduleTab pacienteId={id!} />
+                    <PatientScheduleTab pacienteId={id!} pacienteTelefone={paciente?.telefone} pacienteNome={paciente?.nome} />
                 </TabsContent>
 
                 <TabsContent value="cadastro">

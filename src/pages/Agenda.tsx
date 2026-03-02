@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgendamentoForm } from "@/components/agenda/AgendamentoForm";
 import { RescheduleDialog } from "@/components/agenda/RescheduleDialog";
+import { AppointmentDetailDialog } from "@/components/agenda/AppointmentDetailDialog";
 import { DailyView, WeeklyView, MonthlyView, type Agendamento } from "@/components/agenda/AgendaViews";
 import { generateWeeklyPDF } from "@/lib/generateAgendaPDF";
 import { toast } from "@/hooks/use-toast";
@@ -25,6 +26,13 @@ const Agenda = () => {
   const [loading, setLoading] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduleAg, setRescheduleAg] = useState<Agendamento | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailAg, setDetailAg] = useState<Agendamento | null>(null);
+
+  const handleAppointmentClick = (ag: Agendamento) => {
+    setDetailAg(ag);
+    setDetailOpen(true);
+  };
 
   const handleReschedule = (ag: Agendamento) => {
     setRescheduleAg(ag);
@@ -37,7 +45,8 @@ const Agenda = () => {
       let query = (supabase.from("agendamentos") as any)
         .select(`
           *,
-          pacientes (id, nome, telefone)
+          pacientes (id, nome, telefone),
+          profiles:profissional_id (nome)
         `);
 
       if (isPatient) {
@@ -221,6 +230,7 @@ const Agenda = () => {
             onCancel={handleCancelAppointment}
             onCheckin={handleCheckin}
             onReschedule={handleReschedule}
+            onAppointmentClick={handleAppointmentClick}
           />
         )}
         {viewMode === "semanal" && (
@@ -232,6 +242,7 @@ const Agenda = () => {
             onCancel={handleCancelAppointment}
             onCheckin={handleCheckin}
             onReschedule={handleReschedule}
+            onAppointmentClick={handleAppointmentClick}
           />
         )}
         {viewMode === "mensal" && (
@@ -243,6 +254,7 @@ const Agenda = () => {
             onCancel={handleCancelAppointment}
             onCheckin={handleCheckin}
             onReschedule={handleReschedule}
+            onAppointmentClick={handleAppointmentClick}
           />
         )}
       </div>
@@ -259,6 +271,16 @@ const Agenda = () => {
         onOpenChange={setRescheduleOpen}
         agendamento={rescheduleAg}
         onSuccess={fetchAgendamentos}
+      />
+
+      <AppointmentDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        agendamento={detailAg}
+        onCancel={handleCancelAppointment}
+        onCheckin={handleCheckin}
+        onReschedule={handleReschedule}
+        isPatient={isPatient}
       />
     </div>
   );
