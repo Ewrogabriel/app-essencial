@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, addWeeks, setHours as setH, setMinutes as setM, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Repeat, DollarSign } from "lucide-react";
+import { CalendarIcon, Repeat, DollarSign, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { checkAvailability, type AvailabilityCheckResult } from "@/lib/availabilityCheck";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -101,7 +103,8 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [modalidades, setModalidades] = useState<Modalidade[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const [availabilityResult, setAvailabilityResult] = useState<AvailabilityCheckResult | null>(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -124,6 +127,27 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
   const diasSelecionados = form.watch("dias_semana");
   const freqSemanal = form.watch("frequencia_semanal");
   const tipoAtendimento = form.watch("tipo_atendimento");
+  const watchedProfId = form.watch("profissional_id");
+  const watchedDate = form.watch("data");
+  const watchedHorario = form.watch("horario");
+
+  // Check availability when professional, date, or time changes (single appointments only)
+  useEffect(() => {
+    if (!watchedProfId || !watchedDate || !watchedHorario || isRecorrente) {
+      setAvailabilityResult(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setCheckingAvailability(true);
+      const [h, m] = watchedHorario.split(":").map(Number);
+      const dt = new Date(watchedDate);
+      dt.setHours(h, m, 0, 0);
+      const result = await checkAvailability(watchedProfId, dt);
+      setAvailabilityResult(result);
+      setCheckingAvailability(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [watchedProfId, watchedDate, watchedHorario, isRecorrente]);
 
   useEffect(() => {
     if (defaultDate) {
@@ -766,6 +790,25 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
                 </FormItem>
               )}
             />
+
+            {/* Availability Alert */}
+            {!isRecorrente && availabilityResult && (
+              <Alert variant={availabilityResult.isWithinSchedule && !availabilityResult.isOverCapacity ? "default" : "destructive"} className="flex items-start gap-2">
+                {availabilityResult.isWithinSchedule && !availabilityResult.isOverCapacity ? (
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-600" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 mt-0.5" />
+                )}
+                <AlertDescription className="text-sm">
+                  {availabilityResult.message}
+                  {availabilityResult.isOverCapacity && (
+                    <span className="block text-xs mt-1 opacity-80">
+                      O agendamento será criado, mas excederá a capacidade configurada.
+                    </span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
