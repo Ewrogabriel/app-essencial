@@ -1,7 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MessageSquare, Ban, RotateCcw, CheckCircle2, Send, Calendar, Clock, User, Activity, FileText } from "lucide-react";
+import {
+  MessageSquare, Ban, RotateCcw, CheckCircle2, Send, Calendar, Clock,
+  User, Activity, FileText, Phone, ClipboardList, Stethoscope, StickyNote,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,9 +15,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Agendamento } from "./AgendaViews";
 
@@ -37,7 +42,7 @@ interface AppointmentDetailDialogProps {
   isPatient?: boolean;
 }
 
-type ActionMode = null | "cancelar" | "lembrete" | "aviso_remarcacao" | "aviso_cancelamento";
+type ActionMode = null | "cancelar" | "lembrete" | "aviso_remarcacao" | "aviso_cancelamento" | "nota_interna";
 
 export function AppointmentDetailDialog({
   open,
@@ -48,8 +53,10 @@ export function AppointmentDetailDialog({
   onReschedule,
   isPatient,
 }: AppointmentDetailDialogProps) {
+  const navigate = useNavigate();
   const [actionMode, setActionMode] = useState<ActionMode>(null);
   const [observacao, setObservacao] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   if (!agendamento) return null;
 
@@ -61,19 +68,24 @@ export function AppointmentDetailDialog({
   const statusCfg = statusColors[ag.status] || statusColors.agendado;
   const isCanceled = ag.status === "cancelado" || ag.status === "falta";
   const canAct = !isCanceled && ag.status !== "realizado";
+  const phone = (ag as any).pacientes?.telefone || "";
 
   const dataFormatada = format(dt, "dd/MM/yyyy (EEEE)", { locale: ptBR });
   const horaFormatada = format(dt, "HH:mm");
 
   const sendWhatsApp = (message: string) => {
-    // We need the patient phone — it comes from pacientes join
-    const phone = (ag as any).pacientes?.telefone || "";
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (!cleanPhone) return;
+    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  const openWhatsAppDirect = () => {
     const cleanPhone = phone.replace(/\D/g, "");
     if (!cleanPhone) {
+      toast.error("Paciente sem telefone cadastrado.");
       return;
     }
-    const url = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    window.open(`https://wa.me/55${cleanPhone}`, "_blank");
   };
 
   const handleSendReminder = () => {
@@ -109,12 +121,40 @@ export function AppointmentDetailDialog({
 
   const handleConfirmCancel = () => {
     onCancel(ag.id);
-    // After cancelling, send notice if observation provided
     if (observacao.trim()) {
       handleSendCancellationNotice();
     }
     resetAction();
     onOpenChange(false);
+  };
+
+  const handleSaveInternalNote = async () => {
+    if (!observacao.trim()) {
+      toast.error("Digite uma observação.");
+      return;
+    }
+    setSavingNote(true);
+    try {
+      const timestamp = format(new Date(), "dd/MM/yyyy HH:mm");
+      const newObs = ag.observacoes
+        ? `${ag.observacoes}\n[${timestamp}] ${observacao.trim()}`
+        : `[${timestamp}] ${observacao.trim()}`;
+
+      const { error } = await (supabase
+        .from("agendamentos")
+        .update({ observacoes: newObs })
+        .eq("id", ag.id) as any);
+      if (error) throw error;
+
+      // Update local state
+      ag.observacoes = newObs;
+      toast.success("Nota interna salva com sucesso.");
+      resetAction();
+    } catch (e: any) {
+      toast.error("Erro ao salvar nota: " + e.message);
+    } finally {
+      setSavingNote(false);
+    }
   };
 
   const resetAction = () => {
@@ -127,9 +167,19 @@ export function AppointmentDetailDialog({
     onOpenChange(v);
   };
 
+  const goToPatient = () => {
+    onOpenChange(false);
+    navigate(`/pacientes/${ag.paciente_id}`);
+  };
+
+  const goToEvolution = () => {
+    onOpenChange(false);
+    navigate(`/pacientes/${ag.paciente_id}?tab=atendimentos`);
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -178,14 +228,31 @@ export function AppointmentDetailDialog({
           </div>
 
           {ag.observacoes && (
-            <div className="text-xs bg-muted p-2 rounded-md">
-              <p className="font-medium text-muted-foreground mb-1 flex items-center gap-1"><FileText className="h-3 w-3" /> Observações</p>
+            <div className="text-xs bg-muted p-2 rounded-md max-h-[120px] overflow-y-auto">
+              <p className="font-medium text-muted-foreground mb-1 flex items-center gap-1"><FileText className="h-3 w-3" /> Observações / Notas Internas</p>
               <p className="whitespace-pre-wrap">{ag.observacoes}</p>
             </div>
           )}
         </div>
 
         <Separator />
+
+        {/* Quick Navigation */}
+        {!isPatient && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={goToPatient}>
+              <ClipboardList className="h-4 w-4 mr-1" /> Prontuário
+            </Button>
+            <Button variant="outline" size="sm" onClick={goToEvolution}>
+              <Stethoscope className="h-4 w-4 mr-1" /> Evoluções
+            </Button>
+            <Button variant="outline" size="sm" onClick={openWhatsAppDirect}>
+              <Phone className="h-4 w-4 mr-1" /> Falar com Paciente
+            </Button>
+          </div>
+        )}
+
+        {!isPatient && <Separator />}
 
         {/* Action Mode Content */}
         {actionMode && (
@@ -195,6 +262,7 @@ export function AppointmentDetailDialog({
               {actionMode === "lembrete" && "Observação adicional no lembrete (opcional)"}
               {actionMode === "aviso_remarcacao" && "Motivo da remarcação (opcional)"}
               {actionMode === "aviso_cancelamento" && "Motivo do cancelamento (opcional)"}
+              {actionMode === "nota_interna" && "Nova nota interna"}
             </Label>
             <Textarea
               value={observacao}
@@ -224,6 +292,11 @@ export function AppointmentDetailDialog({
                   <Send className="h-4 w-4 mr-1" /> Enviar Aviso
                 </Button>
               )}
+              {actionMode === "nota_interna" && (
+                <Button size="sm" onClick={handleSaveInternalNote} disabled={savingNote}>
+                  <StickyNote className="h-4 w-4 mr-1" /> {savingNote ? "Salvando..." : "Salvar Nota"}
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -231,6 +304,16 @@ export function AppointmentDetailDialog({
         {/* Action Buttons */}
         {!actionMode && (
           <div className="grid grid-cols-2 gap-2">
+            {!isPatient && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-primary/20"
+                onClick={() => setActionMode("nota_interna")}
+              >
+                <StickyNote className="h-4 w-4 mr-1" /> Nota Interna
+              </Button>
+            )}
             {canAct && !isPatient && (
               <>
                 <Button
