@@ -15,13 +15,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { generateContractPDF } from "@/lib/generateContractPDF";
 import { generateProfessionalContractPDF } from "@/lib/generateProfessionalContractPDF";
+import { useClinicSettings } from "@/hooks/useClinicSettings";
 
 const Contratos = () => {
   const { user, isPatient, patientId, isAdmin, isGestor } = useAuth();
+  const { data: clinicSettings } = useClinicSettings();
   const canManage = isAdmin || isGestor;
   const [selectedPaciente, setSelectedPaciente] = useState("");
   const [selectedPlano, setSelectedPlano] = useState("");
   const [selectedProfissional, setSelectedProfissional] = useState("");
+
+  const clinicNome = clinicSettings?.nome || "Essencial Fisio Pilates";
+  const clinicCNPJ = clinicSettings?.cnpj || "";
+  const clinicEnderecoFull = [clinicSettings?.endereco, clinicSettings?.numero ? `nº ${clinicSettings.numero}` : "", clinicSettings?.bairro, clinicSettings?.cidade ? `${clinicSettings.cidade}/${clinicSettings.estado}` : ""].filter(Boolean).join(", ");
+  const clinicTelefone = clinicSettings?.telefone || "";
+  const clinicInstagram = clinicSettings?.instagram || "";
 
   const { data: pacientes = [] } = useQuery({
     queryKey: ["pacientes-contrato"],
@@ -203,11 +211,11 @@ const Contratos = () => {
               <CardHeader><CardTitle className="text-base">Pré-visualização do Contrato</CardTitle></CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none text-foreground space-y-4 text-sm border rounded-lg p-6 bg-white dark:bg-muted/20 max-h-[70vh] overflow-y-auto">
-                  <h2 className="text-center font-bold text-lg">ESSENCIAL FISIO PILATES</h2>
-                  <p className="text-center text-xs text-muted-foreground">CNPJ: 61.080.977/0001-50</p>
+                  <h2 className="text-center font-bold text-lg">{clinicNome.toUpperCase()}</h2>
+                  {clinicCNPJ && <p className="text-center text-xs text-muted-foreground">CNPJ: {clinicCNPJ}</p>}
                   <h3 className="text-center font-bold">CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE PILATES</h3>
                   <p>Pelo presente instrumento particular, de um lado:</p>
-                  <p><strong>CONTRATADA:</strong> Essencial Fisio Pilates, pessoa jurídica de direito privado, com sede à Rua Capitão Antônio Ferreira Campos, nº 46 – Bairro Carmo – Barbacena/MG, telefone/WhatsApp (32) 98415-2802, Instagram @essencialfisiopilatesbq.</p>
+                  <p><strong>CONTRATADA:</strong> {clinicNome}, pessoa jurídica de direito privado{clinicEnderecoFull ? `, com sede à ${clinicEnderecoFull}` : ""}{clinicTelefone ? `, telefone/WhatsApp ${clinicTelefone}` : ""}{clinicInstagram ? `, Instagram ${clinicInstagram}` : ""}.</p>
                   <p>E, de outro lado:</p>
                   <p><strong>CONTRATANTE:</strong> <span className="bg-primary/10 px-1 rounded font-semibold">{paciente?.nome || "___________________________"}</span>, CPF nº <span className="bg-primary/10 px-1 rounded">{paciente?.cpf || "_______________"}</span>, RG nº <span className="bg-primary/10 px-1 rounded">{paciente?.rg || "_______________"}</span>.</p>
                   <h4 className="font-bold mt-4">CLÁUSULA 1ª – DO OBJETO</h4>
@@ -262,7 +270,7 @@ const Contratos = () => {
                   <div className="mt-8 pt-4 border-t">
                     <p>Data: {format(new Date(), "dd/MM/yyyy")}</p>
                     <div className="grid grid-cols-2 gap-8 mt-8">
-                      <div className="text-center"><div className="border-t border-foreground/40 pt-2">CONTRATADA</div><p className="text-xs text-muted-foreground">Essencial Fisio Pilates</p></div>
+                      <div className="text-center"><div className="border-t border-foreground/40 pt-2">CONTRATADA</div><p className="text-xs text-muted-foreground">{clinicNome}</p></div>
                       <div className="text-center"><div className="border-t border-foreground/40 pt-2">CONTRATANTE</div><p className="text-xs text-muted-foreground">{paciente?.nome || "_______________"}</p></div>
                     </div>
                   </div>
@@ -308,12 +316,12 @@ const Contratos = () => {
                 <CardHeader><CardTitle className="text-base">Pré-visualização do Contrato Profissional</CardTitle></CardHeader>
                 <CardContent>
                   <div className="prose prose-sm max-w-none text-foreground space-y-4 text-sm border rounded-lg p-6 bg-white dark:bg-muted/20 max-h-[70vh] overflow-y-auto">
-                    <h2 className="text-center font-bold text-lg">ESSENCIAL FISIO PILATES</h2>
-                    <p className="text-center text-xs text-muted-foreground">CNPJ: 61.080.977/0001-50</p>
+                    <h2 className="text-center font-bold text-lg">{clinicNome.toUpperCase()}</h2>
+                    {clinicCNPJ && <p className="text-center text-xs text-muted-foreground">CNPJ: {clinicCNPJ}</p>}
                     <h3 className="text-center font-bold">CONTRATO DE PRESTAÇÃO DE SERVIÇOS PROFISSIONAIS</h3>
 
                     <p>Pelo presente instrumento particular, de um lado:</p>
-                    <p><strong>CLÍNICA:</strong> Essencial Fisio Pilates, pessoa jurídica de direito privado, com sede à Rua Capitão Antônio Ferreira Campos, nº 46 – Bairro Carmo – Barbacena/MG, telefone/WhatsApp (32) 98415-2802.</p>
+                    <p><strong>CLÍNICA:</strong> {clinicNome}, pessoa jurídica de direito privado{clinicEnderecoFull ? `, com sede à ${clinicEnderecoFull}` : ""}{clinicTelefone ? `, telefone/WhatsApp ${clinicTelefone}` : ""}.</p>
                     <p>E, de outro lado:</p>
                     <p>
                       <strong>PROFISSIONAL:</strong>{" "}
@@ -386,7 +394,7 @@ const Contratos = () => {
                     <div className="mt-8 pt-4 border-t">
                       <p>Data: {format(new Date(), "dd/MM/yyyy")}</p>
                       <div className="grid grid-cols-2 gap-8 mt-8">
-                        <div className="text-center"><div className="border-t border-foreground/40 pt-2">CLÍNICA</div><p className="text-xs text-muted-foreground">Essencial Fisio Pilates</p></div>
+                        <div className="text-center"><div className="border-t border-foreground/40 pt-2">CLÍNICA</div><p className="text-xs text-muted-foreground">{clinicNome}</p></div>
                         <div className="text-center"><div className="border-t border-foreground/40 pt-2">PROFISSIONAL</div><p className="text-xs text-muted-foreground">{profissional?.nome || "_______________"}</p></div>
                       </div>
                     </div>

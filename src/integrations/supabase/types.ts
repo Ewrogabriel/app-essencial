@@ -163,6 +163,63 @@ export type Database = {
         }
         Relationships: []
       }
+      clinic_settings: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          instagram: string | null
+          logo_url: string | null
+          nome: string
+          numero: string | null
+          telefone: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          nome?: string
+          numero?: string | null
+          telefone?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          nome?: string
+          numero?: string | null
+          telefone?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       commissions: {
         Row: {
           agendamento_id: string | null

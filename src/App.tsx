@@ -37,6 +37,7 @@ import PrecosPlanos from "./pages/PrecosPlanos";
 import Comissoes from "./pages/Comissoes";
 import PerfilProfissional from "./pages/PerfilProfissional";
 import PerfilProfissionalPublico from "./pages/PerfilProfissionalPublico";
+import ClinicSettings from "./pages/ClinicSettings";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => (
               <Route path="/comissoes" element={<Comissoes />} />
               <Route path="/perfil-profissional" element={<PerfilProfissional />} />
               <Route path="/profissional/:userId" element={<PerfilProfissionalPublico />} />
+              <Route path="/clinica" element={<ClinicSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
