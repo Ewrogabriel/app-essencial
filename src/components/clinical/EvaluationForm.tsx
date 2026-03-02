@@ -49,7 +49,7 @@ export const EvaluationForm = ({ open, onOpenChange, pacienteId }: EvaluationFor
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["evaluations", pacienteId] });
+            queryClient.invalidateQueries({ queryKey: ["avaliacao", pacienteId] });
             toast({ title: "Avaliação registrada com sucesso!" });
             onOpenChange(false);
         },

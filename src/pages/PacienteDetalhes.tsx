@@ -67,11 +67,24 @@ const PacienteDetalhes = () => {
         queryFn: async () => {
             const { data, error } = await (supabase
                 .from("evolutions")
-                .select("*, profiles(nome)")
+                .select("*")
                 .eq("paciente_id", id)
                 .order("data_evolucao", { ascending: false }) as any);
             if (error) throw error;
-            return data;
+            
+            // Fetch profissional names
+            const profIds = [...new Set((data || []).map((e: any) => e.profissional_id))] as string[];
+            let profMap: Record<string, string> = {};
+            if (profIds.length > 0) {
+              const { data: profs } = await (supabase
+                .from("profiles")
+                .select("user_id, nome")
+                .in("user_id", profIds) as any);
+              if (profs) {
+                profMap = Object.fromEntries(profs.map((p: any) => [p.user_id, p.nome]));
+              }
+            }
+            return (data || []).map((e: any) => ({ ...e, profissional_nome: profMap[e.profissional_id] || "—" }));
         },
         enabled: !!id,
     });
@@ -208,7 +221,7 @@ const PacienteDetalhes = () => {
                                                 <Badge variant="outline" className="mb-2">
                                                     {format(new Date(evol.data_evolucao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                                 </Badge>
-                                                <CardTitle className="text-base">Profissional: {evol.profiles?.nome}</CardTitle>
+                                                <CardTitle className="text-base">Profissional: {evol.profissional_nome}</CardTitle>
                                             </div>
                                         </div>
                                     </CardHeader>
