@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Receipt, DollarSign } from "lucide-react";
+import { Receipt, DollarSign, Download } from "lucide-react";
+import { generateReceiptPDF, getReceiptNumber } from "@/lib/generateReceiptPDF";
+import { toast } from "@/hooks/use-toast";
 
 const MeusPagamentos = () => {
   const { patientId } = useAuth();
@@ -26,6 +29,20 @@ const MeusPagamentos = () => {
     enabled: !!patientId,
   });
 
+  const { data: paciente } = useQuery({
+    queryKey: ["paciente-self-receipt", patientId],
+    queryFn: async () => {
+      if (!patientId) return null;
+      const { data } = await supabase
+        .from("pacientes")
+        .select("nome, cpf")
+        .eq("id", patientId)
+        .single() as any;
+      return data;
+    },
+    enabled: !!patientId,
+  });
+
   const statusMap: Record<string, { label: string; variant: "default" | "destructive" }> = {
     pago: { label: "Pago", variant: "default" },
     pendente: { label: "Pendente", variant: "destructive" },
@@ -38,6 +55,30 @@ const MeusPagamentos = () => {
   const totalPendente = pagamentos
     .filter((p: any) => p.status === 'pendente')
     .reduce((acc: number, p: any) => acc + Number(p.valor), 0);
+
+  const handleDownloadReceipt = (pagamento: any) => {
+    const numero = getReceiptNumber(pagamento.id, pagamento.created_at);
+    const dataPgto = pagamento.data_pagamento
+      ? format(new Date(pagamento.data_pagamento), "dd/MM/yyyy")
+      : format(new Date(), "dd/MM/yyyy");
+
+    const ref = pagamento.data_vencimento
+      ? format(new Date(pagamento.data_vencimento), "MMMM/yyyy", { locale: ptBR })
+      : pagamento.descricao || "Serviço";
+
+    const pdf = generateReceiptPDF({
+      numero,
+      pacienteNome: paciente?.nome || "—",
+      cpf: paciente?.cpf || "",
+      descricao: pagamento.descricao || "Serviço de Pilates/Fisioterapia",
+      valor: Number(pagamento.valor),
+      formaPagamento: pagamento.forma_pagamento || "",
+      dataPagamento: dataPgto,
+      referencia: ref.charAt(0).toUpperCase() + ref.slice(1),
+    });
+    pdf.save(`Recibo_${numero}.pdf`);
+    toast({ title: "Recibo baixado com sucesso!" });
+  };
 
   return (
     <div className="space-y-6">
@@ -85,6 +126,7 @@ const MeusPagamentos = () => {
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Pagamento</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Recibo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -102,6 +144,13 @@ const MeusPagamentos = () => {
                       <Badge variant={statusMap[item.status]?.variant || "outline"}>
                         {statusMap[item.status]?.label || item.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.status === "pago" && (
+                        <Button size="sm" variant="outline" className="h-8" onClick={() => handleDownloadReceipt(item)}>
+                          <Download className="h-3.5 w-3.5 mr-1" /> PDF
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
