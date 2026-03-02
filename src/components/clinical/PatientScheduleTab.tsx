@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, Clock, CheckCircle2, XCircle, AlertTriangle, CircleDot, Ban, RotateCcw } from "lucide-react";
+import { Calendar, Clock, CheckCircle2, XCircle, AlertTriangle, CircleDot, Ban, RotateCcw, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,8 @@ import { toast } from "@/hooks/use-toast";
 
 interface PatientScheduleTabProps {
   pacienteId: string;
+  pacienteTelefone?: string;
+  pacienteNome?: string;
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
@@ -29,7 +31,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   falta: { label: "Falta", variant: "destructive", icon: <AlertTriangle className="h-3.5 w-3.5" /> },
 };
 
-export const PatientScheduleTab = ({ pacienteId }: PatientScheduleTabProps) => {
+export const PatientScheduleTab = ({ pacienteId, pacienteTelefone, pacienteNome }: PatientScheduleTabProps) => {
   const queryClient = useQueryClient();
   const [actionDialog, setActionDialog] = useState<{ open: boolean; agendamento: any; action: "cancelar" | "remarcar" } | null>(null);
   const [justificativa, setJustificativa] = useState("");
@@ -105,6 +107,23 @@ export const PatientScheduleTab = ({ pacienteId }: PatientScheduleTabProps) => {
     }
   };
 
+  const sendReminder = (ag: any) => {
+    const phone = pacienteTelefone?.replace(/\D/g, "") || "";
+    if (!phone) return;
+    const firstName = pacienteNome?.split(" ")[0] || "paciente";
+    const dt = new Date(ag.data_horario);
+    const dataFormatada = format(dt, "dd/MM/yyyy (EEEE)", { locale: ptBR });
+    const horaFormatada = format(dt, "HH:mm");
+    const profNome = ag.profissional_nome || "seu profissional";
+    const confirmLink = `${window.location.origin}/patient-dashboard`;
+    const msg =
+      `Olá, ${firstName}! Confirmamos sua sessão no dia *${dataFormatada}* às *${horaFormatada}* ` +
+      `com *${profNome}* no Essencial FisioPilates. ` +
+      `Podemos contar com sua presença?\n\n` +
+      `✅ Confirmar ou ❌ Desmarcar pelo link:\n${confirmLink}`;
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
   if (isLoading) {
     return <div className="p-8 text-center animate-pulse text-muted-foreground">Carregando agenda...</div>;
   }
@@ -131,6 +150,7 @@ export const PatientScheduleTab = ({ pacienteId }: PatientScheduleTabProps) => {
                   showActions
                   onCancel={() => { setActionDialog({ open: true, agendamento: ag, action: "cancelar" }); setJustificativa(""); }}
                   onReschedule={() => { setActionDialog({ open: true, agendamento: ag, action: "remarcar" }); setJustificativa(""); }}
+                  onSendReminder={() => sendReminder(ag)}
                 />
               ))}
             </div>
@@ -215,9 +235,10 @@ interface ScheduleCardProps {
   showActions?: boolean;
   onCancel?: () => void;
   onReschedule?: () => void;
+  onSendReminder?: () => void;
 }
 
-const ScheduleCard = ({ agendamento, showActions, onCancel, onReschedule }: ScheduleCardProps) => {
+const ScheduleCard = ({ agendamento, showActions, onCancel, onReschedule, onSendReminder }: ScheduleCardProps) => {
   const cfg = statusConfig[agendamento.status] || statusConfig.agendado;
   const dataHorario = new Date(agendamento.data_horario);
 
@@ -248,6 +269,11 @@ const ScheduleCard = ({ agendamento, showActions, onCancel, onReschedule }: Sche
       </div>
       {showActions && (
         <div className="flex gap-1 shrink-0">
+          {onSendReminder && agendamento.status !== "cancelado" && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={onSendReminder} title="Enviar lembrete via WhatsApp">
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+          )}
           {onCancel && agendamento.status !== "cancelado" && (
             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onCancel} title="Desmarcar">
               <Ban className="h-4 w-4" />
