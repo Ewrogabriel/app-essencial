@@ -19,6 +19,7 @@ import {
   CreditCard,
   User,
   Calculator,
+  MessageSquare,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -63,6 +64,7 @@ const menuFinanceiro = [
 
 const menuComunicacao = [
   { title: "Mural de Avisos", url: "/avisos", icon: Megaphone },
+  { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
   { title: "Dados da Clínica", url: "/clinica", icon: Activity },
 ];
 
@@ -82,6 +84,10 @@ const menuProfissional = [
 
 const menuProfFinanceiro = [
   { title: "Minhas Comissões", url: "/comissoes", icon: Calculator },
+];
+
+const menuProfComunicacao = [
+  { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
 ];
 
 const menuProfPerfil = [
@@ -178,6 +184,7 @@ export function AppSidebar() {
           <>
             {renderGroup("Principal", menuProfissional)}
             {renderGroup("Financeiro", menuProfFinanceiro)}
+            {renderGroup("Comunicação", menuProfComunicacao)}
             {renderGroup("Perfil", menuProfPerfil)}
           </>
         ) : (

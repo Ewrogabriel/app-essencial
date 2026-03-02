@@ -1,41 +1,34 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, Trash2, AlertCircle, RotateCcw, MessageSquare } from "lucide-react";
+import { Calendar, Trash2, AlertCircle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 
 const MinhaAgenda = () => {
-  const { patientId } = useAuth();
+  const { patientId, user } = useAuth();
   const queryClient = useQueryClient();
   const [cancelDialog, setCancelDialog] = useState<{ id: string; open: boolean } | null>(null);
   const [cancelObs, setCancelObs] = useState("");
   const [rescheduleDialog, setRescheduleDialog] = useState<any>(null);
   const [rescheduleObs, setRescheduleObs] = useState("");
   const [newDateTime, setNewDateTime] = useState("");
+  const [selectedProfId, setSelectedProfId] = useState<string>("");
 
   const { data: agendamentos = [], isLoading } = useQuery({
     queryKey: ["patient-full-agenda", patientId],
@@ -50,6 +43,18 @@ const MinhaAgenda = () => {
       return data;
     },
     enabled: !!patientId,
+  });
+
+  // Fetch all professionals for cross-professional reschedule
+  const { data: profissionais = [] } = useQuery({
+    queryKey: ["all-professionals"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("user_id, nome, especialidade");
+      // Filter only professionals
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role").eq("role", "profissional");
+      const profIds = new Set((roles || []).map((r: any) => r.user_id));
+      return (data || []).filter((p: any) => profIds.has(p.user_id));
+    },
   });
 
   const cancelMutation = useMutation({
@@ -75,23 +80,62 @@ const MinhaAgenda = () => {
   });
 
   const rescheduleMutation = useMutation({
-    mutationFn: async ({ agendamentoId, novaData, motivo }: { agendamentoId: string; novaData: string; motivo: string }) => {
-      if (!patientId) throw new Error("Paciente não identificado");
+    mutationFn: async ({ agendamentoId, novaData, motivo, novoProfId }: { agendamentoId: string; novaData: string; motivo: string; novoProfId: string }) => {
+      if (!patientId || !user) throw new Error("Paciente não identificado");
+      // Insert reschedule request
       const { error } = await (supabase
         .from("solicitacoes_remarcacao")
         .insert({
           agendamento_id: agendamentoId,
           paciente_id: patientId,
           nova_data_horario: novaData,
-          motivo,
+          motivo: novoProfId !== rescheduleDialog?.profissional_id
+            ? `[Troca de profissional] ${motivo}`
+            : motivo,
         }) as any);
       if (error) throw error;
+
+      // If different professional, notify both old and new
+      const ag = rescheduleDialog;
+      const patientName = "Paciente";
+      const oldProfName = ag?.profiles?.nome || "Profissional";
+
+      if (novoProfId !== ag?.profissional_id) {
+        // Notify new professional
+        await (supabase.from("notificacoes").insert({
+          user_id: novoProfId,
+          tipo: "remarcacao",
+          titulo: "Solicitação de remarcação (novo profissional)",
+          resumo: `${patientName} solicita remarcação para ${format(new Date(novaData), "dd/MM 'às' HH:mm")}`,
+          conteudo: `Um paciente solicitou remarcação de uma sessão originalmente com ${oldProfName} para você.\n\nNova data: ${format(new Date(novaData), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\nMotivo: ${motivo}`,
+          link: "/agenda",
+        }) as any);
+        // Notify old professional
+        await (supabase.from("notificacoes").insert({
+          user_id: ag.profissional_id,
+          tipo: "remarcacao",
+          titulo: "Paciente solicitou troca de profissional",
+          resumo: `Remarcação com outro profissional solicitada`,
+          conteudo: `Um paciente solicitou remarcação para outro profissional.\nData original: ${format(new Date(ag.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\nMotivo: ${motivo}`,
+        }) as any);
+      } else {
+        // Same professional, just notify them
+        await (supabase.from("notificacoes").insert({
+          user_id: ag.profissional_id,
+          tipo: "remarcacao",
+          titulo: "Solicitação de remarcação",
+          resumo: `Remarcação para ${format(new Date(novaData), "dd/MM 'às' HH:mm")}`,
+          conteudo: `Paciente solicita remarcação.\nData atual: ${format(new Date(ag.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\nNova data: ${format(new Date(novaData), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\nMotivo: ${motivo}`,
+          link: "/agenda",
+        }) as any);
+      }
     },
     onSuccess: () => {
       toast.success("Solicitação de remarcação enviada! Aguarde a confirmação.");
       setRescheduleDialog(null);
       setRescheduleObs("");
       setNewDateTime("");
+      setSelectedProfId("");
     },
     onError: (error) => toast.error("Erro: " + error.message),
   });
@@ -146,17 +190,15 @@ const MinhaAgenda = () => {
                     {canAct(item.status) && (
                       <div className="flex gap-1">
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="ghost" size="icon"
                           className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                          onClick={() => { setRescheduleDialog(item); setRescheduleObs(""); setNewDateTime(""); }}
+                          onClick={() => { setRescheduleDialog(item); setRescheduleObs(""); setNewDateTime(""); setSelectedProfId(item.profissional_id); }}
                           title="Solicitar remarcação"
                         >
                           <RotateCcw className="h-4 w-4" />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="ghost" size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => { setCancelDialog({ id: item.id, open: true }); setCancelObs(""); }}
                           title="Desmarcar"
@@ -181,7 +223,7 @@ const MinhaAgenda = () => {
         </p>
       </div>
 
-      {/* Cancel Dialog with observations */}
+      {/* Cancel Dialog */}
       <AlertDialog open={!!cancelDialog?.open} onOpenChange={(open) => !open && setCancelDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -190,12 +232,7 @@ const MinhaAgenda = () => {
               Sua sessão será marcada como cancelada. Informe o motivo abaixo.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <Textarea
-            value={cancelObs}
-            onChange={(e) => setCancelObs(e.target.value)}
-            placeholder="Motivo do cancelamento..."
-            className="min-h-[80px]"
-          />
+          <Textarea value={cancelObs} onChange={(e) => setCancelObs(e.target.value)} placeholder="Motivo do cancelamento..." className="min-h-[80px]" />
           <AlertDialogFooter>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
             <AlertDialogAction
@@ -209,9 +246,9 @@ const MinhaAgenda = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reschedule Dialog */}
+      {/* Reschedule Dialog - now with professional selector */}
       <Dialog open={!!rescheduleDialog} onOpenChange={(open) => !open && setRescheduleDialog(null)}>
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="sm:max-w-[460px]">
           <DialogHeader>
             <DialogTitle>Solicitar Remarcação</DialogTitle>
           </DialogHeader>
@@ -221,23 +258,40 @@ const MinhaAgenda = () => {
                 <p><strong>Sessão atual:</strong> {format(new Date(rescheduleDialog.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
                 <p><strong>Profissional:</strong> {rescheduleDialog.profiles?.nome}</p>
               </div>
-              <div>
-                <label className="text-sm font-medium">Nova data e horário desejado</label>
+
+              <div className="space-y-2">
+                <Label>Profissional</Label>
+                <Select value={selectedProfId} onValueChange={setSelectedProfId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o profissional..." /></SelectTrigger>
+                  <SelectContent>
+                    {profissionais.map((p: any) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>
+                        {p.nome}{p.especialidade ? ` — ${p.especialidade}` : ""}
+                        {p.user_id === rescheduleDialog.profissional_id ? " (atual)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedProfId && selectedProfId !== rescheduleDialog.profissional_id && (
+                  <p className="text-xs text-amber-600 font-medium">
+                    ⚠️ Troca de profissional — dependerá de aprovação e disponibilidade de vaga.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Nova data e horário desejado</Label>
                 <input
                   type="datetime-local"
                   value={newDateTime}
                   onChange={(e) => setNewDateTime(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Motivo (opcional)</label>
-                <Textarea
-                  value={rescheduleObs}
-                  onChange={(e) => setRescheduleObs(e.target.value)}
-                  placeholder="Informe o motivo da remarcação..."
-                  className="mt-1"
-                />
+
+              <div className="space-y-2">
+                <Label>Motivo (opcional)</Label>
+                <Textarea value={rescheduleObs} onChange={(e) => setRescheduleObs(e.target.value)} placeholder="Informe o motivo da remarcação..." />
               </div>
             </div>
           )}
@@ -245,14 +299,13 @@ const MinhaAgenda = () => {
             <Button variant="outline" onClick={() => setRescheduleDialog(null)}>Cancelar</Button>
             <Button
               onClick={() => {
-                if (!newDateTime) {
-                  toast.error("Informe a nova data e horário.");
-                  return;
-                }
+                if (!newDateTime) { toast.error("Informe a nova data e horário."); return; }
+                if (!selectedProfId) { toast.error("Selecione o profissional."); return; }
                 rescheduleMutation.mutate({
                   agendamentoId: rescheduleDialog.id,
                   novaData: new Date(newDateTime).toISOString(),
                   motivo: rescheduleObs || "Sem motivo informado",
+                  novoProfId: selectedProfId,
                 });
               }}
               disabled={rescheduleMutation.isPending}
