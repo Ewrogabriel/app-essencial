@@ -240,6 +240,9 @@ export function AppointmentDetailDialog({
         {/* Quick Navigation */}
         {!isPatient && (
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); navigate(`/pacientes/${ag.paciente_id}/detalhes`); }}>
+              <User className="h-4 w-4 mr-1" /> Ver Perfil
+            </Button>
             <Button variant="outline" size="sm" onClick={goToPatient}>
               <ClipboardList className="h-4 w-4 mr-1" /> Prontuário
             </Button>
