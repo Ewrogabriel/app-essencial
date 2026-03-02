@@ -130,6 +130,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bloqueios_profissional: {
+        Row: {
+          created_at: string
+          data: string
+          dia_inteiro: boolean
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          motivo: string | null
+          profissional_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          dia_inteiro?: boolean
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          motivo?: string | null
+          profissional_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          dia_inteiro?: boolean
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          motivo?: string | null
+          profissional_id?: string
+        }
+        Relationships: []
+      }
       commissions: {
         Row: {
           agendamento_id: string | null
@@ -391,6 +424,30 @@ export type Database = {
           status?: string
           updated_at?: string
           valor?: number
+        }
+        Relationships: []
+      }
+      feriados: {
+        Row: {
+          created_at: string
+          created_by: string
+          data: string
+          descricao: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data: string
+          descricao: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data?: string
+          descricao?: string
+          id?: string
         }
         Relationships: []
       }
