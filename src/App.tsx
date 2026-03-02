@@ -29,6 +29,7 @@ import Inteligencia from "./pages/Inteligencia";
 import Automacoes from "./pages/Automacoes";
 import PatientOnboarding from "./pages/PatientOnboarding";
 import AvisosAdmin from "./pages/AvisosAdmin";
+import DisponibilidadeProfissional from "./pages/DisponibilidadeProfissional";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="/inteligencia" element={<Inteligencia />} />
               <Route path="/automacoes" element={<Automacoes />} />
               <Route path="/avisos" element={<AvisosAdmin />} />
+              <Route path="/disponibilidade" element={<DisponibilidadeProfissional />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

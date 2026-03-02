@@ -14,6 +14,7 @@ import {
   Brain,
   Send,
   Megaphone,
+  Clock,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -42,6 +43,7 @@ const menuPrincipal = [
 const menuProfissional = [
   { title: "Cadastro", url: "/modalidades", icon: Layers },
   { title: "Profissional", url: "/profissionais", icon: UserCog },
+  { title: "Disponibilidade", url: "/disponibilidade", icon: Clock },
 ];
 
 const menuGestao = [

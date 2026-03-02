@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Activity, AlertTriangle, ArrowRight } from "lucide-react";
+import { Users, Activity, AlertTriangle, ArrowRight, Trophy } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -88,6 +88,39 @@ const Dashboard = () => {
         .eq("status", "pendente")
         .lte("data_vencimento", new Date().toISOString().split("T")[0]);
       return count ?? 0;
+    },
+  });
+
+  // Ranking de frequência - pacientes que menos cancelam
+  const { data: frequencyRanking = [] } = useQuery({
+    queryKey: ["dashboard-frequency-ranking"],
+    queryFn: async () => {
+      const { data: agendamentos } = await (supabase.from("agendamentos") as any)
+        .select("paciente_id, status, pacientes(nome)");
+      if (!agendamentos) return [];
+
+      const stats: Record<string, { nome: string; total: number; cancelados: number; realizados: number; checkins: number }> = {};
+      agendamentos.forEach((ag: any) => {
+        const pid = ag.paciente_id;
+        if (!stats[pid]) {
+          stats[pid] = { nome: ag.pacientes?.nome || "?", total: 0, cancelados: 0, realizados: 0, checkins: 0 };
+        }
+        stats[pid].total++;
+        if (ag.status === "cancelado" || ag.status === "falta") stats[pid].cancelados++;
+        if (ag.status === "realizado") stats[pid].realizados++;
+      });
+
+      return Object.entries(stats)
+        .map(([id, s]) => ({
+          id,
+          nome: s.nome,
+          total: s.total,
+          cancelados: s.cancelados,
+          realizados: s.realizados,
+          taxa: s.total > 0 ? Math.round(((s.total - s.cancelados) / s.total) * 100) : 0,
+        }))
+        .sort((a, b) => b.taxa - a.taxa || b.realizados - a.realizados)
+        .slice(0, 10);
     },
   });
 
@@ -226,7 +259,42 @@ const Dashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
               )}
+      </div>
+
+      {/* Ranking de Frequência */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-amber-500" />
+            Ranking de Frequência
+          </CardTitle>
+          <Badge variant="secondary" className="text-xs">Top 10</Badge>
+        </CardHeader>
+        <CardContent>
+          {frequencyRanking.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Sem dados de agendamentos ainda</p>
+          ) : (
+            <div className="space-y-2">
+              {frequencyRanking.map((p: any, i: number) => (
+                <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    i === 0 ? "bg-amber-100 text-amber-700" : i === 1 ? "bg-gray-100 text-gray-600" : i === 2 ? "bg-orange-100 text-orange-700" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {i + 1}º
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{p.nome}</p>
+                    <p className="text-xs text-muted-foreground">{p.realizados} realizados · {p.cancelados} cancelados</p>
+                  </div>
+                  <Badge variant={p.taxa >= 80 ? "default" : p.taxa >= 50 ? "secondary" : "destructive"} className="text-xs">
+                    {p.taxa}%
+                  </Badge>
+                </div>
+              ))}
             </div>
+          )}
+        </CardContent>
+      </Card>
           </CardContent>
         </Card>
       </div>

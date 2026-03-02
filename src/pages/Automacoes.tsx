@@ -60,6 +60,7 @@ const PatientDispatchRow = ({ p, triggers, sendWhatsApp }: { p: any; triggers: a
 const Automacoes = () => {
   const { clinicId } = useAuth();
 
+  const [searchPatient, setSearchPatient] = useState("");
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<any>(null);
 
@@ -67,16 +68,15 @@ const Automacoes = () => {
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
 
   const { data: patients = [] } = useQuery({
-    queryKey: ["automation-patients", clinicId],
+    queryKey: ["automation-patients"],
     queryFn: async () => {
       const { data, error } = await (supabase.from("pacientes") as any)
-        .select("*")
-        .eq("clinic_id", clinicId)
-        .eq("status", "ativo");
+        .select("id, nome, telefone, status")
+        .eq("status", "ativo")
+        .order("nome");
       if (error) throw error;
       return data;
     },
-    enabled: !!clinicId,
   });
 
   const sendWhatsApp = (phone: string, message: string) => {
@@ -192,19 +192,22 @@ const Automacoes = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            <Input
+              placeholder="Buscar paciente por nome..."
+              value={searchPatient}
+              onChange={(e) => setSearchPatient(e.target.value)}
+              className="max-w-sm"
+            />
             {patients.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">Nenhum paciente ativo para disparar.</p>
             ) : (
-              <div className="grid gap-3">
-                {patients.slice(0, 5).map((p: any) => (
-                  <PatientDispatchRow key={p.id} p={p} triggers={triggers} sendWhatsApp={sendWhatsApp} />
-                ))}
+              <div className="grid gap-3 max-h-[400px] overflow-y-auto">
+                {patients
+                  .filter((p: any) => !searchPatient || p.nome?.toLowerCase().includes(searchPatient.toLowerCase()))
+                  .map((p: any) => (
+                    <PatientDispatchRow key={p.id} p={p} triggers={triggers} sendWhatsApp={sendWhatsApp} />
+                  ))}
               </div>
-            )}
-            {patients.length > 5 && (
-              <Button variant="link" className="w-full text-xs" onClick={() => toast.info("Lista completa em desenvolvimento")}>
-                Ver todos os pacientes ativos
-              </Button>
             )}
           </div>
         </CardContent>

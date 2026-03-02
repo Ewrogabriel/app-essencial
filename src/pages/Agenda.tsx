@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AgendamentoForm } from "@/components/agenda/AgendamentoForm";
+import { RescheduleDialog } from "@/components/agenda/RescheduleDialog";
 import { DailyView, WeeklyView, MonthlyView, type Agendamento } from "@/components/agenda/AgendaViews";
 import { generateWeeklyPDF } from "@/lib/generateAgendaPDF";
 import { toast } from "@/hooks/use-toast";
@@ -22,6 +23,13 @@ const Agenda = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [loading, setLoading] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleAg, setRescheduleAg] = useState<Agendamento | null>(null);
+
+  const handleReschedule = (ag: Agendamento) => {
+    setRescheduleAg(ag);
+    setRescheduleOpen(true);
+  };
 
   const fetchAgendamentos = useCallback(async () => {
     setLoading(true);
@@ -212,6 +220,7 @@ const Agenda = () => {
             isPatient={isPatient}
             onCancel={handleCancelAppointment}
             onCheckin={handleCheckin}
+            onReschedule={handleReschedule}
           />
         )}
         {viewMode === "semanal" && (
@@ -222,6 +231,7 @@ const Agenda = () => {
             isPatient={isPatient}
             onCancel={handleCancelAppointment}
             onCheckin={handleCheckin}
+            onReschedule={handleReschedule}
           />
         )}
         {viewMode === "mensal" && (
@@ -232,6 +242,7 @@ const Agenda = () => {
             isPatient={isPatient}
             onCancel={handleCancelAppointment}
             onCheckin={handleCheckin}
+            onReschedule={handleReschedule}
           />
         )}
       </div>
@@ -241,6 +252,13 @@ const Agenda = () => {
         onOpenChange={setFormOpen}
         onSuccess={fetchAgendamentos}
         defaultDate={selectedDate}
+      />
+
+      <RescheduleDialog
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+        agendamento={rescheduleAg}
+        onSuccess={fetchAgendamentos}
       />
     </div>
   );

@@ -171,6 +171,42 @@ export type Database = {
           },
         ]
       }
+      disponibilidade_profissional: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          max_pacientes: number
+          profissional_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id?: string
+          max_pacientes?: number
+          profissional_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          dia_semana?: number
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          max_pacientes?: number
+          profissional_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       evaluations: {
         Row: {
           antecedentes_pessoais: string | null
@@ -567,6 +603,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      solicitacoes_remarcacao: {
+        Row: {
+          agendamento_id: string
+          created_at: string
+          id: string
+          motivo: string | null
+          nova_data_horario: string
+          paciente_id: string
+          respondido_at: string | null
+          respondido_por: string | null
+          status: string
+        }
+        Insert: {
+          agendamento_id: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          nova_data_horario: string
+          paciente_id: string
+          respondido_at?: string | null
+          respondido_por?: string | null
+          status?: string
+        }
+        Update: {
+          agendamento_id?: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          nova_data_horario?: string
+          paciente_id?: string
+          respondido_at?: string | null
+          respondido_por?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_remarcacao_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
