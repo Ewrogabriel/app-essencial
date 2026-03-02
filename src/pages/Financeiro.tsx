@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Plus, DollarSign, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
+import { ptBR } from "date-fns/locale";
+import { Plus, DollarSign, TrendingUp, AlertCircle, CheckCircle, Download, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { generateReceiptPDF, getReceiptNumber } from "@/lib/generateReceiptPDF";
 
 const statusBadge: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pago: { label: "Pago", variant: "default" },
@@ -217,7 +219,8 @@ const Financeiro = () => {
                       <TableHead>Forma</TableHead>
                       <TableHead>Vencimento</TableHead>
                       <TableHead>Data Pgto</TableHead>
-                      <TableHead>Status</TableHead>
+                       <TableHead>Status</TableHead>
+                       <TableHead className="text-right">Recibo</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -237,6 +240,33 @@ const Financeiro = () => {
                           <Badge variant={pagamento.status === 'pago' ? 'default' : 'destructive'}>
                             {statusBadge[pagamento.status]?.label || pagamento.status}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {pagamento.status === "pago" && (
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" variant="outline" className="h-8" onClick={() => {
+                                const numero = getReceiptNumber(pagamento.id, pagamento.created_at);
+                                const dataPgto = format(new Date(pagamento.data_pagamento), "dd/MM/yyyy");
+                                const ref = pagamento.data_vencimento
+                                  ? format(new Date(pagamento.data_vencimento), "MMMM/yyyy", { locale: ptBR })
+                                  : pagamento.descricao || "Serviço";
+                                const pdf = generateReceiptPDF({
+                                  numero,
+                                  pacienteNome: pagamento.pacientes?.nome || "—",
+                                  cpf: "",
+                                  descricao: pagamento.descricao || "Serviço de Pilates/Fisioterapia",
+                                  valor: Number(pagamento.valor),
+                                  formaPagamento: pagamento.forma_pagamento || "",
+                                  dataPagamento: dataPgto,
+                                  referencia: ref.charAt(0).toUpperCase() + ref.slice(1),
+                                });
+                                pdf.save(`Recibo_${numero}.pdf`);
+                                toast({ title: "Recibo gerado!" });
+                              }}>
+                                <Download className="h-3.5 w-3.5 mr-1" /> PDF
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
