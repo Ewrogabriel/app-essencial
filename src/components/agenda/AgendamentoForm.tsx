@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format, addWeeks, setHours as setH, setMinutes as setM, addDays, addMonths } from "date-fns";
+import { format, addWeeks, setHours as setH, setMinutes as setM, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Repeat, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -61,7 +61,7 @@ const formSchema = z.object({
   tipo_atendimento: z.string().min(1, "Selecione a modalidade"),
   tipo_sessao: z.enum(["individual", "grupo"]),
   observacoes: z.string().optional(),
-  frequencia: z.enum(["none", "daily", "weekly", "biweekly", "monthly"]).default("none"),
+  recorrente: z.boolean().default(false),
   dias_semana: z.array(z.number()).default([]),
   frequencia_semanal: z.number().min(1).max(7).default(1),
   recorrencia_semanas: z.number().min(1).max(200).default(52),
@@ -110,7 +110,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
       tipo_sessao: "individual",
       horario: "08:00",
       observacoes: "",
-      frequencia: "none",
+      recorrente: false,
       dias_semana: [],
       frequencia_semanal: 1,
       recorrencia_semanas: 52,
@@ -120,8 +120,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
     },
   });
 
-  const frequencia = form.watch("frequencia");
-  const isRecorrente = frequencia !== "none";
+  const isRecorrente = form.watch("recorrente");
   const diasSelecionados = form.watch("dias_semana");
   const freqSemanal = form.watch("frequencia_semanal");
   const tipoAtendimento = form.watch("tipo_atendimento");
@@ -184,37 +183,21 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
     const startDate = values.data;
     const totalWeeks = values.recorrencia_semanas;
 
-    if (values.frequencia === 'none') return dates;
+    if (!values.recorrente) return dates;
 
-    const [hours, minutes] = values.horario.split(":").map(Number);
+    for (let week = 0; week < totalWeeks; week++) {
+      for (const dia of values.dias_semana) {
+        const diaHorario = values.horarios_por_dia[String(dia)] || values.horario || "08:00";
+        const [h, m] = diaHorario.split(":").map(Number);
 
-    if (values.frequencia === 'daily') {
-      for (let i = 0; i < totalWeeks * 7; i++) {
-        const d = addDays(startDate, i);
-        // Optional: skip weekends if requested, but prompt didn't specify
-        dates.push(setM(setH(d, hours), minutes));
-      }
-    } else if (values.frequencia === 'weekly' || values.frequencia === 'biweekly') {
-      const interval = values.frequencia === 'weekly' ? 1 : 2;
-      for (let week = 0; week < totalWeeks; week += interval) {
-        for (const dia of values.dias_semana) {
-          const diaHorario = values.horarios_por_dia[String(dia)] || values.horario || "08:00";
-          const [h, m] = diaHorario.split(":").map(Number);
+        const weekStart = addWeeks(startDate, week);
+        const dayOffset = (dia - weekStart.getDay() + 7) % 7;
+        const targetDate = addDays(weekStart, dayOffset);
 
-          const weekStart = addWeeks(startDate, week);
-          const dayOffset = (dia - weekStart.getDay() + 7) % 7;
-          const targetDate = addDays(weekStart, dayOffset);
-
-          if (targetDate >= new Date(new Date().setHours(0, 0, 0, 0))) {
-            const dt = setM(setH(targetDate, h), m);
-            dates.push(dt);
-          }
+        if (targetDate >= new Date(new Date().setHours(0, 0, 0, 0))) {
+          const dt = setM(setH(targetDate, h), m);
+          dates.push(dt);
         }
-      }
-    } else if (values.frequencia === 'monthly') {
-      for (let i = 0; i < totalWeeks / 4; i++) {
-        const d = addMonths(startDate, i);
-        dates.push(setM(setH(d, hours), minutes));
       }
     }
 
@@ -232,8 +215,8 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
 
     try {
       if (isRecorrente) {
-        // Validation for weekly/biweekly
-        if ((values.frequencia === 'weekly' || values.frequencia === 'biweekly') && values.dias_semana.length !== values.frequencia_semanal) {
+        // Validation: days must match frequency
+        if (values.dias_semana.length !== values.frequencia_semanal) {
           toast({
             title: "Atenção",
             description: `Você selecionou ${values.dias_semana.length} dia(s) mas a frequência é ${values.frequencia_semanal}x. Ajuste para que coincidam.`,
@@ -527,27 +510,15 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
                 </div>
                 <FormField
                   control={form.control}
-                  name="frequencia"
+                  name="recorrente"
                   render={({ field }) => (
-                    <FormItem className="w-1/2">
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Repetição" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">Não Repetir</SelectItem>
-                          <SelectItem value="daily">Diário</SelectItem>
-                          <SelectItem value="weekly">Semanal</SelectItem>
-                          <SelectItem value="biweekly">Quinzenal</SelectItem>
-                          <SelectItem value="monthly">Mensal</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <FormItem>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />

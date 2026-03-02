@@ -40,12 +40,6 @@ import {
 
 type Paciente = Tables<"pacientes">;
 
-const tipoLabels: Record<string, string> = {
-  fisioterapia: "Fisioterapia",
-  pilates: "Pilates",
-  rpg: "RPG",
-};
-
 const Pacientes = () => {
   const { clinicId } = useAuth();
   const navigate = useNavigate();
@@ -89,6 +83,14 @@ const Pacientes = () => {
       const ids = roles?.map(r => r.user_id) ?? [];
       if (!ids.length) return [];
       const { data } = await supabase.from("profiles").select("user_id, nome").in("user_id", ids).order("nome");
+      return data ?? [];
+    },
+  });
+
+  const { data: modalidades = [] } = useQuery({
+    queryKey: ["modalidades-filter"],
+    queryFn: async () => {
+      const { data } = await supabase.from("modalidades").select("id, nome").eq("ativo", true).order("nome");
       return data ?? [];
     },
   });
@@ -174,10 +176,10 @@ const Pacientes = () => {
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos os tipos</SelectItem>
-                <SelectItem value="fisioterapia">Fisioterapia</SelectItem>
-                <SelectItem value="pilates">Pilates</SelectItem>
-                <SelectItem value="rpg">RPG</SelectItem>
+                <SelectItem value="todos">Todas modalidades</SelectItem>
+                {modalidades.map((m: any) => (
+                  <SelectItem key={m.id} value={m.nome.toLowerCase()}>{m.nome}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={filtroStatus} onValueChange={setFiltroStatus}>
@@ -239,7 +241,7 @@ const Pacientes = () => {
                       <TableCell className="hidden md:table-cell">{paciente.cpf || "—"}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">
-                          {tipoLabels[paciente.tipo_atendimento] || paciente.tipo_atendimento}
+                          {paciente.tipo_atendimento.charAt(0).toUpperCase() + paciente.tipo_atendimento.slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell>
