@@ -32,11 +32,7 @@ const PatientDashboard = () => {
   const { data: agenda = [] } = useQuery({
     queryKey: ["patient-agenda", patientId],
     queryFn: async () => {
-      if (!patientId) {
-        console.log("[v0] PatientId not available in patient-agenda query");
-        return [];
-      }
-      console.log("[v0] Fetching patient-agenda for patientId:", patientId);
+      if (!patientId) return [];
       const { data, error } = await (supabase
         .from("agendamentos")
         .select("*")
@@ -45,11 +41,7 @@ const PatientDashboard = () => {
         .in("status", ["agendado", "confirmado"])
         .order("data_horario", { ascending: true })
         .limit(5) as any);
-      if (error) {
-        console.error("[v0] Error in patient-agenda query:", error);
-        throw error;
-      }
-      console.log("[v0] Patient-agenda found:", data?.length, "items");
+      if (error) throw error;
       // Manual profile lookup (no FK join)
       const profIds = [...new Set((data || []).map((a: any) => a.profissional_id))] as string[];
       let profMap: Record<string, string> = {};
