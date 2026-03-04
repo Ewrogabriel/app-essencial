@@ -55,7 +55,7 @@ const Planos = () => {
         .select("*, pacientes(nome), profiles(nome)");
       
       if (filterStatus) {
-        query = query.eq("status", filterStatus);
+        query = query.eq("status", filterStatus as any);
       }
       if (filterPaciente) {
         query = query.ilike("pacientes.nome", `%${filterPaciente}%`);

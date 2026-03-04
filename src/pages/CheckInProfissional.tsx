@@ -44,7 +44,7 @@ const CheckInProfissional = () => {
     mutationFn: async ({ id, presenca }: { id: string; presenca: "presente" | "faltou" }) => {
       const { error } = await supabase
         .from("agendamentos")
-        .update({ status: presenca === "presente" ? "realizado" : "faltou" })
+        .update({ status: presenca === "presente" ? "realizado" : "falta" })
         .eq("id", id);
       if (error) throw error;
     },

@@ -13,11 +13,10 @@ export default function Indicadores() {
   const { data: mrr = 0 } = useQuery({
     queryKey: ["mrr"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("matriculas")
+      const { data, error } = await (supabase
+        .from("planos") as any)
         .select("valor")
-        .eq("status", "ativa")
-        .eq("tipo", "recorrente");
+        .eq("status", "ativo");
 
       if (error) throw error;
       return (data || []).reduce((sum: number, m: any) => sum + (m.valor || 0), 0);
@@ -28,10 +27,10 @@ export default function Indicadores() {
   const { data: receitaFutura = 0 } = useQuery({
     queryKey: ["receita-futura"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("matriculas")
+      const { data, error } = await (supabase
+        .from("planos") as any)
         .select("valor, data_vencimento")
-        .eq("status", "ativa")
+        .eq("status", "ativo")
         .gte("data_vencimento", agora.toISOString());
 
       if (error) throw error;
@@ -43,14 +42,14 @@ export default function Indicadores() {
   const { data: metrics = { cancelados: 0, total: 0 } } = useQuery({
     queryKey: ["taxa-cancelamento"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("matriculas")
+      const { data, error } = await (supabase
+        .from("planos") as any)
         .select("status");
 
       if (error) throw error;
       
       const total = (data || []).length;
-      const cancelados = (data || []).filter((m: any) => m.status === "cancelada").length;
+      const cancelados = (data || []).filter((m: any) => m.status === "cancelado").length;
       
       return { cancelados, total };
     },

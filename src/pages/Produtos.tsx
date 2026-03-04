@@ -40,7 +40,7 @@ const Produtos = () => {
   const { data: produtos = [] } = useQuery({
     queryKey: ["produtos", filterCategoria],
     queryFn: async () => {
-      let query = supabase.from("produtos").select("*");
+      let query = (supabase.from("produtos") as any).select("*");
       
       if (filterCategoria) {
         query = query.eq("categoria", filterCategoria);
@@ -64,16 +64,14 @@ const Produtos = () => {
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
       
-      const { data, error } = await supabase
-        .from("produtos")
+      const { data, error } = await (supabase
+        .from("produtos") as any)
         .insert({
           nome: formData.nome,
           descricao: formData.descricao,
           preco: parseFloat(formData.preco),
-          quantidade_estoque: parseInt(formData.quantidade_estoque),
-          categoria: formData.categoria,
-          imagem_url: formData.imagem_url || null,
-          permite_reserva: formData.permite_reserva,
+          estoque: parseInt(formData.quantidade_estoque),
+          foto_url: formData.imagem_url || null,
           created_by: user.id,
         })
         .select()
@@ -95,7 +93,7 @@ const Produtos = () => {
 
   const deleteProduto = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("produtos").delete().eq("id", id);
+      const { error } = await (supabase.from("produtos") as any).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
