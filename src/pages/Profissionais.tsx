@@ -199,6 +199,26 @@ const Profissionais = () => {
     toast({ title: "Contrato gerado!", description: "O PDF do contrato foi baixado." });
   };
 
+  const fetchAddressFor = async (cepCode: string) => {
+    const cleanCep = cepCode.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        toast({ title: "CEP não encontrado", variant: "destructive" });
+        return;
+      }
+      setEndereco(data.logradouro || "");
+      setBairro(data.bairro || "");
+      setCidade(data.localidade || "");
+      setEstado(data.uf || "");
+    } catch (err) {
+      console.error("Erro ao buscar CEP", err);
+      toast({ title: "Erro ao buscar endereço", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -384,7 +404,7 @@ const Profissionais = () => {
               </div>
               <div className="space-y-2 max-w-[200px]">
                 <Label>CEP</Label>
-                <Input value={cep} onChange={(e) => setCep(maskCEP(e.target.value))} placeholder="00000-000" />
+                <Input value={cep} onChange={(e) => { const v = maskCEP(e.target.value); setCep(v); fetchAddressFor(v); }} placeholder="00000-000" />
               </div>
 
               <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1 pt-2">Dados Profissionais</h4>

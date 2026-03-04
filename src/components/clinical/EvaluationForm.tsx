@@ -74,70 +74,67 @@ export const EvaluationForm = ({ open, onOpenChange, pacienteId }: EvaluationFor
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
-                <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
-                    <DialogHeader className="shrink-0">
-                        <DialogTitle>Avaliação Inicial / Anamnese</DialogTitle>
-                    </DialogHeader>
-
-                    <ScrollArea className="flex-1 overflow-hidden">
-                        <div className="space-y-4 py-4 pr-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="queixa_principal">Queixa Principal *</Label>
-                                <Textarea
-                                    id="queixa_principal"
-                                    placeholder="O que trouxe o paciente à clínica?"
-                                    value={formData.queixa_principal}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="historico_doenca">Histórico da Doença Atual (HDA)</Label>
-                                <Textarea
-                                    id="historico_doenca"
-                                    placeholder="Início dos sintomas, evolução..."
-                                    value={formData.historico_doenca}
-                                    onChange={handleChange}
-                                    rows={3}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="antecedentes_pessoais">Antecedentes Pessoais / Comorbidades</Label>
-                                <Textarea
-                                    id="antecedentes_pessoais"
-                                    placeholder="Diabetes, hipertensão, cirurgias anteriores..."
-                                    value={formData.antecedentes_pessoais}
-                                    onChange={handleChange}
-                                    rows={3}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="objetivos_tratamento">Objetivos do Tratamento</Label>
-                                <Textarea
-                                    id="objetivos_tratamento"
-                                    placeholder="O que o paciente espera alcançar?"
-                                    value={formData.objetivos_tratamento}
-                                    onChange={handleChange}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="conduta_inicial">Conduta Inicial / Plano Terapêutico</Label>
-                                <Textarea
-                                    id="conduta_inicial"
-                                    placeholder="Quais técnicas serão utilizadas inicialmente?"
-                                    value={formData.conduta_inicial}
-                                    onChange={handleChange}
-                                />
-                            </div>
+            <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Avaliação Inicial / Anamnese</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="queixa_principal">Queixa Principal *</Label>
+                            <Textarea
+                                id="queixa_principal"
+                                placeholder="O que trouxe o paciente à clínica?"
+                                value={formData.queixa_principal}
+                                onChange={handleChange}
+                                required
+                            />
                         </div>
-                    </ScrollArea>
 
-                    <DialogFooter className="shrink-0 pt-4 border-t mt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="historico_doenca">Histórico da Doença Atual (HDA)</Label>
+                            <Textarea
+                                id="historico_doenca"
+                                placeholder="Início dos sintomas, evolução..."
+                                value={formData.historico_doenca}
+                                onChange={handleChange}
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="antecedentes_pessoais">Antecedentes Pessoais / Comorbidades</Label>
+                            <Textarea
+                                id="antecedentes_pessoais"
+                                placeholder="Diabetes, hipertensão, cirurgias anteriores..."
+                                value={formData.antecedentes_pessoais}
+                                onChange={handleChange}
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="objetivos_tratamento">Objetivos do Tratamento</Label>
+                            <Textarea
+                                id="objetivos_tratamento"
+                                placeholder="O que o paciente espera alcançar?"
+                                value={formData.objetivos_tratamento}
+                                onChange={handleChange}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="conduta_inicial">Conduta Inicial / Plano Terapêutico</Label>
+                            <Textarea
+                                id="conduta_inicial"
+                                placeholder="Quais técnicas serão utilizadas inicialmente?"
+                                value={formData.conduta_inicial}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter className="pt-4 border-t sm:justify-end gap-2">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                             Cancelar
                         </Button>

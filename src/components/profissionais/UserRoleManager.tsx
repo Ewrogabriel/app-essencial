@@ -41,10 +41,42 @@ const UserRoleManager = () => {
 
             if (rError) throw rError;
 
-            return profiles.map(p => ({
-                ...p,
-                roles: roles.filter(r => r.user_id === p.user_id).map(r => r.role)
-            }));
+            const { data: pacientes, error: pacError } = await supabase
+                .from("pacientes")
+                .select("*");
+
+            if (pacError) throw pacError;
+
+            // Merge profiles and patients
+            const mergedUsers: any[] = [];
+
+            // First add profiles (users with accounts)
+            profiles.forEach(p => {
+                mergedUsers.push({
+                    id: p.id,
+                    user_id: p.user_id,
+                    nome: p.nome || "Sem nome",
+                    email: p.email,
+                    roles: roles.filter(r => r.user_id === p.user_id).map(r => r.role),
+                    hasAccount: true
+                });
+            });
+
+            // Then add patients that don't have an associated profile
+            pacientes.forEach((pac: any) => {
+                if (!pac.user_id || !mergedUsers.find(mu => mu.user_id === pac.user_id)) {
+                    mergedUsers.push({
+                        id: pac.id,
+                        user_id: pac.user_id, // Might be null
+                        nome: pac.nome || "Sem nome",
+                        email: pac.email || "(Paciente sem cadastro/email)",
+                        roles: pac.user_id ? roles.filter(r => r.user_id === pac.user_id).map(r => r.role) : [],
+                        hasAccount: !!pac.user_id
+                    });
+                }
+            });
+
+            return mergedUsers;
         }
     });
 
@@ -99,12 +131,12 @@ const UserRoleManager = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredUsers.map((u) => {
-                            const currentRole = u.roles[0] || "Sem cargo";
+                        {filteredUsers.map((u, index) => {
+                            const currentRole = u.roles[0] || (u.hasAccount ? "Sem cargo" : "Sem acesso");
                             return (
-                                <TableRow key={u.user_id}>
+                                <TableRow key={u.user_id || `pac-${u.id}-${index}`}>
                                     <TableCell>
-                                        <div className="font-medium">{u.nome || "Sem nome"}</div>
+                                        <div className="font-medium">{u.nome}</div>
                                         <div className="text-xs text-muted-foreground">{u.email}</div>
                                     </TableCell>
                                     <TableCell>
@@ -113,20 +145,26 @@ const UserRoleManager = () => {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Select
-                                            onValueChange={(val) => handleRoleChange(u.user_id, val, u.roles)}
-                                            defaultValue={currentRole}
-                                        >
-                                            <SelectTrigger className="w-[140px] ml-auto">
-                                                <SelectValue placeholder="Mudar cargo" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="paciente">Paciente</SelectItem>
-                                                <SelectItem value="profissional">Profissional</SelectItem>
-                                                <SelectItem value="gestor">Gestor / Gerente</SelectItem>
-                                                <SelectItem value="admin">Administrador</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        {u.hasAccount ? (
+                                            <Select
+                                                onValueChange={(val) => handleRoleChange(u.user_id, val, u.roles)}
+                                                defaultValue={currentRole !== "Sem cargo" ? currentRole : undefined}
+                                            >
+                                                <SelectTrigger className="w-[140px] ml-auto">
+                                                    <SelectValue placeholder="Mudar cargo" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="paciente">Paciente</SelectItem>
+                                                    <SelectItem value="profissional">Profissional</SelectItem>
+                                                    <SelectItem value="gestor">Gestor / Gerente</SelectItem>
+                                                    <SelectItem value="admin">Administrador</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <div className="text-xs text-muted-foreground italic text-right">
+                                                Para virar profissional, cadastre o CPF do paciente.
+                                            </div>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             );

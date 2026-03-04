@@ -63,11 +63,37 @@ const ClinicSettings = () => {
     setUploading(false);
   };
 
+  const fetchAddressFor = async (cepCode: string) => {
+    const cleanCep = cepCode.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        toast({ title: "CEP não encontrado", variant: "destructive" });
+        return;
+      }
+      setForm(f => ({
+        ...f,
+        endereco: data.logradouro || f.endereco,
+        bairro: data.bairro || f.bairro,
+        cidade: data.localidade || f.cidade,
+        estado: data.uf || f.estado,
+      }));
+    } catch (err) {
+      console.error("Erro ao buscar CEP", err);
+      toast({ title: "Erro ao buscar endereço", variant: "destructive" });
+    }
+  };
+
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value;
     if (field === "cnpj") val = maskCNPJ(val);
     if (field === "telefone" || field === "whatsapp") val = maskPhone(val);
-    if (field === "cep") val = maskCEP(val);
+    if (field === "cep") {
+      val = maskCEP(val);
+      fetchAddressFor(val);
+    }
     setForm(f => ({ ...f, [field]: val }));
   };
 

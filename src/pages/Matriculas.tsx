@@ -36,7 +36,7 @@ const Matriculas = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterPaciente, setFilterPaciente] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  
+
   const [formData, setFormData] = useState({
     paciente_id: "",
     profissional_id: "",
@@ -46,8 +46,8 @@ const Matriculas = () => {
     data_vencimento: format(addMonths(new Date(), 1), "yyyy-MM-dd"),
     desconto: "0",
     desconto_tipo: "percentual",
-    duracao_minutos: 60,
-    frequencia: "semanal",
+    horario: "08:00",
+    dias_semana: [] as number[],
     observacoes: "",
     ativo: true,
     total_sessoes: 4,
@@ -56,15 +56,15 @@ const Matriculas = () => {
   const { data: matriculas = [] } = useQuery({
     queryKey: ["matriculas", filterPaciente, filterStatus],
     queryFn: async () => {
-      let query = supabase.from("planos").select("*, pacientes(nome), profiles(nome)").eq("status", "ativo");
-      
+      let query = supabase.from("matriculas").select("*, pacientes(nome), profiles(nome), modalidades(nome)").eq("status", "ativa");
+
       if (filterPaciente) {
         query = query.ilike("pacientes.nome", `%${filterPaciente}%`);
       }
       if (filterStatus) {
         query = query.eq("status", filterStatus as any);
       }
-      
+
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -100,24 +100,25 @@ const Matriculas = () => {
 
       const desconto = parseFloat(formData.desconto) || 0;
       const valor = parseFloat(formData.valor) || 0;
-      const desconto_valor = formData.desconto_tipo === "percentual" 
-        ? (valor * desconto) / 100 
+      const desconto_valor = formData.desconto_tipo === "percentual"
+        ? (valor * desconto) / 100
         : desconto;
       const valor_final = valor - desconto_valor;
 
       const { data, error } = await supabase
-        .from("planos")
+        .from("matriculas")
         .insert({
           paciente_id: formData.paciente_id,
           profissional_id: formData.profissional_id || user.id,
-          tipo_atendimento: formData.tipo_atendimento,
-          valor: valor_final,
+          tipo: "mensal", // default
+          valor_mensal: valor_final,
           data_inicio: formData.data_inicio,
           data_vencimento: formData.data_vencimento,
-          total_sessoes: formData.total_sessoes,
+          total_sessoes_mes: formData.total_sessoes,
           observacoes: formData.observacoes || null,
-          created_by: user.id,
-          status: "ativo",
+          desconto: desconto_valor,
+          criada_por: user.id,
+          status: "ativa",
         })
         .select()
         .single();
@@ -128,15 +129,65 @@ const Matriculas = () => {
       if (valor_final > 0) {
         await supabase.from("pagamentos").insert({
           paciente_id: formData.paciente_id,
-          plano_id: data.id,
+          matricula_id: data.id, // Assuming pagamentos has matricula_id, if not, use plano_id
           profissional_id: formData.profissional_id || user.id,
           valor: valor_final,
           data_vencimento: formData.data_vencimento,
           status: "pendente",
           forma_pagamento: null,
-          descricao: `Matrícula - ${formData.tipo_atendimento}`,
+          descricao: `Matrícula - Mensal`,
           created_by: user.id,
         });
+      }
+
+      // Helper function to get dates for a specific day of week in a range
+      const getDatesForWeekday = (startDateStr: string, endDateStr: string, weekday: number) => {
+        const dates: string[] = [];
+        const start = new Date(startDateStr);
+        const end = new Date(endDateStr);
+        // Avoid timezone shift issues by creating at noon
+        let current = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 12, 0, 0);
+
+        while (current <= end) {
+          if (current.getDay() === weekday) {
+            dates.push(current.toISOString().split('T')[0]);
+          }
+          current.setDate(current.getDate() + 1);
+        }
+        return dates;
+      };
+
+      // Criar agendamentos recorrentes se selecionado dias
+      if (formData.dias_semana.length > 0) {
+        const agendamentosBase = [];
+        const groupId = crypto.randomUUID();
+
+        for (const dia of formData.dias_semana) {
+          const dates = getDatesForWeekday(formData.data_inicio, formData.data_vencimento, dia);
+          for (const date of dates) {
+            agendamentosBase.push({
+              paciente_id: formData.paciente_id,
+              profissional_id: formData.profissional_id || user.id,
+              matricula_id: data.id,
+              data_horario: `${date}T${formData.horario}:00-03:00`,
+              duracao_minutos: 60, // Fixed default or make it dynamic
+              tipo_atendimento: "fisioterapia", // Since `tipo` in matricula is 'mensal', we use default or allow selection
+              tipo_sessao: "individual",
+              status: "agendado",
+              recorrente: true,
+              recorrencia_grupo_id: groupId,
+              dias_semana: formData.dias_semana,
+              frequencia_semanal: 1,
+              recorrencia_fim: formData.data_vencimento,
+              created_by: user.id,
+            });
+          }
+        }
+
+        if (agendamentosBase.length > 0) {
+          const { error: agError } = await supabase.from("agendamentos").insert(agendamentosBase);
+          if (agError) throw agError;
+        }
       }
 
       return data;
@@ -153,8 +204,8 @@ const Matriculas = () => {
         data_vencimento: format(addMonths(new Date(), 1), "yyyy-MM-dd"),
         desconto: "0",
         desconto_tipo: "percentual",
-        duracao_minutos: 60,
-        frequencia: "semanal",
+        horario: "08:00",
+        dias_semana: [],
         observacoes: "",
         ativo: true,
         total_sessoes: 4,
@@ -169,8 +220,8 @@ const Matriculas = () => {
   const suspenderMatricula = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("planos")
-        .update({ status: "suspenso" })
+        .from("matriculas")
+        .update({ status: "suspensa" })
         .eq("id", id);
       if (error) throw error;
     },
@@ -248,8 +299,8 @@ const Matriculas = () => {
                   <TableRow key={mat.id}>
                     <TableCell className="font-medium">{mat.pacientes?.nome || "N/A"}</TableCell>
                     <TableCell>{mat.profiles?.nome || "N/A"}</TableCell>
-                    <TableCell>{mat.tipo_atendimento}</TableCell>
-                    <TableCell>R$ {parseFloat(mat.valor || 0).toFixed(2)}</TableCell>
+                    <TableCell>{mat.modalidades?.nome || "Mensalidade"}</TableCell>
+                    <TableCell>R$ {parseFloat(mat.valor_mensal || 0).toFixed(2)}</TableCell>
                     <TableCell>{format(new Date(mat.data_inicio), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                     <TableCell>{format(new Date(mat.data_vencimento), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                     <TableCell>
@@ -409,6 +460,55 @@ const Matriculas = () => {
                   value={formData.data_vencimento}
                   onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Horário Fixo</Label>
+                <Input
+                  type="time"
+                  value={formData.horario}
+                  onChange={(e) => setFormData({ ...formData, horario: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label>Dias da Semana</Label>
+                <Select
+                  value="" // controlled via custom UI usually, but doing simplest multi-select possible
+                  onValueChange={(val) => {
+                    const dia = parseInt(val);
+                    setFormData({
+                      ...formData,
+                      dias_semana: formData.dias_semana.includes(dia)
+                        ? formData.dias_semana.filter(d => d !== dia)
+                        : [...formData.dias_semana, dia]
+                    });
+                  }}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder={formData.dias_semana.length > 0 ? `${formData.dias_semana.length} selecionados` : "Selecione dias"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Segunda-feira</SelectItem>
+                    <SelectItem value="2">Terça-feira</SelectItem>
+                    <SelectItem value="3">Quarta-feira</SelectItem>
+                    <SelectItem value="4">Quinta-feira</SelectItem>
+                    <SelectItem value="5">Sexta-feira</SelectItem>
+                    <SelectItem value="6">Sábado</SelectItem>
+                    <SelectItem value="0">Domingo</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {formData.dias_semana.includes(1) && <Badge variant="secondary">Seg</Badge>}
+                  {formData.dias_semana.includes(2) && <Badge variant="secondary">Ter</Badge>}
+                  {formData.dias_semana.includes(3) && <Badge variant="secondary">Qua</Badge>}
+                  {formData.dias_semana.includes(4) && <Badge variant="secondary">Qui</Badge>}
+                  {formData.dias_semana.includes(5) && <Badge variant="secondary">Sex</Badge>}
+                  {formData.dias_semana.includes(6) && <Badge variant="secondary">Sáb</Badge>}
+                  {formData.dias_semana.includes(0) && <Badge variant="secondary">Dom</Badge>}
+                </div>
               </div>
             </div>
 
