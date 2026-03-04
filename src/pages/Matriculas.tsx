@@ -62,7 +62,7 @@ const Matriculas = () => {
         query = query.ilike("pacientes.nome", `%${filterPaciente}%`);
       }
       if (filterStatus) {
-        query = query.eq("status", filterStatus);
+        query = query.eq("status", filterStatus as any);
       }
       
       const { data, error } = await query.order("created_at", { ascending: false });
@@ -133,7 +133,7 @@ const Matriculas = () => {
           valor: valor_final,
           data_vencimento: formData.data_vencimento,
           status: "pendente",
-          forma_pagamento: "pendente",
+          forma_pagamento: null,
           descricao: `Matrícula - ${formData.tipo_atendimento}`,
           created_by: user.id,
         });

@@ -937,6 +937,13 @@ export type Database = {
             referencedRelation: "pacientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "planos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       precos_planos: {
@@ -975,6 +982,45 @@ export type Database = {
           nome?: string
           updated_at?: string
           valor?: number
+        }
+        Relationships: []
+      }
+      produtos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string
+          descricao: string | null
+          estoque: number
+          foto_url: string | null
+          id: string
+          nome: string
+          preco: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by: string
+          descricao?: string | null
+          estoque?: number
+          foto_url?: string | null
+          id?: string
+          nome: string
+          preco?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string
+          descricao?: string | null
+          estoque?: number
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          preco?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1202,7 +1248,12 @@ export type Database = {
         | "falta"
       status_paciente: "ativo" | "inativo"
       status_pagamento: "pendente" | "pago" | "cancelado"
-      status_plano: "ativo" | "vencido" | "cancelado" | "finalizado"
+      status_plano:
+        | "ativo"
+        | "vencido"
+        | "cancelado"
+        | "finalizado"
+        | "suspenso"
       tipo_atendimento: "fisioterapia" | "pilates" | "rpg"
       tipo_sessao: "individual" | "grupo"
     }
@@ -1350,7 +1401,7 @@ export const Constants = {
       ],
       status_paciente: ["ativo", "inativo"],
       status_pagamento: ["pendente", "pago", "cancelado"],
-      status_plano: ["ativo", "vencido", "cancelado", "finalizado"],
+      status_plano: ["ativo", "vencido", "cancelado", "finalizado", "suspenso"],
       tipo_atendimento: ["fisioterapia", "pilates", "rpg"],
       tipo_sessao: ["individual", "grupo"],
     },
