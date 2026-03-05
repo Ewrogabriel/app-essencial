@@ -50,13 +50,19 @@ const PatientDashboard = () => {
       const profIds = [...new Set((data || []).map((a: any) => a.profissional_id))] as string[];
       let profMap: Record<string, string> = {};
       if (profIds.length > 0) {
-        const { data: profs } = await supabase.from("profiles").select("user_id, nome").in("user_id", profIds);
-        (profs || []).forEach((p: any) => { profMap[p.user_id] = p.nome; });
+        const { data: profs } = await supabase.from("profiles").select("user_id, nome, telefone").in("user_id", profIds);
+        (profs || []).forEach((p: any) => {
+          profMap[p.user_id] = { nome: p.nome, telefone: p.telefone };
+        });
       }
-      return (data || []).map((a: any) => ({
-        ...a,
-        profiles: { nome: profMap[a.profissional_id] || "Profissional" },
-      }));
+      return (data || []).map((a: any) => {
+        const profInfo = profMap[a.profissional_id] || { nome: "Profissional", telefone: "" };
+        return {
+          ...a,
+          profiles: { nome: profInfo.nome },
+          profissional_telefone: profInfo.telefone
+        };
+      });
     },
     enabled: !!patientId,
   });
@@ -142,12 +148,16 @@ const PatientDashboard = () => {
   const { data: dailyTip } = useQuery({
     queryKey: ["daily-tip"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("daily_tips") as any)
-        .select("*")
-        .eq("ativo", true)
+      let query = supabase.from("daily_tips").select("*").eq("ativo", true);
+
+      // Se for paciente, ver apenas dicas de pacientes ou todos
+      query = query.or("target_role.eq.paciente,target_role.eq.todos");
+
+      const { data, error } = await (query
         .order("created_at", { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .maybeSingle() as any);
+
       if (error) throw error;
       return data;
     },
@@ -170,13 +180,19 @@ const PatientDashboard = () => {
       const profIds = [...new Set((data || []).map((a: any) => a.profissional_id))] as string[];
       let profMap: Record<string, string> = {};
       if (profIds.length > 0) {
-        const { data: profs } = await supabase.from("profiles").select("user_id, nome").in("user_id", profIds);
-        (profs || []).forEach((p: any) => { profMap[p.user_id] = p.nome; });
+        const { data: profs } = await supabase.from("profiles").select("user_id, nome, telefone").in("user_id", profIds);
+        (profs || []).forEach((p: any) => {
+          profMap[p.user_id] = { nome: p.nome, telefone: p.telefone };
+        });
       }
-      return (data || []).map((a: any) => ({
-        ...a,
-        profiles: { nome: profMap[a.profissional_id] || "Profissional" },
-      }));
+      return (data || []).map((a: any) => {
+        const profInfo = profMap[a.profissional_id] || { nome: "Profissional", telefone: "" };
+        return {
+          ...a,
+          profiles: { nome: profInfo.nome },
+          profissional_telefone: profInfo.telefone
+        };
+      });
     },
     enabled: !!patientId,
   });
@@ -415,7 +431,7 @@ const PatientDashboard = () => {
                         variant="ghost"
                         className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                         title="Falar com o profissional"
-                        onClick={() => openWhatsAppProfissional(item.telefone || "")} // Need professional phone here, or use clinic
+                        onClick={() => openWhatsAppProfissional(item.profissional_telefone || "")}
                       >
                         <MessageSquare className="h-4 w-4" />
                       </Button>
@@ -551,24 +567,28 @@ const PatientDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-start gap-4">
-              {clinicSettings.logo_url && (
-                <img src={clinicSettings.logo_url} alt="Logo" className="h-16 w-16 rounded-lg object-cover border shrink-0" />
-              )}
-              <div className="space-y-1 text-sm">
-                <p className="font-semibold text-base">{clinicSettings.nome}</p>
-                {clinicSettings.cnpj && <p className="text-muted-foreground">CNPJ: {clinicSettings.cnpj}</p>}
-                {clinicSettings.endereco && (
-                  <p className="text-muted-foreground">
-                    {[clinicSettings.endereco, clinicSettings.numero ? `nº ${clinicSettings.numero}` : "", clinicSettings.bairro, clinicSettings.cidade, clinicSettings.estado].filter(Boolean).join(", ")}
-                  </p>
+            {clinicSettings ? (
+              <div className="flex items-start gap-4">
+                {clinicSettings.logo_url && (
+                  <img src={clinicSettings.logo_url} alt="Logo" className="h-16 w-16 rounded-lg object-cover border shrink-0" />
                 )}
-                {clinicSettings.telefone && <p className="text-muted-foreground">Tel: {clinicSettings.telefone}</p>}
-                {clinicSettings.instagram && <p className="text-muted-foreground">Instagram: {clinicSettings.instagram}</p>}
+                <div className="space-y-1 text-sm">
+                  <p className="font-semibold text-base">{clinicSettings.nome}</p>
+                  {clinicSettings.cnpj && <p className="text-muted-foreground">CNPJ: {clinicSettings.cnpj}</p>}
+                  {clinicSettings.endereco && (
+                    <p className="text-muted-foreground">
+                      {[clinicSettings.endereco, clinicSettings.numero ? `nº ${clinicSettings.numero}` : "", clinicSettings.bairro, clinicSettings.cidade, clinicSettings.estado].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                  {clinicSettings.telefone && <p className="text-muted-foreground">Tel: {clinicSettings.telefone}</p>}
+                  {clinicSettings.instagram && <p className="text-muted-foreground">Instagram: {clinicSettings.instagram}</p>}
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="text-sm text-muted-foreground animate-pulse">Carregando informações da clínica...</p>
+            )}
             <div className="flex gap-2 mt-4">
-              {clinicSettings.whatsapp && (
+              {clinicSettings?.whatsapp && (
                 <Button variant="outline" size="sm" onClick={openWhatsAppClinic} className="gap-2">
                   <MessageCircle className="h-4 w-4" /> WhatsApp Clínica
                 </Button>

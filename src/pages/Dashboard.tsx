@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { UserCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 
 const tipoLabels: Record<string, string> = {
   fisioterapia: "Fisioterapia",
@@ -192,20 +194,31 @@ const Dashboard = () => {
     },
   });
 
-  // Daily Tips
-  const { data: dailyTip } = useQuery({
-    queryKey: ["daily-tip"],
+  const { data: dailyTips = [] } = useQuery({
+    queryKey: ["daily-tips", profile?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("daily_tips")
-        .select("*")
-        .eq("ativo", true)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      let query = supabase.from("daily_tips").select("*").eq("ativo", true);
+
+      const { isAdmin, isGestor } = profile as any || {};
+
+      if (isAdmin || isGestor) {
+        // Admins veem tudo (limit 2 para mostrar uma de cada se possível)
+        const { data, error } = await query
+          .order("created_at", { ascending: false })
+          .limit(2);
+        if (error) throw error;
+        return data || [];
+      } else {
+        // Profissionais veem apenas dicas de profissionais ou todos
+        const { data, error } = await query
+          .or("target_role.eq.profissional,target_role.eq.todos")
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (error) throw error;
+        return data || [];
+      }
     },
+    enabled: !!profile?.id
   });
 
   // Upcoming Birthdays
@@ -340,107 +353,89 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">
-          {saudacao}{profile?.nome ? `, ${profile.nome.split(" ")[0]}` : ""}! 👋
-        </h1>
-        <p className="text-muted-foreground flex items-center gap-2">
-          {format(hoje, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1 text-foreground font-medium">
-              <Clock className="h-4 w-4" />
-              {format(currentTime, "HH:mm:ss")}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2 border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
-              onClick={() => window.open(`https://wa.me/5581900000000`, "_blank")} // Placeholder CLINIC number
-            >
-              <MessageCircle className="h-4 w-4" /> Falar com a Clínica
-            </Button>
-          </div>
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">
+            {saudacao}{profile?.nome ? `, ${profile.nome.split(" ")[0]}` : ""}! 👋
+          </h1>
+          <p className="text-muted-foreground flex items-center gap-2">
+            {format(hoje, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1 text-foreground font-medium bg-muted/50 px-3 py-1.5 rounded-full text-sm">
+            <Clock className="h-4 w-4 text-primary" />
+            {format(currentTime, "HH:mm:ss")}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+            onClick={() => window.open(`https://wa.me/5581900000000`, "_blank")} // Placeholder CLINIC number
+          >
+            <MessageCircle className="h-4 w-4" /> Falar com a Clínica
+          </Button>
+        </div>
       </div>
 
-      {/* Highlights: Tips & Birthdays */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {dailyTip && (
-          <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Lightbulb className="h-5 w-5" />
-                Dica do Dia
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <h3 className="font-bold text-xl mb-1">{dailyTip.titulo}</h3>
-              <p className="text-indigo-100 text-sm italic">"{dailyTip.conteudo}"</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {birthdays.length > 0 && (
-          <Card className="border-pink-200 bg-pink-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2 text-pink-700">
-                <PartyPopper className="h-5 w-5" />
-                Aniversariantes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Hoje */}
-                {birthdays.filter((b: any) => b.dia_aniversario === hoje.getDate() && b.mes_aniversario === (hoje.getMonth() + 1)).length > 0 && (
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-pink-500 mb-1">Hoje 🎂</p>
-                    <div className="space-y-2">
-                      {birthdays.filter((b: any) => b.dia_aniversario === hoje.getDate() && b.mes_aniversario === (hoje.getMonth() + 1)).map((b: any) => (
-                        <div key={b.id} className="flex items-center justify-between text-sm bg-white/50 p-2 rounded border border-pink-100">
-                          <span className="font-bold flex-1">{b.nome}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs gap-1 text-pink-700 hover:bg-pink-100"
-                            onClick={() => sendBirthdayWishes(b.nome, b.telefone)}
-                          >
-                            <MessageCircle className="h-3 w-3" /> Parabéns
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Na Semana */}
-                {birthdays.filter((b: any) => !(b.dia_aniversario === hoje.getDate() && b.mes_aniversario === (hoje.getMonth() + 1))).length > 0 && (
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-pink-400 mb-1">Nos próximos dias</p>
-                    <div className="space-y-2">
-                      {birthdays.filter((b: any) => !(b.dia_aniversario === hoje.getDate() && b.mes_aniversario === (hoje.getMonth() + 1))).map((b: any) => (
-                        <div key={b.id} className="flex items-center justify-between text-sm">
-                          <div className="flex-1">
-                            <span className="font-medium">{b.nome}</span>
-                            <span className="text-pink-600 text-[10px] ml-2 font-mono">({b.dia_aniversario}/{b.mes_aniversario})</span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs text-pink-600 p-1"
-                            onClick={() => sendBirthdayWishes(b.nome, b.telefone)}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+      {/* Destaque: Dicas do Dia */}
+      {dailyTips.length > 0 && (
+        <div className={cn("grid gap-4", dailyTips.length > 1 ? "lg:grid-cols-2" : "grid-cols-1")}>
+          {dailyTips.map((tip: any) => (
+            <Card key={tip.id} className={cn(
+              "text-white border-none shadow-xl overflow-hidden relative group",
+              tip.target_role === 'paciente'
+                ? "bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700"
+                : "bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700"
+            )}>
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <Lightbulb className="h-32 w-32" />
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              <CardHeader className="pb-2 relative z-10">
+                <CardTitle className="text-lg flex items-center gap-2 font-medium text-white/90">
+                  <Lightbulb className={cn("h-5 w-5", tip.target_role === 'paciente' ? "text-yellow-200 fill-yellow-200" : "text-yellow-300 fill-yellow-300")} />
+                  {tip.target_role === 'paciente' ? "Dica para Pacientes" : "Dica de Produtividade"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative z-10 pb-8">
+                <h3 className="font-bold text-2xl mb-2 tracking-tight">{tip.titulo}</h3>
+                <p className="text-white/90 text-lg max-w-2xl leading-relaxed">"{tip.conteudo}"</p>
+                {dailyTips.length > 1 && (
+                  <Badge variant="outline" className="mt-4 border-white/30 text-white bg-white/10 capitalize">
+                    Público: {tip.target_role}
+                  </Badge>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Birthdays - compact in the top row if present */}
+      {birthdays.length > 0 && (
+        <Card className="border-pink-200 bg-pink-50/50">
+          <CardHeader className="py-3">
+            <CardTitle className="text-md flex items-center gap-2 text-pink-700">
+              <PartyPopper className="h-5 w-5" />
+              Aniversariantes da Semana
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <div className="flex flex-wrap gap-2">
+              {birthdays.map((b: any) => (
+                <Badge key={b.id} variant="outline" className="bg-white border-pink-200 text-pink-700 py-1.5 px-3 gap-2 flex items-center cursor-pointer hover:bg-pink-100 transition-colors"
+                  onClick={() => sendBirthdayWishes(b.nome, b.telefone)}>
+                  <span className="font-bold">{b.nome}</span>
+                  <span className="text-[10px] opacity-70">
+                    {b.dia_aniversario === hoje.getDate() && b.mes_aniversario === (hoje.getMonth() + 1) ? "HOJE! 🎂" : `${b.dia_aniversario}/${b.mes_aniversario}`}
+                  </span>
+                  <MessageCircle className="h-3 w-3" />
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map((stat) => (
@@ -640,101 +635,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Resumo Financeiro</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[240px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value: number) => `R$ ${value.toFixed(2)}`}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  />
-                  <Bar dataKey="valor" radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Pacientes por Faixa Etária</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[240px] w-full">
-              {ageData.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                  Nenhum paciente cadastrado
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={ageData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={85}
-                      paddingAngle={3}
-                      dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}`}
-                    >
-                      {ageData.map((_, index) => (
-                        <Cell key={`age-${index}`} fill={AGE_COLORS[index % AGE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-
-            {/* Ranking de Frequência */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-amber-500" />
-                  Ranking de Frequência
-                </CardTitle>
-                <Badge variant="secondary" className="text-xs">Top 10</Badge>
-              </CardHeader>
-              <CardContent>
-                {frequencyRanking.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Sem dados de agendamentos ainda</p>
-                ) : (
-                  <div className="space-y-2">
-                    {frequencyRanking.map((p: any, i: number) => (
-                      <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${i === 0 ? "bg-amber-100 text-amber-700" : i === 1 ? "bg-gray-100 text-gray-600" : i === 2 ? "bg-orange-100 text-orange-700" : "bg-muted text-muted-foreground"
-                          }`}>
-                          {i + 1}º
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{p.nome}</p>
-                          <p className="text-xs text-muted-foreground">{p.realizados} realizados · {p.cancelados} cancelados</p>
-                        </div>
-                        <Badge variant={p.taxa >= 80 ? "default" : p.taxa >= 50 ? "secondary" : "destructive"} className="text-xs">
-                          {p.taxa}%
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </CardContent>
-        </Card>
       </div>
 
       <Card>

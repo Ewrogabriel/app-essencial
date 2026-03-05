@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { format, addMonths } from "date-fns";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { getMonthlyAvailability } from "@/lib/availabilityCheck";
+import { cn } from "@/lib/utils";
+import { startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export type WeeklyScheduleEntry = {
     weekday: number;
@@ -64,6 +70,24 @@ export function EnrollmentForm({ formData, setFormData, pacientes, profissionais
     const [newDuration, setNewDuration] = useState("60");
     const [newTipoSessao, setNewTipoSessao] = useState<'individual' | 'grupo'>("grupo");
     const [modalidades, setModalidades] = useState<{ id: string; nome: string }[]>([]);
+    const [monthlyAvail, setMonthlyAvail] = useState<Record<number, number>>({});
+    const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+
+    useEffect(() => {
+        if (!newProfessional) {
+            setMonthlyAvail({});
+            return;
+        }
+        const fetchMonthly = async () => {
+            const result = await getMonthlyAvailability(
+                newProfessional,
+                currentMonth.getFullYear(),
+                currentMonth.getMonth()
+            );
+            setMonthlyAvail(result);
+        };
+        fetchMonthly();
+    }, [newProfessional, currentMonth]);
 
     useEffect(() => {
         const fetchModalidades = async () => {
@@ -301,18 +325,59 @@ export function EnrollmentForm({ formData, setFormData, pacientes, profissionais
                         <Label className="text-xs">Horário</Label>
                         <Input type="time" className="mt-1" value={newTime} onChange={(e) => setNewTime(e.target.value)} />
                     </div>
-                    <div>
+                    <div className="col-span-2">
                         <Label className="text-xs">Profissional</Label>
-                        <Select value={newProfessional} onValueChange={setNewProfessional}>
-                            <SelectTrigger className="mt-1">
-                                <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {profissionais.map((p) => (
-                                    <SelectItem key={p.user_id} value={p.user_id}>{p.nome}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                            <Select value={newProfessional} onValueChange={setNewProfessional}>
+                                <SelectTrigger className="mt-1 flex-1">
+                                    <SelectValue placeholder="Selecione..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {profissionais.map((p) => (
+                                        <SelectItem key={p.user_id} value={p.user_id}>{p.nome}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm" className="mt-1 gap-2" disabled={!newProfessional}>
+                                        <CalendarIcon className="h-4 w-4" />
+                                        Ver Vagas
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="end">
+                                    <div className="p-3 border-b bg-muted/50">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Grade de Vagas por Dia</p>
+                                    </div>
+                                    <Calendar
+                                        mode="single"
+                                        onMonthChange={setCurrentMonth}
+                                        className="rounded-md"
+                                        components={{
+                                            Day: ({ date, ...props }) => {
+                                                const v = monthlyAvail[date.getDate()];
+                                                const isCurrentM = isSameMonth(date, currentMonth);
+                                                const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                                                return (
+                                                    <div {...props} className="relative w-full h-full flex flex-col items-center justify-center pt-1">
+                                                        <span className={!isCurrentM ? "opacity-30" : ""}>{date.getDate()}</span>
+                                                        {isCurrentM && !isPast && (
+                                                            <span className={cn(
+                                                                "text-[8px] px-1 rounded-full",
+                                                                v > 0 ? "bg-green-100 text-green-700 font-bold" : "bg-red-100 text-red-600"
+                                                            )}>
+                                                                {v}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }
+                                        }}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                     </div>
                     <div>
                         <Label className="text-xs">Duração (min)</Label>

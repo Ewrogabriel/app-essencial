@@ -156,12 +156,14 @@ export async function getAvailableSlots(
 
 
 /**
- * Fetch a summary of available slots for each day of a month for a professional
+ * Fetch a summary of available slots for each day of a month for a professional.
+ * If specificTime is provided, it only returns availability for that exact time slot.
  */
 export async function getMonthlyAvailability(
   profissionalId: string,
   year: number,
-  month: number
+  month: number,
+  specificTime?: string
 ): Promise<Record<number, number>> {
   const startDate = new Date(year, month, 1);
   const endDate = new Date(year, month + 1, 0, 23, 59, 59);
@@ -178,7 +180,7 @@ export async function getMonthlyAvailability(
   // 2. Get all appointments for this professional in this month
   const { data: appointments } = await supabase
     .from("agendamentos")
-    .select("data_horario, status")
+    .select("data_horario, status, tipo_sessao")
     .eq("profissional_id", profissionalId)
     .gte("data_horario", startDate.toISOString())
     .lte("data_horario", endDate.toISOString())
@@ -191,7 +193,16 @@ export async function getMonthlyAvailability(
     const currentDate = new Date(year, month, day);
     const dayOfWeek = currentDate.getDay();
 
-    const daySlots = (availabilitySlots as AvailabilitySlot[]).filter(s => s.dia_semana === dayOfWeek);
+    let daySlots = (availabilitySlots as AvailabilitySlot[]).filter(s => s.dia_semana === dayOfWeek);
+
+    // Filter by specific time if provided
+    if (specificTime) {
+      const timeStr = specificTime.includes(":") && specificTime.split(":").length === 2
+        ? `${specificTime}:00`
+        : specificTime;
+      daySlots = daySlots.filter(s => timeStr >= s.hora_inicio && timeStr < s.hora_fim);
+    }
+
     if (daySlots.length === 0) {
       dailyAvailability[day] = 0;
       continue;

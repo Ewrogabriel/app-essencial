@@ -154,12 +154,13 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
       const result = await getMonthlyAvailability(
         watchedProfId,
         currentMonth.getFullYear(),
-        currentMonth.getMonth()
+        currentMonth.getMonth(),
+        watchedHorario
       );
       setMonthlyAvail(result);
     };
     fetchMonthly();
-  }, [watchedProfId, currentMonth]);
+  }, [watchedProfId, currentMonth, watchedHorario]);
 
   // Check availability when professional, date, or time changes (single appointments only)
   useEffect(() => {
@@ -519,6 +520,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
             )}
 
 
+            {/* Horário (only for single appointments) */}
             {!isRecorrente && (
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -562,6 +564,72 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
                   )}
                 />
               </div>
+            )}
+
+            {/* Data (only for single appointments) */}
+            {!isRecorrente && (
+              <FormField
+                control={form.control}
+                name="data"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? format(field.value, "dd/MM/yyyy") : "Selecione"}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            if (date) setCurrentMonth(date);
+                          }}
+                          onMonthChange={setCurrentMonth}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0
+                          }
+                          className="rounded-md border shadow-sm"
+                          components={{
+                            Day: ({ date, ...props }) => {
+                              const vacancies = monthlyAvail[date.getDate()];
+                              const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                              const isSunday = date.getDay() === 0;
+
+                              return (
+                                <div {...props} className="relative w-full h-full flex flex-col items-center justify-center pt-1">
+                                  <span>{date.getDate()}</span>
+                                  {watchedProfId && !isPast && !isSunday && (
+                                    <span className={cn(
+                                      "text-[9px] mt-0.5 px-1 rounded-full",
+                                      vacancies > 0 ? "bg-green-100 text-green-700 font-bold" : "bg-red-100 text-red-600"
+                                    )}>
+                                      {vacancies}v
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            }
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             {isRecorrente && (
@@ -839,26 +907,31 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
                             <Calendar
                               mode="single"
                               selected={field.value}
-                              onSelect={field.onChange}
+                              onSelect={(date) => {
+                                field.onChange(date);
+                                if (date) setCurrentMonth(date);
+                              }}
                               onMonthChange={setCurrentMonth}
                               locale={ptBR}
                               disabled={(date) =>
-                                date < new Date(new Date().setHours(0, 0, 0, 0))
+                                date < new Date(new Date().setHours(0, 0, 0, 0)) || date.getDay() === 0
                               }
+                              className="rounded-md border shadow-sm"
                               components={{
-                                DayContent: ({ date }) => {
-                                  const day = date.getDate();
-                                  const isSameMonth = date.getMonth() === currentMonth.getMonth();
-                                  const slots = isSameMonth ? monthlyAvail[day] : null;
+                                Day: ({ date, ...props }) => {
+                                  const vacancies = monthlyAvail[date.getDate()];
+                                  const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                                  const isSunday = date.getDay() === 0;
+
                                   return (
-                                    <div className="relative w-full h-full flex items-center justify-center">
-                                      <span className="relative z-10">{day}</span>
-                                      {slots !== undefined && slots !== null && watchedProfId && (
+                                    <div {...props} className="relative w-full h-full flex flex-col items-center justify-center pt-1">
+                                      <span>{date.getDate()}</span>
+                                      {watchedProfId && !isPast && !isSunday && (
                                         <span className={cn(
-                                          "absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold px-0.5 rounded-full z-20",
-                                          slots > 0 ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
+                                          "text-[9px] mt-0.5 px-1 rounded-full",
+                                          vacancies > 0 ? "bg-green-100 text-green-700 font-bold" : "bg-red-100 text-red-600"
                                         )}>
-                                          {slots}v
+                                          {vacancies}v
                                         </span>
                                       )}
                                     </div>
@@ -926,66 +999,6 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
                 </div>
               )}
             </div>
-
-            {/* Data (only for single appointments) */}
-            {!isRecorrente && (
-              <FormField
-                control={form.control}
-                name="data"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? format(field.value, "dd/MM/yyyy") : "Selecione"}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          onMonthChange={setCurrentMonth}
-                          locale={ptBR}
-                          className="p-3 pointer-events-auto"
-                          components={{
-                            DayContent: ({ date }) => {
-                              const day = date.getDate();
-                              const isSameMonth = date.getMonth() === currentMonth.getMonth();
-                              const slots = isSameMonth ? monthlyAvail[day] : null;
-                              return (
-                                <div className="relative w-full h-full flex items-center justify-center">
-                                  <span className="relative z-10">{day}</span>
-                                  {slots !== undefined && slots !== null && watchedProfId && (
-                                    <span className={cn(
-                                      "absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold px-0.5 rounded-full z-20",
-                                      slots > 0 ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
-                                    )}>
-                                      {slots}v
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            }
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <FormField
               control={form.control}
