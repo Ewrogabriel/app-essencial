@@ -251,7 +251,7 @@ const PatientDashboard = () => {
             <Lightbulb className="h-24 w-24" />
           </div>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center gap-2 text-white">
               <Lightbulb className="h-5 w-5" />
               Dica do Dia
             </CardTitle>
@@ -262,7 +262,6 @@ const PatientDashboard = () => {
           </CardContent>
         </Card>
       )}
-
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

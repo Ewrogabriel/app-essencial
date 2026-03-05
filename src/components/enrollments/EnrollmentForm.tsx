@@ -352,15 +352,16 @@ export function EnrollmentForm({ formData, setFormData, pacientes, profissionais
                                     </div>
                                     <Calendar
                                         mode="single"
+                                        locale={ptBR}
                                         onMonthChange={setCurrentMonth}
                                         className="rounded-md"
                                         components={{
-                                            Day: ({ date, ...props }) => {
+                                            DayContent: ({ date }) => {
                                                 const v = monthlyAvail[date.getDate()];
                                                 const isCurrentM = isSameMonth(date, currentMonth);
                                                 const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
                                                 return (
-                                                    <div {...props} className="relative w-full h-full flex flex-col items-center justify-center pt-1">
+                                                    <div className="relative w-full h-full flex flex-col items-center justify-center">
                                                         <span className={!isCurrentM ? "opacity-30" : ""}>{date.getDate()}</span>
                                                         {isCurrentM && !isPast && (
                                                             <span className={cn(

@@ -11,12 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { format, differenceInYears, startOfDay, endOfDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Cell, PieChart, Pie, Legend
-} from 'recharts';
 import {
   Dialog,
   DialogContent,
@@ -39,33 +33,6 @@ const tipoLabels: Record<string, string> = {
   fisioterapia: "Fisioterapia",
   pilates: "Pilates",
   rpg: "RPG",
-};
-
-const AGE_COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#7c3aed', '#4f46e5'];
-
-const getAgeDistribution = (pacientes: any[]) => {
-  const ranges = [
-    { label: '0-17', min: 0, max: 17 },
-    { label: '18-30', min: 18, max: 30 },
-    { label: '31-45', min: 31, max: 45 },
-    { label: '46-60', min: 46, max: 60 },
-    { label: '61-75', min: 61, max: 75 },
-    { label: '76+', min: 76, max: 200 },
-  ];
-
-  const today = new Date();
-  const counts = ranges.map(r => ({ name: r.label, value: 0 }));
-  let semData = 0;
-
-  pacientes.forEach((p: any) => {
-    if (!p.data_nascimento) { semData++; return; }
-    const age = differenceInYears(today, new Date(p.data_nascimento));
-    const idx = ranges.findIndex(r => age >= r.min && age <= r.max);
-    if (idx >= 0) counts[idx].value++;
-  });
-
-  if (semData > 0) counts.push({ name: 'Sem data', value: semData });
-  return counts.filter(c => c.value > 0);
 };
 
 const Dashboard = () => {
@@ -300,10 +267,6 @@ const Dashboard = () => {
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  const ativos = (pacientes || []).filter((p: any) => p.status === "ativo");
-  const recentes = (pacientes || []).slice(0, 5);
-  const ageData = getAgeDistribution(pacientes);
-
   const saudacao =
     hoje.getHours() < 12 ? "Bom dia" : hoje.getHours() < 18 ? "Boa tarde" : "Boa noite";
 
@@ -343,12 +306,6 @@ const Dashboard = () => {
       description: alertCount === 0 ? "Nenhum atraso" : `${alertCount} pagamento(s) em atraso`,
       color: alertCount > 0 ? "text-red-600 bg-red-50" : "text-amber-600 bg-amber-50",
     },
-  ];
-
-  const chartData = [
-    { name: 'Receita', valor: financeData?.receita || 0, color: '#10b981' },
-    { name: 'Despesas', valor: financeData?.custos || 0, color: '#ef4444' },
-    { name: 'Comissões', valor: financeData?.repasses || 0, color: '#f59e0b' },
   ];
 
   return (
