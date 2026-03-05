@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { CalendarIcon, Clock, CheckCircle2, AlertTriangle, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { checkAvailability, getMonthlyAvailability, type AvailabilityCheckResult } from "@/lib/availabilityCheck";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -10,12 +11,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -23,234 +24,263 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { checkAvailability, getAvailableSlots, type AvailabilityCheckResult } from "@/lib/availabilityCheck";
-import type { Agendamento } from "./AgendaViews";
+import { Badge } from "@/components/ui/badge";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface RescheduleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  agendamento: Agendamento | null;
+  agendamento: any;
   onSuccess: () => void;
 }
 
 export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }: RescheduleDialogProps) {
-  const { user, isPatient } = useAuth();
-  const [date, setDate] = useState<Date>();
-  const [time, setTime] = useState("08:00");
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [horario, setHorario] = useState("08:00");
   const [motivo, setMotivo] = useState("");
   const [loading, setLoading] = useState(false);
   const [availabilityResult, setAvailabilityResult] = useState<AvailabilityCheckResult | null>(null);
-  const [availableSlots, setAvailableSlots] = useState<{ hora_inicio: string; hora_fim: string; available: number }[]>([]);
-  const [checking, setChecking] = useState(false);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [monthlyAvail, setMonthlyAvail] = useState<Record<number, number>>({});
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
-  // When date changes, fetch available slots for that day
+  // Reseta campos quando o modal abre
   useEffect(() => {
-    if (!date || !agendamento) {
-      setAvailableSlots([]);
+    if (open && agendamento) {
+      if (agendamento.data_horario) {
+        const d = new Date(agendamento.data_horario);
+        setDate(d);
+        setHorario(format(d, "HH:mm"));
+      }
+      setMotivo("");
       setAvailabilityResult(null);
-      return;
     }
-    const fetchSlots = async () => {
-      const slots = await getAvailableSlots(agendamento.profissional_id, date);
-      setAvailableSlots(slots.map(s => ({
-        hora_inicio: s.slot.hora_inicio,
-        hora_fim: s.slot.hora_fim,
-        available: s.available,
-      })));
+  }, [open, agendamento]);
+
+  // Busca disponibilidade mensal quando o profissional ou mês mudam
+  useEffect(() => {
+    if (!agendamento?.profissional_id || !open) return;
+
+    const fetchMonthly = async () => {
+      const result = await getMonthlyAvailability(
+        agendamento.profissional_id,
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        horario
+      );
+      setMonthlyAvail(result);
     };
-    fetchSlots();
-  }, [date, agendamento]);
+    fetchMonthly();
+  }, [agendamento?.profissional_id, currentMonth, horario, open]);
 
-  // When date + time changes, check availability
+  // Verifica disponibilidade específica quando data ou horário mudam
   useEffect(() => {
-    if (!date || !time || !agendamento) {
+    if (!agendamento?.profissional_id || !date || !horario || !open) {
       setAvailabilityResult(null);
       return;
     }
+
     const timer = setTimeout(async () => {
-      setChecking(true);
-      const [h, m] = time.split(":").map(Number);
+      setCheckingAvailability(true);
+      const [h, m] = horario.split(":").map(Number);
       const dt = new Date(date);
       dt.setHours(h, m, 0, 0);
       const result = await checkAvailability(agendamento.profissional_id, dt);
       setAvailabilityResult(result);
-      setChecking(false);
+      setCheckingAvailability(false);
     }, 300);
+
     return () => clearTimeout(timer);
-  }, [date, time, agendamento]);
+  }, [agendamento?.profissional_id, date, horario, open]);
 
-  const canSubmit = (() => {
-    if (!date) return false;
-    if (isPatient && !motivo) return false;
-    if (isPatient && availabilityResult) {
-      // Patients can only reschedule to available slots
-      if (!availabilityResult.isWithinSchedule) return false;
-      if (availabilityResult.isOverCapacity) return false;
-    }
-    return true;
-  })();
+  const requestReschedule = useMutation({
+    mutationFn: async () => {
+      if (!user || !agendamento || !date) return;
 
-  const handleSubmit = async () => {
-    if (!date || !agendamento || !user) return;
-    setLoading(true);
+      const [h, m] = horario.split(":").map(Number);
+      const novaData = new Date(date);
+      novaData.setHours(h, m, 0, 0);
 
-    const [h, m] = time.split(":").map(Number);
-    const novaData = new Date(date);
-    novaData.setHours(h, m, 0, 0);
-
-    if (isPatient) {
-      // Patient creates a reschedule request
-      const { error } = await (supabase.from("solicitacoes_remarcacao") as any).insert({
-        agendamento_id: agendamento.id,
-        paciente_id: user.id,
-        nova_data_horario: novaData.toISOString(),
-        motivo: motivo || null,
-      });
-
-      if (error) {
-        toast({ title: "Erro ao solicitar remarcação", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Solicitação enviada! 📩", description: "O profissional será notificado para aprovar." });
-        onOpenChange(false);
-        onSuccess();
-      }
-    } else {
-      // Staff directly reschedules
       const { error } = await supabase
-        .from("agendamentos")
-        .update({ data_horario: novaData.toISOString(), observacoes: motivo ? `Remarcado: ${motivo}` : agendamento.observacoes })
-        .eq("id", agendamento.id);
+        .from("solicitacoes_remarcacao")
+        .insert({
+          agendamento_id: agendamento.id,
+          paciente_id: agendamento.paciente_id,
+          nova_data_horario: novaData.toISOString(),
+          motivo: motivo || null,
+          status: "pendente"
+        });
 
-      if (error) {
-        toast({ title: "Erro ao remarcar", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Agendamento remarcado! ✅" });
-        onOpenChange(false);
-        onSuccess();
-      }
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Solicitação enviada!",
+        description: "Sua solicitação de remarcação foi enviada para análise da clínica.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["patient-agenda"] });
+      onSuccess();
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao solicitar remarcação",
+        description: error.message,
+        variant: "destructive",
+      });
     }
+  });
 
-    setLoading(false);
+  const handleReschedule = () => {
+    if (!date) {
+      toast({ title: "Selecione uma data", variant: "destructive" });
+      return;
+    }
+    requestReschedule.mutate();
   };
+
+  if (!agendamento) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{isPatient ? "Solicitar Remarcação" : "Remarcar Agendamento"}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <RefreshCw className="h-5 w-5 text-primary" />
+            Solicitar Remarcação
+          </DialogTitle>
+          <DialogDescription>
+            Escolha uma nova data e horário para sua sessão de {agendamento.tipo_atendimento}.
+          </DialogDescription>
         </DialogHeader>
 
-        {agendamento && (
-          <div className="text-sm text-muted-foreground mb-2">
-            Atual: {format(new Date(agendamento.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Nova Data</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-full justify-start text-left", !date && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "dd/MM/yyyy") : "Selecione a data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
+        <div className="grid gap-6 py-4">
+          <div className="flex flex-col gap-2">
+            <Label className="text-xs font-bold uppercase text-muted-foreground">Profissional</Label>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                {agendamento.profiles?.nome?.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{agendamento.profiles?.nome}</p>
+                <p className="text-xs text-muted-foreground capitalize">{agendamento.tipo_atendimento}</p>
+              </div>
+            </div>
           </div>
 
-          {/* Available slots for selected date */}
-          {date && availableSlots.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Horários disponíveis neste dia</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableSlots.map((slot, i) => (
-                  <Badge
-                    key={i}
-                    variant={slot.available > 0 ? "secondary" : "outline"}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Nova Data</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
                     className={cn(
-                      "cursor-pointer text-xs gap-1 transition-colors",
-                      slot.available <= 0 && "opacity-50 line-through"
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
                     )}
-                    onClick={() => {
-                      if (slot.available > 0) {
-                        setTime(slot.hora_inicio.slice(0, 5));
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "dd/MM/yyyy") : "Escolha a data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    onMonthChange={setCurrentMonth}
+                    disabled={(date) => date < new Date() || date.getDay() === 0}
+                    locale={ptBR}
+                    initialFocus
+                    components={{
+                      DayContent: ({ date: d }) => {
+                        const day = d.getDate();
+                        const avail = monthlyAvail[day];
+                        const isToday = format(d, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                        return (
+                          <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
+                            <span>{day}</span>
+                            {avail !== undefined && (
+                              <span className={cn(
+                                "text-[8px] font-bold mt-0.5",
+                                avail > 0 ? "text-green-600" : "text-red-500"
+                              )}>
+                                {avail > 0 ? `${avail} v` : "lotado"}
+                              </span>
+                            )}
+                          </div>
+                        );
                       }
                     }}
-                  >
-                    <Clock className="h-3 w-3" />
-                    {slot.hora_inicio.slice(0, 5)}-{slot.hora_fim.slice(0, 5)}
-                    <span className="font-normal">({slot.available} vaga{slot.available !== 1 ? "s" : ""})</span>
-                  </Badge>
-                ))}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Novo Horário</Label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="time"
+                  value={horario}
+                  onChange={(e) => setHorario(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+
+          {availabilityResult && (
+            <div className={cn(
+              "p-3 rounded-lg border text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200",
+              availabilityResult.isWithinSchedule && !availabilityResult.isOverCapacity
+                ? "bg-green-50 border-green-200 text-green-800"
+                : "bg-red-50 border-red-200 text-red-800"
+            )}>
+              {availabilityResult.isWithinSchedule && !availabilityResult.isOverCapacity ? (
+                <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="font-semibold">{availabilityResult.isWithinSchedule && !availabilityResult.isOverCapacity ? "Horário Disponível" : "Horário Indisponível"}</p>
+                <p className="text-xs opacity-90">{availabilityResult.message}</p>
               </div>
             </div>
           )}
 
-          {date && availableSlots.length === 0 && !checking && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                O profissional não tem disponibilidade configurada para este dia.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <Label>Novo Horário</Label>
-            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-          </div>
-
-          {/* Availability check result */}
-          {availabilityResult && (
-            <Alert variant={availabilityResult.isWithinSchedule && !availabilityResult.isOverCapacity ? "default" : "destructive"}>
-              {availabilityResult.isWithinSchedule && !availabilityResult.isOverCapacity ? (
-                <CheckCircle2 className="h-4 w-4" />
-              ) : (
-                <AlertTriangle className="h-4 w-4" />
-              )}
-              <AlertDescription className="text-sm">
-                {availabilityResult.message}
-                {isPatient && (availabilityResult.isOverCapacity || !availabilityResult.isWithinSchedule) && (
-                  <span className="block text-xs mt-1 font-medium">
-                    Escolha um horário disponível acima para continuar.
-                  </span>
-                )}
-                {!isPatient && availabilityResult.isOverCapacity && (
-                  <span className="block text-xs mt-1 opacity-80">
-                    Como profissional/admin, você pode remarcar mesmo assim.
-                  </span>
-                )}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <Label>Motivo {isPatient ? "(obrigatório)" : "(opcional)"}</Label>
+          <div className="flex flex-col gap-2">
+            <Label className="text-xs font-bold uppercase text-muted-foreground">Motivo (Opcional)</Label>
             <Textarea
-              placeholder="Informe o motivo da remarcação..."
+              placeholder="Descreva brevemente o motivo da remarcação..."
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
-              rows={3}
+              className="resize-none h-20"
             />
+          </div>
+
+          <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 flex items-start gap-3">
+            <Lightbulb className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-indigo-900 leading-relaxed">
+              <strong>Importante:</strong> Ao solicitar a remarcação, seu horário original permanece reservado até que a clínica aprove o novo horário. Você receberá uma notificação assim que for confirmado.
+            </div>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={loading || !canSubmit}>
-            {loading ? "Enviando..." : isPatient ? "Solicitar Remarcação" : "Remarcar"}
+          <Button
+            onClick={handleReschedule}
+            disabled={requestReschedule.isPending || (!!availabilityResult && availabilityResult.isOverCapacity)}
+            className="gap-2"
+          >
+            {requestReschedule.isPending && <RefreshCw className="h-4 w-4 animate-spin" />}
+            Confirmar Solicitação
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -11,12 +11,15 @@ import { Progress } from "@/components/ui/progress";
 import { useClinicSettings } from "@/hooks/useClinicSettings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { Lightbulb, CheckCircle2, XCircle, RefreshCw, MessageSquare } from "lucide-react";
+import { Lightbulb, CheckCircle2, XCircle, RefreshCw, MessageSquare, Hourglass } from "lucide-react";
+import { RescheduleDialog } from "@/components/agenda/RescheduleDialog";
 
 const PatientDashboard = () => {
   const { profile, patientId, loading } = useAuth();
   const { data: clinicSettings } = useClinicSettings();
   const queryClient = useQueryClient();
+  const [rescheduleData, setRescheduleData] = useState<any>(null);
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
 
   if (loading) {
     return (
@@ -147,6 +150,21 @@ const PatientDashboard = () => {
         .eq("paciente_id", patientId)
         .eq("status", "pendente")
         .order("data_vencimento", { ascending: true }) as any);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!patientId,
+  });
+
+  const { data: solicitacoes = [] } = useQuery({
+    queryKey: ["patient-solicitacoes", patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+      const { data, error } = await supabase
+        .from("solicitacoes_remarcacao")
+        .select("agendamento_id, status")
+        .eq("paciente_id", patientId)
+        .eq("status", "pendente");
       if (error) throw error;
       return data || [];
     },
@@ -459,9 +477,17 @@ const PatientDashboard = () => {
                         size="sm"
                         variant="outline"
                         className="flex-1 gap-2"
-                        onClick={() => toast({ title: "Funcionalidade em breve", description: "Entre em contato com a clínica para reagendar." })}
+                        disabled={solicitacoes.some((s: any) => s.agendamento_id === item.id)}
+                        onClick={() => {
+                          setRescheduleData(item);
+                          setIsRescheduleOpen(true);
+                        }}
                       >
-                        <RefreshCw className="h-4 w-4" /> Reagendar
+                        {solicitacoes.some((s: any) => s.agendamento_id === item.id) ? (
+                          <><Hourglass className="h-4 w-4" /> Pendente</>
+                        ) : (
+                          <><RefreshCw className="h-4 w-4" /> Reagendar</>
+                        )}
                       </Button>
                       <Button
                         size="sm"
@@ -605,6 +631,13 @@ const PatientDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <RescheduleDialog
+        open={isRescheduleOpen}
+        onOpenChange={setIsRescheduleOpen}
+        agendamento={rescheduleData}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["patient-solicitacoes"] })}
+      />
     </div>
   );
 };
