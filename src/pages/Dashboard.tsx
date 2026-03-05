@@ -172,7 +172,7 @@ const Dashboard = () => {
   });
 
   const { data: dailyTips = [] } = useQuery({
-    queryKey: ["daily-tips", profile?.id],
+    queryKey: ["daily-tips", profile?.id, isAdmin, isGestor],
     queryFn: async () => {
       let query = supabase.from("daily_tips").select("*").eq("ativo", true);
 
@@ -193,7 +193,7 @@ const Dashboard = () => {
         return data || [];
       }
     },
-    enabled: !!profile?.user_id
+    enabled: !!profile?.id
   });
 
   // Upcoming Birthdays

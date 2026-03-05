@@ -154,7 +154,7 @@ const PatientDashboard = () => {
   });
 
   const { data: dailyTip } = useQuery({
-    queryKey: ["daily-tip"],
+    queryKey: ["daily-tip", profile?.id],
     queryFn: async () => {
       let query = supabase.from("daily_tips").select("*").eq("ativo", true);
 
@@ -169,6 +169,7 @@ const PatientDashboard = () => {
       if (error) throw error;
       return data;
     },
+    enabled: !!profile?.id,
   });
 
   const { data: pastAgenda = [] } = useQuery({
