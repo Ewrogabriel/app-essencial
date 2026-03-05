@@ -39,8 +39,16 @@ const tipoLabels: Record<string, string> = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, isAdmin, isGestor, loading } = useAuth();
   const queryClient = useQueryClient();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -168,8 +176,6 @@ const Dashboard = () => {
     queryFn: async () => {
       let query = supabase.from("daily_tips").select("*").eq("ativo", true);
 
-      const { isAdmin, isGestor } = profile as any || {};
-
       if (isAdmin || isGestor) {
         // Admins veem tudo (limit 2 para mostrar uma de cada se possível)
         const { data, error } = await query
@@ -187,7 +193,7 @@ const Dashboard = () => {
         return data || [];
       }
     },
-    enabled: !!profile?.id
+    enabled: !!profile?.user_id
   });
 
   // Upcoming Birthdays
@@ -234,6 +240,28 @@ const Dashboard = () => {
     },
   });
 
+  // Professionals for the re-assignment dialog
+  const { data: profissionais = [] } = useQuery({
+    queryKey: ["profissionais-dashboard"],
+    queryFn: async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["profissional", "admin", "gestor"]);
+
+      const userIds = roles?.map(r => r.user_id) || [];
+      if (userIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, nome")
+        .in("user_id", userIds);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Quick Action Mutations
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -271,6 +299,9 @@ const Dashboard = () => {
 
   const saudacao =
     hoje.getHours() < 12 ? "Bom dia" : hoje.getHours() < 18 ? "Boa tarde" : "Boa noite";
+
+  const ativos = (pacientes || []).filter((p: any) => p.status === "ativo");
+  const recentes = (pacientes || []).slice(0, 5);
 
   const stats = [
     {
@@ -710,7 +741,7 @@ const Dashboard = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {profissionais.map((p: any) => (
-                        <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                        <SelectItem key={p.user_id} value={p.user_id}>{p.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

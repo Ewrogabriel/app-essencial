@@ -14,9 +14,17 @@ import { toast } from "@/hooks/use-toast";
 import { Lightbulb, CheckCircle2, XCircle, RefreshCw, MessageSquare } from "lucide-react";
 
 const PatientDashboard = () => {
-  const { profile, patientId } = useAuth();
+  const { profile, patientId, loading } = useAuth();
   const { data: clinicSettings } = useClinicSettings();
   const queryClient = useQueryClient();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const { data: paciente } = useQuery({
     queryKey: ["patient-self", patientId],
