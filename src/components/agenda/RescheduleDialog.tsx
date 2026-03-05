@@ -20,10 +20,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,6 +40,8 @@ interface RescheduleDialogProps {
 export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }: RescheduleDialogProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [profissionais, setProfissionais] = useState<any[]>([]);
+  const [selectedProfId, setSelectedProfId] = useState<string>("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [horario, setHorario] = useState("08:00");
   const [motivo, setMotivo] = useState("");
@@ -55,18 +59,27 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
         setDate(d);
         setHorario(format(d, "HH:mm"));
       }
+      setSelectedProfId(agendamento.profissional_id || "");
       setMotivo("");
       setAvailabilityResult(null);
+      fetchProfissionais();
     }
   }, [open, agendamento]);
 
+  const fetchProfissionais = async () => {
+    const { data } = await (supabase.from("profiles") as any)
+      .select("id, nome")
+      .order("nome");
+    setProfissionais(data || []);
+  };
+
   // Busca disponibilidade mensal quando o profissional ou mês mudam
   useEffect(() => {
-    if (!agendamento?.profissional_id || !open) return;
+    if (!selectedProfId || !open) return;
 
     const fetchMonthly = async () => {
       const result = await getMonthlyAvailability(
-        agendamento.profissional_id,
+        selectedProfId,
         currentMonth.getFullYear(),
         currentMonth.getMonth(),
         horario
@@ -74,11 +87,11 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
       setMonthlyAvail(result);
     };
     fetchMonthly();
-  }, [agendamento?.profissional_id, currentMonth, horario, open]);
+  }, [selectedProfId, currentMonth, horario, open]);
 
   // Verifica disponibilidade específica quando data ou horário mudam
   useEffect(() => {
-    if (!agendamento?.profissional_id || !date || !horario || !open) {
+    if (!selectedProfId || !date || !horario || !open) {
       setAvailabilityResult(null);
       return;
     }
@@ -88,13 +101,13 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
       const [h, m] = horario.split(":").map(Number);
       const dt = new Date(date);
       dt.setHours(h, m, 0, 0);
-      const result = await checkAvailability(agendamento.profissional_id, dt);
+      const result = await checkAvailability(selectedProfId, dt);
       setAvailabilityResult(result);
       setCheckingAvailability(false);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [agendamento?.profissional_id, date, horario, open]);
+  }, [selectedProfId, date, horario, open]);
 
   const requestReschedule = useMutation({
     mutationFn: async () => {
@@ -104,13 +117,18 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
       const novaData = new Date(date);
       novaData.setHours(h, m, 0, 0);
 
+      const requestedProf = profissionais.find(p => p.id === selectedProfId);
+      const motivoCompleto = selectedProfId !== agendamento.profissional_id
+        ? `[TROCA DE PROFISSIONAL PARA: ${requestedProf?.nome || selectedProfId}] ${motivo}`
+        : motivo;
+
       const { error } = await supabase
         .from("solicitacoes_remarcacao")
         .insert({
           agendamento_id: agendamento.id,
           paciente_id: agendamento.paciente_id,
           nova_data_horario: novaData.toISOString(),
-          motivo: motivo || null,
+          motivo: motivoCompleto || null,
           status: "pendente"
         });
 
@@ -160,15 +178,23 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
         <div className="grid gap-6 py-4">
           <div className="flex flex-col gap-2">
             <Label className="text-xs font-bold uppercase text-muted-foreground">Profissional</Label>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                {agendamento.profiles?.nome?.charAt(0)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{agendamento.profiles?.nome}</p>
-                <p className="text-xs text-muted-foreground capitalize">{agendamento.tipo_atendimento}</p>
-              </div>
-            </div>
+            <Select value={selectedProfId} onValueChange={setSelectedProfId}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Selecione o profissional" />
+              </SelectTrigger>
+              <SelectContent>
+                {profissionais.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedProfId !== agendamento.profissional_id && (
+              <p className="text-[10px] text-amber-600 font-medium">
+                ⚠️ Você está solicitando a troca de profissional.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
