@@ -97,9 +97,9 @@ const Matriculas = () => {
   const { data: matriculas = [], isLoading } = useQuery({
     queryKey: ["matriculas", filterPaciente, filterStatus],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabase
         .from("matriculas")
-        .select("*, pacientes(nome), profiles:profissional_id(nome)")
+        .select("*, pacientes(nome)")
         .order("created_at", { ascending: false });
 
       if (filterStatus) query = query.eq("status", filterStatus);
@@ -145,7 +145,7 @@ const Matriculas = () => {
       const finalValue = monthly - descValue;
 
       // Create enrollment
-      const { data: mat, error } = await (supabase as any)
+      const { data: mat, error } = await supabase
         .from("matriculas")
         .insert({
           paciente_id: formData.paciente_id,
@@ -175,7 +175,7 @@ const Matriculas = () => {
           professional_id: s.professional_id,
           session_duration: s.session_duration,
         }));
-        const { error: schedsErr } = await (supabase as any).from("weekly_schedules").insert(schedInserts);
+        const { error: schedsErr } = await supabase.from("weekly_schedules").insert(schedInserts);
         if (schedsErr) throw schedsErr;
 
         // Generate sessions for the next 30 days
@@ -243,7 +243,7 @@ const Matriculas = () => {
 
   const suspenderMatricula = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("matriculas").update({ status: "suspensa" }).eq("id", id);
+      const { error } = await supabase.from("matriculas").update({ status: "suspensa" }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -255,7 +255,7 @@ const Matriculas = () => {
 
   const cancelarMatricula = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("matriculas")
         .update({ status: "cancelada", cancellation_date: new Date().toISOString().split("T")[0] })
         .eq("id", id);
@@ -270,7 +270,7 @@ const Matriculas = () => {
 
   const ativarMatricula = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("matriculas").update({ status: "ativa" }).eq("id", id);
+      const { error } = await supabase.from("matriculas").update({ status: "ativa" }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
