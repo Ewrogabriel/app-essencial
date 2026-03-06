@@ -238,6 +238,7 @@ const Matriculas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["matriculas"] });
       queryClient.invalidateQueries({ queryKey: ["agendamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["current-patient"] });
       setEditOpen(false);
       toast({ title: "✅ Matrícula atualizada com sucesso!" });
     },
@@ -341,6 +342,7 @@ const Matriculas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["matriculas"] });
       queryClient.invalidateQueries({ queryKey: ["agendamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["current-patient"] });
       setFormOpen(false);
       setFormData(getEmptyForm());
       toast({ title: "✅ Matrícula criada com sucesso!" });
