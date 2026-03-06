@@ -41,7 +41,6 @@ import {
 type Paciente = Tables<"pacientes">;
 
 const Pacientes = () => {
-  const { clinicId } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
