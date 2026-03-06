@@ -532,9 +532,9 @@ const PatientDashboard = () => {
                   </div>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="space-y-4">
           <Card className="bg-primary/5 border-primary/20">
