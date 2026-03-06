@@ -66,11 +66,16 @@ const Pacientes = () => {
   };
 
   const { data: pacientes = [], isLoading } = useQuery({
-    queryKey: ["pacientes"],
+    queryKey: ["pacientes", clinicId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("pacientes") as any)
-        .select("*")
-        .order("nome");
+      let query = (supabase.from("pacientes") as any).select("*");
+      
+      // Filtrar por clínica se o usuário tiver uma clínica associada
+      if (clinicId) {
+        query = query.eq("clinic_id", clinicId);
+      }
+      
+      const { data, error } = await query.order("nome");
       if (error) throw error;
       return data as Paciente[];
     },
