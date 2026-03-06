@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pencil, UserCog, UserCheck, Shield, FileText } from "lucide-react";
+import { Pencil, UserCog, UserCheck, Shield, FileText, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import UserRoleManager from "@/components/profissionais/UserRoleManager";
@@ -88,6 +88,10 @@ const Profissionais = () => {
   const [estado, setEstado] = useState("");
   const [cep, setCep] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createPasswordConfirm, setCreatePasswordConfirm] = useState("");
 
   const { data: profissionais = [], isLoading } = useQuery({
     queryKey: ["profissionais"],
@@ -116,6 +120,7 @@ const Profissionais = () => {
   });
 
   const openEdit = (p: Profissional) => {
+    setIsCreating(false);
     setEditingId(p.id);
     setNome(p.nome);
     setEmail(p.email || "");
@@ -138,6 +143,103 @@ const Profissionais = () => {
     setEstado(p.estado || "");
     setCep(p.cep || "");
     setDialogOpen(true);
+  };
+
+  const openCreate = () => {
+    setIsCreating(true);
+    setEditingId(null);
+    setNome("");
+    setEmail("");
+    setCreateEmail("");
+    setCreatePassword("");
+    setCreatePasswordConfirm("");
+    setTelefone("");
+    setEspecialidade(null);
+    setCommissionRate("0");
+    setCommissionFixed("0");
+    setCorAgenda("#3b82f6");
+    setRegistroProfissional("");
+    setTipoContratacao(null);
+    setCnpj("");
+    setCpf("");
+    setRg("");
+    setDataNascimento("");
+    setEstadoCivil(null);
+    setEndereco("");
+    setNumero("");
+    setBairro("");
+    setCidade("");
+    setEstado("");
+    setCep("");
+    setDialogOpen(true);
+  };
+
+  const handleCreate = async () => {
+    if (!nome.trim() || !createEmail.trim() || !createPassword.trim()) {
+      toast({ title: "Erro", description: "Preencha todos os campos obrigatórios", variant: "destructive" });
+      return;
+    }
+    if (createPassword !== createPasswordConfirm) {
+      toast({ title: "Erro", description: "As senhas não coincidem", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: createEmail.trim(),
+        password: createPassword.trim(),
+      });
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Erro ao criar usuário");
+
+      // Create profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          user_id: authData.user.id,
+          nome: nome.trim(),
+          email: createEmail.trim(),
+          telefone: telefone || null,
+          especialidade: especialidade,
+          commission_rate: parseFloat(commissionRate) || 0,
+          commission_fixed: parseFloat(commissionFixed) || 0,
+          cor_agenda: corAgenda,
+          registro_profissional: registroProfissional || null,
+          tipo_contratacao: tipoContratacao || null,
+          cnpj: cnpj || null,
+          cpf: cpf || null,
+          rg: rg || null,
+          data_nascimento: dataNascimento || null,
+          estado_civil: estadoCivil || null,
+          endereco: endereco || null,
+          numero: numero || null,
+          bairro: bairro || null,
+          cidade: cidade || null,
+          estado: estado || null,
+          cep: cep || null,
+        } as any);
+      if (profileError) throw profileError;
+
+      // Set user role as profissional
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: "profissional",
+        });
+      if (roleError) throw roleError;
+
+      toast({ title: "Profissional criado com sucesso!", description: "Um email de confirmação foi enviado." });
+      queryClient.invalidateQueries({ queryKey: ["profissionais"] });
+      setDialogOpen(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" });
+    }
+
+    setLoading(false);
   };
 
   const handleSave = async () => {
@@ -226,6 +328,15 @@ const Profissionais = () => {
         <p className="text-muted-foreground">Visualize e edite os dados dos profissionais</p>
       </div>
 
+      {canManage && (
+        <div className="flex justify-end">
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Profissional
+          </Button>
+        </div>
+      )}
+
       <Card>
         <CardContent className="pt-6">
           {isLoading ? (
@@ -234,7 +345,7 @@ const Profissionais = () => {
             <div className="flex flex-col items-center py-12 text-muted-foreground">
               <UserCog className="h-12 w-12 mb-4 opacity-40" />
               <p className="text-lg font-medium">Nenhum profissional cadastrado</p>
-              <p className="text-sm mt-1">Profissionais são criados automaticamente ao se registrar</p>
+              <p className="text-sm mt-1">{canManage ? "Clique em 'Novo Profissional' para criar um" : "Aguarde a criação de profissionais"}</p>
             </div>
           ) : (
             <Table>
@@ -327,10 +438,29 @@ const Profissionais = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Editar Profissional</DialogTitle>
+            <DialogTitle>{isCreating ? "Novo Profissional" : "Editar Profissional"}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[70vh] pr-4">
             <div className="space-y-4">
+              {isCreating && (
+                <>
+                  <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">Autenticação</h4>
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <Input type="email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} placeholder="email@exemplo.com" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Senha *</Label>
+                      <Input type="password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} placeholder="••••••••" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Confirmar Senha *</Label>
+                      <Input type="password" value={createPasswordConfirm} onChange={(e) => setCreatePasswordConfirm(e.target.value)} placeholder="••••••••" />
+                    </div>
+                  </div>
+                </>
+              )}
               <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">Dados Pessoais</h4>
               <div className="space-y-2">
                 <Label>Nome *</Label>
@@ -464,8 +594,11 @@ const Profissionais = () => {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleSave} disabled={loading || !nome.trim()}>
-                  {loading ? "Salvando..." : "Salvar"}
+                <Button 
+                  onClick={isCreating ? handleCreate : handleSave} 
+                  disabled={loading || !nome.trim() || (isCreating && (!createEmail.trim() || !createPassword.trim()))}
+                >
+                  {loading ? (isCreating ? "Criando..." : "Salvando...") : (isCreating ? "Criar Profissional" : "Salvar")}
                 </Button>
               </div>
             </div>
