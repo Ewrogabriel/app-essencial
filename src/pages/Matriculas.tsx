@@ -90,6 +90,7 @@ function getDatesForWeekday(startDateStr: string, endDateStr: string, weekday: n
 
 const Matriculas = () => {
   const { user, isAdmin } = useAuth();
+  const navigate = (path: string) => window.location.href = path;
   const queryClient = useQueryClient();
 
   const [mainTab, setMainTab] = useState("matriculas");
@@ -416,7 +417,8 @@ const Matriculas = () => {
         weekday: s.weekday,
         time: s.time,
         professional_id: s.professional_id,
-        session_duration: s.session_duration
+        session_duration: s.session_duration,
+        tipo_sessao: 'grupo' as const
       })),
       valid_from: format(new Date(), "yyyy-MM-dd"), // Defaults to today for changes
     });
