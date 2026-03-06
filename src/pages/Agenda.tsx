@@ -326,7 +326,7 @@ const Agenda = () => {
       <AgendamentoForm
         open={formOpen}
         onOpenChange={setFormOpen}
-        onSuccess={fetchAgendamentos}
+        onSuccess={refetchAgendamentos}
         defaultDate={selectedDate}
       />
 
@@ -334,7 +334,7 @@ const Agenda = () => {
         open={rescheduleOpen}
         onOpenChange={setRescheduleOpen}
         agendamento={rescheduleAg}
-        onSuccess={fetchAgendamentos}
+        onSuccess={refetchAgendamentos}
       />
 
       <AppointmentDetailDialog
