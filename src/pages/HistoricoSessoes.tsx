@@ -5,14 +5,18 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, X, Calendar } from "lucide-react";
+import { CheckCircle2, X, Calendar, RefreshCw } from "lucide-react";
+import { RescheduleDialog } from "@/components/agenda/RescheduleDialog";
 
 export default function HistoricoSessoes() {
   const { patientId } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7));
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleAg, setRescheduleAg] = useState<any>(null);
 
   const { data: sessoes = [] } = useQuery({
     queryKey: ["sessoes-historico", patientId, selectedMonth],
@@ -41,6 +45,11 @@ export default function HistoricoSessoes() {
   const faltadas = sessoes.filter((s: any) => s.status === "falta");
   const proximas = sessoes.filter((s: any) => s.status === "agendado");
 
+  const handleReschedule = (sessao: any) => {
+    setRescheduleAg(sessao);
+    setRescheduleOpen(true);
+  };
+
   const renderSessaoCard = (sessao: any) => (
     <div key={sessao.id} className="p-4 border rounded-lg">
       <div className="flex items-start justify-between">
@@ -60,19 +69,32 @@ export default function HistoricoSessoes() {
             </p>
           )}
         </div>
-        <div>
-          {sessao.status === "confirmado" || sessao.status === "realizado" ? (
-            <Badge className="bg-green-100 text-green-800">
-              <CheckCircle2 className="w-3 h-3 mr-1" />
-              Realizado
-            </Badge>
-          ) : sessao.status === "falta" ? (
-            <Badge className="bg-red-100 text-red-800">
-              <X className="w-3 h-3 mr-1" />
-              Falta
-            </Badge>
-          ) : (
-            <Badge variant="outline">Agendado</Badge>
+        <div className="flex flex-col gap-2 items-end">
+          <div>
+            {sessao.status === "confirmado" || sessao.status === "realizado" ? (
+              <Badge className="bg-green-100 text-green-800">
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                Realizado
+              </Badge>
+            ) : sessao.status === "falta" ? (
+              <Badge className="bg-red-100 text-red-800">
+                <X className="w-3 h-3 mr-1" />
+                Falta
+              </Badge>
+            ) : (
+              <Badge variant="outline">Agendado</Badge>
+            )}
+          </div>
+          {(sessao.status === "falta" || sessao.status === "cancelado") && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleReschedule(sessao)}
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Remarcar
+            </Button>
           )}
         </div>
       </div>
@@ -184,6 +206,16 @@ export default function HistoricoSessoes() {
           )}
         </TabsContent>
       </Tabs>
+
+      <RescheduleDialog
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+        agendamento={rescheduleAg}
+        onSuccess={() => {
+          setRescheduleAg(null);
+          // Refetch will happen automatically through React Query
+        }}
+      />
     </div>
   );
 }
