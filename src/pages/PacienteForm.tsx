@@ -307,17 +307,30 @@ const PacienteForm = () => {
       
       const accessCode = generateSimpleCode();
       
+      // First insert without codigo_acesso (which is not in the schema cache)
       const insertData = {
         ...payload,
         created_by: user.id,
         profissional_id: user.id,
-        codigo_acesso: accessCode, // Store in database
       };
       const { data, error: insertError } = await (supabase.from("pacientes") as any).insert(insertData).select("id").single();
       error = insertError;
+      
       if (data) {
         savedPatientId = data.id;
         setCodigoAcesso(accessCode);
+        
+        // Update with codigo_acesso after insertion
+        // Use a timeout to ensure the row is committed before updating
+        setTimeout(async () => {
+          const { error: updateError } = await (supabase.from("pacientes") as any)
+            .update({ codigo_acesso: accessCode })
+            .eq("id", data.id);
+          
+          if (updateError) {
+            console.warn("[v0] Failed to update codigo_acesso:", updateError);
+          }
+        }, 100);
       }
     }
 
