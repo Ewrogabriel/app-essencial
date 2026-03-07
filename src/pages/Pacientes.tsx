@@ -260,7 +260,7 @@ const Pacientes = () => {
                             onClick={() => {
                               // Try to get from localStorage first
                               const codes = JSON.parse(localStorage.getItem('paciente_codes') || '{}');
-                              let accessCode = codes[paciente.id] || paciente.codigo_acesso;
+                              let accessCode = codes[paciente.id] || (paciente as any).codigo_acesso;
                               
                               if (!accessCode) {
                                 toast({ title: "Código não disponível", variant: "destructive" });
