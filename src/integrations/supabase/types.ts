@@ -725,11 +725,44 @@ export type Database = {
         }
         Relationships: []
       }
+      paciente_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          paciente_id: string
+          session_token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          paciente_id: string
+          session_token: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          paciente_id?: string
+          session_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paciente_sessions_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacientes: {
         Row: {
           bairro: string | null
           cep: string | null
           cidade: string | null
+          codigo_acesso: string | null
           complemento: string | null
           cpf: string | null
           created_at: string
@@ -771,6 +804,7 @@ export type Database = {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
+          codigo_acesso?: string | null
           complemento?: string | null
           cpf?: string | null
           created_at?: string
@@ -812,6 +846,7 @@ export type Database = {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
+          codigo_acesso?: string | null
           complemento?: string | null
           cpf?: string | null
           created_at?: string
