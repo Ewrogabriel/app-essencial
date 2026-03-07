@@ -29,7 +29,14 @@ export default function PacienteAccess() {
       
       const { data: pacientes, error: searchError } = await (supabase.from("pacientes") as any)
         .select("id")
-        .ilike("codigo_acesso", cleanCode);
+        .eq("codigo_acesso", cleanCode);
+      
+      if (searchError) {
+        console.error("Search error:", searchError);
+        toast({ title: "Erro", description: "Erro ao buscar código", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
       
       let pacienteId = null;
       if (pacientes && pacientes.length > 0) {
