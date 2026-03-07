@@ -68,7 +68,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/paciente-access" element={<PacienteAccess />} />
-            <Route path="/dashboard-paciente" element={<DashboardPaciente />} />
+            {/* Access code redirects to /dashboard now */}
             <Route path="/onboarding/:id" element={<PatientOnboarding />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<Index />} />
