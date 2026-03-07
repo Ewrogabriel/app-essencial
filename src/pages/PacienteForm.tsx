@@ -249,116 +249,112 @@ const PacienteForm = () => {
     });
   };
 
+  // Helper function to generate access code
+  const generateAccessCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
     setLoading(true);
 
-    const payload: any = {
-      nome,
-      cpf: cpf || null,
-      rg: rg || null,
-      telefone: telefone || null,
-      email: email || null,
-      data_nascimento: dataNascimento || null,
-      foto_url: fotoUrl || null,
-      cep: cep || null,
-      rua: rua || null,
-      numero: numero || null,
-      complemento: complemento || null,
-      bairro: bairro || null,
-      cidade: cidade || null,
-      estado: estado || null,
-      tipo_atendimento: tipoAtendimento,
-      status,
-      observacoes: observacoes || null,
-      tem_responsavel_legal: temResponsavel,
-      responsavel_nome: temResponsavel ? respNome || null : null,
-      responsavel_cpf: temResponsavel ? respCpf || null : null,
-      responsavel_rg: temResponsavel ? respRg || null : null,
-      responsavel_telefone: temResponsavel ? respTelefone || null : null,
-      responsavel_email: temResponsavel ? respEmail || null : null,
-      responsavel_parentesco: temResponsavel ? respParentesco || null : null,
-      responsavel_endereco: temResponsavel ? respEndereco || null : null,
-      responsavel_cep: temResponsavel ? respCep || null : null,
-      responsavel_rua: temResponsavel ? respRua || null : null,
-      responsavel_numero: temResponsavel ? respNumero || null : null,
-      responsavel_complemento: temResponsavel ? respComplemento || null : null,
-      responsavel_bairro: temResponsavel ? respBairro || null : null,
-      responsavel_cidade: temResponsavel ? respCidade || null : null,
-      responsavel_estado: temResponsavel ? respEstado || null : null,
-    };
-
-    let error;
-    let savedPatientId = id;
-
-    if (isEditing) {
-      ({ error } = await (supabase.from("pacientes") as any).update(payload).eq("id", id));
-    } else {
-      // Generate a simple 8-character alphanumeric code for easy use BEFORE insert
-      const generateSimpleCode = () => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let code = '';
-        for (let i = 0; i < 8; i++) {
-          code += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return code;
+    try {
+      const payload: any = {
+        nome,
+        cpf: cpf || null,
+        rg: rg || null,
+        telefone: telefone || null,
+        email: email || null,
+        data_nascimento: dataNascimento || null,
+        foto_url: fotoUrl || null,
+        cep: cep || null,
+        rua: rua || null,
+        numero: numero || null,
+        complemento: complemento || null,
+        bairro: bairro || null,
+        cidade: cidade || null,
+        estado: estado || null,
+        tipo_atendimento: tipoAtendimento,
+        status,
+        observacoes: observacoes || null,
+        tem_responsavel_legal: temResponsavel,
+        responsavel_nome: temResponsavel ? respNome || null : null,
+        responsavel_cpf: temResponsavel ? respCpf || null : null,
+        responsavel_rg: temResponsavel ? respRg || null : null,
+        responsavel_telefone: temResponsavel ? respTelefone || null : null,
+        responsavel_email: temResponsavel ? respEmail || null : null,
+        responsavel_parentesco: temResponsavel ? respParentesco || null : null,
+        responsavel_endereco: temResponsavel ? respEndereco || null : null,
+        responsavel_cep: temResponsavel ? respCep || null : null,
+        responsavel_rua: temResponsavel ? respRua || null : null,
+        responsavel_numero: temResponsavel ? respNumero || null : null,
+        responsavel_complemento: temResponsavel ? respComplemento || null : null,
+        responsavel_bairro: temResponsavel ? respBairro || null : null,
+        responsavel_cidade: temResponsavel ? respCidade || null : null,
+        responsavel_estado: temResponsavel ? respEstado || null : null,
       };
-      
-      const accessCode = generateSimpleCode();
-      
-      // First insert without codigo_acesso (which is not in the schema cache)
-      const insertData = {
-        ...payload,
-        created_by: user.id,
-        profissional_id: user.id,
-      };
-      const { data, error: insertError } = await (supabase.from("pacientes") as any).insert(insertData).select("id").single();
-      error = insertError;
-      
-      if (data) {
+
+      let savedPatientId = id;
+      let newAccessCode: string | null = null;
+
+      if (isEditing) {
+        // Update existing patient
+        const { error } = await (supabase.from("pacientes") as any)
+          .update(payload)
+          .eq("id", id);
+        
+        if (error) throw error;
+        
+        toast({ title: "Paciente atualizado com sucesso!" });
+      } else {
+        // Create new patient with access code
+        const accessCode = generateAccessCode();
+        
+        const insertData = {
+          ...payload,
+          created_by: user.id,
+          profissional_id: user.id,
+          codigo_acesso: accessCode,
+        };
+
+        const { data, error } = await (supabase.from("pacientes") as any)
+          .insert(insertData)
+          .select("id")
+          .single();
+        
+        if (error) throw error;
+        if (!data) throw new Error("Erro ao criar paciente");
+
         savedPatientId = data.id;
+        newAccessCode = accessCode;
         setCodigoAcesso(accessCode);
-        
-        // Update with codigo_acesso after insertion
-        const { error: updateError } = await (supabase.from("pacientes") as any)
-          .update({ codigo_acesso: accessCode })
-          .eq("id", data.id);
-        
-        if (updateError) {
-          console.warn("[v0] Failed to update codigo_acesso:", updateError);
-          error = updateError;
-        }
-      }
-    }
 
-    if (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-      setLoading(false);
-    } else {
-      // Show success message
-      if (!isEditing && savedPatientId) {
-        
+        // Show success with access code
         const accessLink = `${window.location.origin}/paciente-access`;
-        const inviteMessage = `Olá ${nome.split(' ')[0]}! 👋\n\nVocê foi cadastrado(a) em nosso sistema Essencial FisioPilates. Para acessar sua área de atendimento, use o código abaixo:\n\n📱 CÓDIGO DE ACESSO: ${accessCode}\n\n🔗 Link: ${accessLink}\n\nSimplemente acesse o link acima e insira seu código de acesso.\n\nQualquer dúvida, entre em contato conosco! 😊`;
+        const inviteMessage = `Olá ${nome.split(' ')[0]}!\n\nVocê foi cadastrado em nosso sistema. Para acessar, use o código:\n\nCÓDIGO: ${accessCode}\n\nLink: ${accessLink}\n\nQualquer dúvida, entre em contato!`;
         
         toast({
-          title: "Paciente cadastrado! ✓",
-          description: "Clique no botão para copiar o convite com código.",
+          title: "Paciente cadastrado com sucesso!",
+          description: "Código de acesso gerado. Clique para copiar.",
           action: (
             <Button variant="outline" size="sm" onClick={() => {
               navigator.clipboard.writeText(inviteMessage);
-              toast({ title: "Convite copiado! ✓" });
+              toast({ title: "Convite copiado!" });
             }}>
-              <Copy className="h-4 w-4 mr-2" /> Copiar Convite
+              <Copy className="h-4 w-4 mr-2" /> Copiar
             </Button>
           ),
           duration: 10000,
         });
-      } else {
-        toast({ title: isEditing ? "Paciente atualizado!" : "Paciente criado!" });
       }
-      
+
+      // Try to create patient account if CPF exists
       if (cpf && cpf.replace(/\D/g, "").length === 11) {
         try {
           await supabase.functions.invoke("create-patient-account", {
@@ -368,10 +364,14 @@ const PacienteForm = () => {
           console.error("Erro ao criar conta do paciente:", err);
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["pacientes"] });
-      setLoading(false);
       navigate("/pacientes");
+    } catch (err: any) {
+      const errorMessage = err?.message || "Erro ao salvar paciente";
+      toast({ title: "Erro ao salvar", description: errorMessage, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
