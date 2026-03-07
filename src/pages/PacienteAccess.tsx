@@ -26,18 +26,14 @@ export default function PacienteAccess() {
     try {
       // Search database for patient with matching access code
       const cleanCode = codigoAcesso.trim().toUpperCase();
-      console.log("[v0] Procurando código:", cleanCode);
       
       const { data: pacientes, error: searchError } = await (supabase.from("pacientes") as any)
         .select("id")
         .ilike("codigo_acesso", cleanCode);
       
-      console.log("[v0] Resultado da busca:", { pacientes, searchError });
-      
       let pacienteId = null;
       if (pacientes && pacientes.length > 0) {
         pacienteId = pacientes[0].id;
-        console.log("[v0] Paciente encontrado:", pacienteId);
       }
       
       if (!pacienteId) {
