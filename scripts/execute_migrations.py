@@ -3,15 +3,12 @@ import os
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 try:
     import psycopg2
     from psycopg2 import sql
 except ImportError:
     print("[v0] Installing psycopg2...")
-    os.system("uv pip install psycopg2-binary")
+    os.system("pip install psycopg2-binary")
     import psycopg2
     from psycopg2 import sql
 
@@ -22,11 +19,11 @@ if not postgres_url:
     print("[v0] ERROR: POSTGRES_URL environment variable not set")
     sys.exit(1)
 
-migrations_dir = Path(__file__).parent.parent / "supabase" / "migrations"
+# Use absolute path
+migrations_dir = Path("/vercel/share/v0-project/supabase/migrations")
 
-if not migrations_dir.exists():
-    print(f"[v0] ERROR: Migrations directory not found at {migrations_dir}")
-    sys.exit(1)
+# Create migrations directory if it doesn't exist
+migrations_dir.mkdir(parents=True, exist_ok=True)
 
 migration_files = sorted([f for f in migrations_dir.glob("*.sql")])
 
