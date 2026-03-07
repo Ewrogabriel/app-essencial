@@ -6,7 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Phone, Mail, MapPin, FileText, Edit2, Save, X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { User, Phone, Mail, MapPin, FileText, Edit2, Save, X, AlertCircle, CheckCircle2, Camera, Upload } from "lucide-react";
 import { PatientAttachments } from "@/components/clinical/PatientAttachments";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -15,6 +15,7 @@ const MeuPerfil = () => {
   const { patientId, profile, loading: authLoading } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const { data: paciente, isLoading, refetch } = useQuery({
     queryKey: ["patient-profile-self", patientId],
@@ -78,6 +79,38 @@ const MeuPerfil = () => {
     }
   });
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !patientId) return;
+
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `pacientes/${patientId}/foto.${ext}`;
+      const { error: upErr } = await supabase.storage.from("essencialfisiopilatesbq").upload(path, file, { upsert: true });
+      
+      if (upErr) throw upErr;
+
+      const { data: urlData } = supabase.storage.from("essencialfisiopilatesbq").getPublicUrl(path);
+      const foto_url = urlData.publicUrl;
+
+      // Update directly in database
+      const { error: updateErr } = await (supabase
+        .from("pacientes")
+        .update({ foto_url })
+        .eq("id", patientId) as any);
+
+      if (updateErr) throw updateErr;
+
+      toast({ title: "Foto atualizada com sucesso!" });
+      refetch();
+    } catch (error: any) {
+      toast({ title: "Erro ao fazer upload", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   if (authLoading || isLoading) {
     return <div className="p-8 text-center animate-pulse text-muted-foreground">Carregando seus dados...</div>;
   }
@@ -116,6 +149,50 @@ const MeuPerfil = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Foto de Perfil */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="h-5 w-5 text-primary" />
+            Foto de Perfil
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-6">
+            <div className="w-32 h-32 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
+              {displayData.foto_url ? (
+                <img src={displayData.foto_url} alt="Perfil" className="w-full h-full object-cover" />
+              ) : (
+                <User className="h-16 w-16 text-muted-foreground" />
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">Altere sua foto de perfil clicando em "Escolher arquivo"</p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  disabled={uploadingPhoto}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <Button
+                  asChild
+                  variant="outline"
+                  disabled={uploadingPhoto}
+                >
+                  <label htmlFor="photo-upload" className="cursor-pointer">
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploadingPhoto ? "Enviando..." : "Escolher Arquivo"}
+                  </label>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
