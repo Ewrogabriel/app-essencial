@@ -118,7 +118,8 @@ const Financeiro = () => {
   const createPagamento = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
-      const insertData: Record<string, unknown> = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("pagamentos") as any).insert({
         paciente_id: formData.paciente_id,
         profissional_id: user.id,
         plano_id: formData.plano_id || null,
@@ -130,8 +131,7 @@ const Financeiro = () => {
         descricao: formData.descricao || null,
         observacoes: formData.observacoes || null,
         created_by: user.id,
-      };
-      const { error } = await supabase.from("pagamentos").insert(insertData as Parameters<typeof supabase.from<"pagamentos">>[0] extends infer T ? Record<string, unknown> : never);
+      });
       if (error) throw error;
     },
     onSuccess: () => {
