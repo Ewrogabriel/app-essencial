@@ -108,12 +108,18 @@ const ClinicSettings = () => {
       </div>
 
       <Tabs defaultValue="dados" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
           <TabsTrigger value="dados" className="gap-2">
-            <Settings2 className="h-4 w-4" /> Dados da Clínica
+            <Settings2 className="h-4 w-4" /> Dados
           </TabsTrigger>
           <TabsTrigger value="pagamento" className="gap-2">
-            <CreditCard className="h-4 w-4" /> Formas de Pagamento
+            <CreditCard className="h-4 w-4" /> Pagamento
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="gap-2">
+            <Shield className="h-4 w-4" /> Logs
+          </TabsTrigger>
+          <TabsTrigger value="backup" className="gap-2">
+            <Database className="h-4 w-4" /> Backup
           </TabsTrigger>
         </TabsList>
 
