@@ -48,6 +48,7 @@ import FormasPagamento from "./pages/FormasPagamento";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
 import ListaEspera from "./pages/ListaEspera";
 import Convenios from "./pages/Convenios";
+import VacancyCalendar from "./pages/VacancyCalendar";
 import PreCadastro from "./pages/PreCadastro";
 import PreCadastrosAdmin from "./pages/PreCadastrosAdmin";
 import NotasFiscais from "./pages/NotasFiscais";
