@@ -267,7 +267,7 @@ const Planos = () => {
                     >
                       <TableCell className="font-medium">{plano.pacientes?.nome ?? "—"}</TableCell>
                       <TableCell className="capitalize">{plano.tipo_atendimento}</TableCell>
-                      <TableCell>{plano.sessoes_utilizadas}/{plano.total_sessoes} <span className="text-xs text-muted-foreground">({restante} restantes)</span></TableCell>
+                      <TableCell>{plano.sessoes_utilizadas}/{plano.total_sessoes} <span className="text-xs text-muted-foreground">({Math.max(0, restante)} disponíveis{agendadas > 0 ? `, ${agendadas} agendadas` : ""})</span></TableCell>
                       <TableCell className="w-32">
                         <Progress value={pct} className="h-2" />
                       </TableCell>
