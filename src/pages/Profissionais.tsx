@@ -82,7 +82,7 @@ const Profissionais = () => {
   const [permDialogOpen, setPermDialogOpen] = useState(false);
   const [permUserId, setPermUserId] = useState<string | null>(null);
   const [permUserName, setPermUserName] = useState("");
-  const [permChecked, setPermChecked] = useState<string[]>([]);
+  const [permChecked, setPermChecked] = useState<PermissionEntry[]>([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
