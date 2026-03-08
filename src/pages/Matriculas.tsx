@@ -4,7 +4,7 @@ import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Plus, Pause, X, ChevronRight, BarChart2, Calendar,
-  RefreshCw, User, DollarSign, Settings
+  RefreshCw, User, DollarSign, Settings, ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
