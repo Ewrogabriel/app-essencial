@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Clock, CheckCircle2, AlertTriangle, Lightbulb, RefreshCw } from "lucide-react";
+import { CalendarIcon, Clock, CheckCircle2, AlertTriangle, Lightbulb, RefreshCw, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { checkAvailability, getMonthlyAvailability, type AvailabilityCheckResult } from "@/lib/availabilityCheck";
+import { suggestAvailableSlots, type SuggestedSlot } from "@/lib/suggestSlots";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
