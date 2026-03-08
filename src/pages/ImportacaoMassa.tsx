@@ -89,7 +89,7 @@ const ImportacaoMassa = () => {
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         try {
-          const { error } = await (supabase.from("pacientes") as any).insert({
+          const { error } = await supabase.from("pacientes").insert({
             nome: String(row.nome).trim(),
             telefone: String(row.telefone).trim(),
             email: row.email ? String(row.email).trim() : null,
