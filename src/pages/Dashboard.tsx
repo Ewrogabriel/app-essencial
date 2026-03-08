@@ -264,7 +264,7 @@ const Dashboard = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, nome")
+        .select("user_id, nome, telefone")
         .in("user_id", userIds);
 
       if (error) throw error;
