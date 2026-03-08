@@ -112,6 +112,10 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
     return () => clearTimeout(timer);
   }, [selectedProfId, date, horario, open]);
 
+  const isCancelado = agendamento?.status === "cancelado" || agendamento?.status === "falta";
+  const tipoLabel = isCancelado ? "Remarcação" : "Reagendamento";
+  const tipoLabelLower = isCancelado ? "remarcação" : "reagendamento";
+
   const requestReschedule = useMutation({
     mutationFn: async () => {
       if (!user || !agendamento || !date) return;
@@ -136,11 +140,45 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
         });
 
       if (error) throw error;
+
+      // Notify professional
+      await (supabase.from("notificacoes").insert({
+        user_id: agendamento.profissional_id,
+        tipo: isCancelado ? "remarcacao" : "reagendamento",
+        titulo: `Solicitação de ${tipoLabelLower}`,
+        resumo: `Paciente solicita ${tipoLabelLower} para ${format(novaData, "dd/MM 'às' HH:mm")}`,
+        conteudo: `Paciente solicita ${tipoLabelLower}.\nData ${isCancelado ? "cancelada" : "atual"}: ${format(new Date(agendamento.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\nNova data: ${format(novaData, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\nMotivo: ${motivo || "Não informado"}`,
+        link: "/solicitacoes-alteracao",
+      }) as any);
+
+      // If different professional, also notify the new one
+      if (selectedProfId !== agendamento.profissional_id) {
+        await (supabase.from("notificacoes").insert({
+          user_id: selectedProfId,
+          tipo: isCancelado ? "remarcacao" : "reagendamento",
+          titulo: `Solicitação de ${tipoLabelLower} (novo profissional)`,
+          resumo: `Paciente solicita ${tipoLabelLower} para ${format(novaData, "dd/MM 'às' HH:mm")}`,
+          link: "/solicitacoes-alteracao",
+        }) as any);
+      }
+
+      // Notify admins
+      const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+      for (const admin of (adminRoles || [])) {
+        if (admin.user_id === agendamento.profissional_id) continue;
+        await (supabase.from("notificacoes").insert({
+          user_id: admin.user_id,
+          tipo: isCancelado ? "remarcacao" : "reagendamento",
+          titulo: `Nova solicitação de ${tipoLabelLower}`,
+          resumo: `Paciente solicita ${tipoLabelLower} para ${format(novaData, "dd/MM 'às' HH:mm")}`,
+          link: "/solicitacoes-alteracao",
+        }) as any);
+      }
     },
     onSuccess: () => {
       toast({
         title: "Solicitação enviada!",
-        description: "Sua solicitação de remarcação foi enviada para análise da clínica.",
+        description: `Sua solicitação de ${tipoLabelLower} foi enviada para análise da clínica.`,
       });
       queryClient.invalidateQueries({ queryKey: ["patient-agenda"] });
       onSuccess();
@@ -148,7 +186,7 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
     },
     onError: (error: any) => {
       toast({
-        title: "Erro ao solicitar remarcação",
+        title: `Erro ao solicitar ${tipoLabelLower}`,
         description: error.message,
         variant: "destructive",
       });
@@ -171,10 +209,12 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5 text-primary" />
-            Solicitar Remarcação
+            Solicitar {tipoLabel}
           </DialogTitle>
           <DialogDescription>
-            Escolha uma nova data e horário para sua sessão de {agendamento.tipo_atendimento}.
+            {isCancelado
+              ? "Escolha uma nova data e horário para remarcar sua sessão cancelada."
+              : `Escolha uma nova data e horário para reagendar sua sessão de ${agendamento.tipo_atendimento}.`}
           </DialogDescription>
         </DialogHeader>
 

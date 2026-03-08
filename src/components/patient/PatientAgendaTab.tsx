@@ -79,7 +79,7 @@ export const PatientAgendaTab = ({
                       {solicitacoes.some((s: any) => s.agendamento_id === item.id) ? (
                         <><Hourglass className="h-4 w-4" /> Pendente</>
                       ) : (
-                        <><RefreshCw className="h-4 w-4" /> Reagendar</>
+                        <><RefreshCw className="h-4 w-4" /> {item.status === "cancelado" || item.status === "falta" ? "Remarcar" : "Reagendar"}</>
                       )}
                     </Button>
                     <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 gap-2"
@@ -101,7 +101,7 @@ export const PatientAgendaTab = ({
               <XCircle className="h-5 w-5 text-destructive" />
               Sessões Canceladas
             </CardTitle>
-            <CardDescription>Você pode solicitar o reagendamento dessas sessões.</CardDescription>
+            <CardDescription>Você pode solicitar a remarcação dessas sessões.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -115,8 +115,8 @@ export const PatientAgendaTab = ({
                       {item.profiles?.nome} • {item.tipo_atendimento}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-2" onClick={() => onReschedule(item)}>
-                    <RefreshCw className="h-4 w-4" /> Reagendar
+                    <Button size="sm" variant="outline" className="gap-2" onClick={() => onReschedule(item)}>
+                     <RefreshCw className="h-4 w-4" /> Remarcar
                   </Button>
                 </div>
               ))}
