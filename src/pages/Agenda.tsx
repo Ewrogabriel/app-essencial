@@ -293,18 +293,35 @@ const Agenda = () => {
         </div>
       </div>
 
-      {/* Color Legend */}
-      {isStaff && (profissionais as any[]).length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <span className="text-muted-foreground font-medium">Legenda:</span>
-          {(profissionais as any[]).map((p: any) => (
-            <div key={p.user_id} className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: p.cor_agenda || '#3b82f6' }} />
-              <span>{p.nome}</span>
+      {/* Status + Color Legend */}
+      <div className="flex flex-wrap items-center gap-4 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground font-medium">Status:</span>
+          {[
+            { key: "agendado", label: "Agendado", color: "hsl(199 89% 48%)" },
+            { key: "confirmado", label: "Confirmado", color: "hsl(168 65% 38%)" },
+            { key: "realizado", label: "Realizado", color: "hsl(142 71% 45%)" },
+            { key: "cancelado", label: "Cancelado", color: "hsl(0 72% 51%)" },
+            { key: "falta", label: "Falta", color: "hsl(38 92% 50%)" },
+          ].map(s => (
+            <div key={s.key} className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+              <span>{s.label}</span>
             </div>
           ))}
         </div>
-      )}
+        {isStaff && (profissionais as any[]).length > 0 && (
+          <div className="flex items-center gap-2 border-l border-border pl-4">
+            <span className="text-muted-foreground font-medium">Profissionais:</span>
+            {(profissionais as any[]).map((p: any) => (
+              <div key={p.user_id} className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: p.cor_agenda || '#3b82f6' }} />
+                <span>{p.nome}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Calendar View */}
       <div>
