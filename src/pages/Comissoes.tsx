@@ -74,7 +74,7 @@ const Comissoes = () => {
       const endDate = `${mesRef}-${endMonth.getDate()}T23:59:59`;
       const { data } = await (supabase.from("agendamentos") as any)
         .select("*, pacientes(nome)")
-        .eq("status", "realizado")
+        .in("status", ["agendado", "confirmado", "pendente", "realizado"])
         .gte("data_horario", startDate)
         .lte("data_horario", endDate);
       return data ?? [];
@@ -216,7 +216,7 @@ const Comissoes = () => {
 
   // Commission calculation using rules
   const calcSummary = () => {
-    const summary: Record<string, { nome: string; userId: string; totalAtendimentos: number; totalValor: number; comissao: number; regras: any[] }> = {};
+    const summary: Record<string, { nome: string; userId: string; totalAtendimentos: number; realizados: number; totalValor: number; comissao: number; regras: any[] }> = {};
     profissionais.forEach((p: any) => {
       const profRegras = regrasComissao.filter((r: any) => r.profissional_id === p.user_id && r.ativo);
       const atendimentos = agendamentos.filter((a: any) => a.profissional_id === p.user_id);
@@ -259,6 +259,7 @@ const Comissoes = () => {
         nome: p.nome,
         userId: p.user_id,
         totalAtendimentos: atendimentos.length,
+        realizados: atendimentos.filter((a: any) => a.status === "realizado").length,
         totalValor,
         comissao: comissaoTotal,
         regras: profRegras,
@@ -537,7 +538,12 @@ const Comissoes = () => {
                     {summary.map((s) => (
                       <TableRow key={s.userId}>
                         <TableCell className="font-medium">{s.nome}</TableCell>
-                        <TableCell className="text-center">{s.totalAtendimentos}</TableCell>
+                        <TableCell className="text-center">
+                          {s.totalAtendimentos}
+                          {s.realizados < s.totalAtendimentos && (
+                            <span className="text-xs text-muted-foreground ml-1">({s.realizados} realizados)</span>
+                          )}
+                        </TableCell>
                         <TableCell>R$ {s.totalValor.toFixed(2)}</TableCell>
                         <TableCell className="font-bold text-primary">R$ {s.comissao.toFixed(2)}</TableCell>
                         <TableCell>

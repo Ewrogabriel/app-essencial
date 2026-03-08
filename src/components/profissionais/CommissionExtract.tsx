@@ -51,7 +51,7 @@ export function CommissionExtract() {
       const endDate = `${mesRef}-${endMonth.getDate()}T23:59:59`;
       const { data } = await (supabase.from("agendamentos") as any)
         .select("*, pacientes(nome)")
-        .eq("status", "realizado")
+        .in("status", ["agendado", "confirmado", "pendente", "realizado"])
         .gte("data_horario", startDate)
         .lte("data_horario", endDate);
       return data ?? [];
@@ -82,7 +82,7 @@ export function CommissionExtract() {
 
   // Calculate summary
   const calcSummary = () => {
-    const summary: Record<string, { nome: string; userId: string; totalAtendimentos: number; totalValor: number; comissao: number; regras: any[]; modalidades: Record<string, number> }> = {};
+    const summary: Record<string, { nome: string; userId: string; totalAtendimentos: number; realizados: number; totalValor: number; comissao: number; regras: any[]; modalidades: Record<string, number> }> = {};
     
     const profsToCalc = filterProf === "todos" ? profissionais : profissionais.filter((p: any) => p.user_id === filterProf);
     
@@ -122,6 +122,7 @@ export function CommissionExtract() {
           nome: p.nome,
           userId: p.user_id,
           totalAtendimentos: atendimentos.length,
+          realizados: atendimentos.filter((a: any) => a.status === "realizado").length,
           totalValor,
           comissao: comissaoTotal,
           regras: profRegras,
@@ -296,7 +297,7 @@ export function CommissionExtract() {
               Extrato — {format(new Date(`${mesRef}-01`), "MMMM yyyy", { locale: ptBR })}
             </CardTitle>
             <CardDescription>
-              Comissões calculadas com base nas regras configuradas na aba Equipe.
+              Comissões previstas para todas as sessões e consultas agendadas no mês.
             </CardDescription>
           </div>
           {summary.length > 0 && (
@@ -308,7 +309,7 @@ export function CommissionExtract() {
         <CardContent className="p-0">
           {summary.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
-              Nenhum atendimento realizado neste mês com os filtros selecionados.
+              Nenhuma sessão ou consulta agendada neste mês com os filtros selecionados.
             </div>
           ) : (
             <>
@@ -327,7 +328,12 @@ export function CommissionExtract() {
                   {summary.map((s) => (
                     <TableRow key={s.userId}>
                       <TableCell className="font-medium">{s.nome}</TableCell>
-                      <TableCell className="text-center">{s.totalAtendimentos}</TableCell>
+                      <TableCell className="text-center">
+                        {s.totalAtendimentos}
+                        {s.realizados < s.totalAtendimentos && (
+                          <span className="text-xs text-muted-foreground ml-1">({s.realizados} realizados)</span>
+                        )}
+                      </TableCell>
                       <TableCell>R$ {s.totalValor.toFixed(2)}</TableCell>
                       <TableCell className="font-bold text-primary">R$ {s.comissao.toFixed(2)}</TableCell>
                       <TableCell>
