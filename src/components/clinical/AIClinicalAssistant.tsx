@@ -44,7 +44,7 @@ export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssist
   const { data: evolutions = [] } = useQuery({
     queryKey: ["evolucoes-ai", pacienteId],
     queryFn: async () => {
-      const { data } = await (supabase.from("evolutions") as any)
+      const { data } = await supabase.from("evolutions")
         .select("descricao, conduta, data_evolucao")
         .eq("paciente_id", pacienteId)
         .order("data_evolucao", { ascending: false })
