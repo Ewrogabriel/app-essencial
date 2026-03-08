@@ -372,7 +372,7 @@ const PatientDashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            {saudacao}, {profile?.nome?.split(" ")[0]}! 👋
+            {saudacao}, {(paciente?.nome || profile?.nome || "Paciente").split(" ")[0]}! 👋
           </h1>
           <p className="text-muted-foreground text-sm">
             {format(hoje, "EEEE, dd 'de' MMMM", { locale: ptBR })}
