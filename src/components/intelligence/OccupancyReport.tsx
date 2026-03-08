@@ -20,7 +20,7 @@ export function OccupancyReport() {
     queryKey: ["occ-profs"],
     queryFn: async () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id").in("role", ["profissional", "admin"]);
-      const ids = (roles || []).map((r: any) => r.user_id);
+      const ids = (roles || []).map((r) => r.user_id);
       if (!ids.length) return [];
       const { data } = await supabase.from("profiles").select("user_id, nome").in("user_id", ids).order("nome");
       return data || [];
