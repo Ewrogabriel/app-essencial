@@ -341,7 +341,7 @@ const Planos = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Modalidade</Label>
-                <Select value={formData.tipo_atendimento} onValueChange={(v: any) => setFormData(p => ({ ...p, tipo_atendimento: v }))}>
+                <Select value={formData.tipo_atendimento} onValueChange={(v) => setFormData(p => ({ ...p, tipo_atendimento: v }))}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {(modalidades as any[]).map((mod) => (
