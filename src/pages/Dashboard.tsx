@@ -37,6 +37,7 @@ import { toast } from "@/hooks/use-toast";
 import { UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import { ClinicReportButton } from "@/components/reports/ClinicReportButton";
 
 const tipoLabels: Record<string, string> = {
   fisioterapia: "Fisioterapia",
