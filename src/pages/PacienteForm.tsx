@@ -81,6 +81,7 @@ const PacienteForm = () => {
 
   const [rg, setRg] = useState("");
   const [codigoAcesso, setCodigoAcesso] = useState<string | null>(null);
+  const [lgpdConsentimento, setLgpdConsentimento] = useState(false);
 
   const { data: modalidades = [] } = useQuery({
     queryKey: ["modalidades-ativas"],
