@@ -76,6 +76,7 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <I18nProvider>
         <AuthProvider>
           <ClinicProvider>
           <Toaster />
