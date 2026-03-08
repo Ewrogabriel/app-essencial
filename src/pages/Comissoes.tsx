@@ -25,6 +25,7 @@ import { toast } from "@/hooks/use-toast";
 
 const Comissoes = () => {
   const { user, isAdmin, isGestor, isProfissional } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const canManage = isAdmin || isGestor;
 
