@@ -526,6 +526,10 @@ const PatientDashboard = () => {
           />
         </TabsContent>
 
+        <TabsContent value="prontuario" className="mt-4">
+          {patientId && <PatientEvolutionsTab pacienteId={patientId} />}
+        </TabsContent>
+
         <TabsContent value="financeiro" className="mt-4">
           <PatientFinanceTab
             pendencias={pendencias}
