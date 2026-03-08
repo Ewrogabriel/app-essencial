@@ -362,6 +362,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
               recorrente: true,
               recorrencia_grupo_id: grupoId,
               valor_sessao: values.valor_sessao || null,
+              clinic_id: activeClinicId,
             });
           }
           const { error } = await (supabase.from("agendamentos") as any).insert(records);
