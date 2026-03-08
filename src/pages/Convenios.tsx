@@ -184,7 +184,7 @@ const Convenios = () => {
           <p className="text-muted-foreground">Gerencie empresas parceiras</p>
         </div>
         <Button onClick={() => { resetForm(); setFormOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" /> Novo Convênio
+          <Plus className="h-4 w-4 mr-2" /> Novo Parceiro
         </Button>
       </div>
 
