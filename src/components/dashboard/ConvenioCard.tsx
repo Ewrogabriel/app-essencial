@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Globe, MessageCircle, ChevronRight, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface Convenio {
 export function ConvenioCard() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [detailOpen, setDetailOpen] = useState(false);
+  const navigate = useNavigate();
 
   const { data: convenios = [] } = useQuery<Convenio[]>({
     queryKey: ["convenios-ativos"],
@@ -105,9 +107,22 @@ export function ConvenioCard() {
             </div>
           </div>
           {convenios.length > 1 && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              {convenios.length} parceiros disponíveis · Clique para ver detalhes
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-muted-foreground">
+                {convenios.length} parceiros disponíveis
+              </p>
+              <Button
+                variant="link"
+                size="sm"
+                className="text-xs h-auto p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/convenios");
+                }}
+              >
+                Ver todos →
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
