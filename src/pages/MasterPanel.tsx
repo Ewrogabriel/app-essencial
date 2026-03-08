@@ -42,6 +42,7 @@ function ClinicsTab() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedClinic, setSelectedClinic] = useState<any>(null);
   const [form, setForm] = useState({
     nome: "", cnpj: "", endereco: "", numero: "", bairro: "", cidade: "", estado: "", cep: "",
     telefone: "", whatsapp: "", email: "", instagram: "",
