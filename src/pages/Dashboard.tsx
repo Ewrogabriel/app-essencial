@@ -265,7 +265,7 @@ const Dashboard = () => {
     queryFn: async () => {
       const todayStart = startOfDay(new Date()).toISOString();
       const todayEnd = endOfDay(new Date()).toISOString();
-      let q = (supabase.from("agendamentos") as any)
+      let q = supabase.from("agendamentos")
         .select("*, pacientes(nome, telefone)")
         .gte("data_horario", todayStart)
         .lte("data_horario", todayEnd)
