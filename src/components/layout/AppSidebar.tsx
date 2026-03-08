@@ -58,8 +58,8 @@ const menuAtendimento = [
   { title: "Matrículas", url: "/matriculas", icon: Receipt },
 ];
 
-const menuGestao = [
-  { title: "Profissionais", url: "/profissionais", icon: UserCog },
+const menuEquipe = [
+  { title: "Equipe", url: "/profissionais", icon: UserCog },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
 ];
 
