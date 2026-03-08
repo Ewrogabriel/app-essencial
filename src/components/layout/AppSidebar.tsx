@@ -163,8 +163,8 @@ export function AppSidebar() {
         {(isAdmin || isGestor) ? (
           <>
             {renderGroup("Atendimento", menuAtendimento)}
-            {renderGroup("Equipe & Gestão", menuEquipe)}
-            {renderGroup("Análises", menuAnalises)}
+            {renderGroup("Equipe & Financeiro", menuEquipeFinanceiro)}
+            {renderGroup("Inteligência", menuInteligencia)}
             {renderGroup("Comunicação", menuComunicacao)}
             {renderGroup("Configurações", menuConfig)}
             {isProfissional && renderGroup("Perfil", [
