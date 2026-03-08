@@ -142,11 +142,12 @@ const App = () => (
               <Route path="/mensagens" element={<MensagensInternas />} />
               <Route path="/solicitacoes-alteracao" element={<SolicitacoesAlteracao />} />
               <Route path="/formas-pagamento" element={<ClinicSettings />} />
-              <Route path="/lista-espera" element={<ListaEspera />} />
+              <Route path="/lista-espera" element={<Agenda />} />
               <Route path="/convenios" element={<Convenios />} />
-              <Route path="/vagas" element={<VacancyCalendar />} />
+              <Route path="/vagas" element={<Agenda />} />
               <Route path="/pre-cadastros" element={<PreCadastrosAdmin />} />
-              <Route path="/notas-fiscais" element={<NotasFiscais />} />
+              <Route path="/notas-fiscais" element={<Financeiro />} />
+              <Route path="/comissoes" element={<Financeiro />} />
               <Route path="/gestao-clinicas" element={<GestaoClinicas />} />
               <Route path="/master" element={<MasterPanel />} />
               <Route path="/importacao" element={<ImportacaoMassa />} />
