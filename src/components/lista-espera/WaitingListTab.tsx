@@ -64,7 +64,9 @@ const WaitingListTab = ({ entries, isLoading, isStaff, tipo, emptyMessage, empty
     updateStatusMutation.mutate({ id: entry.id, status: "notificado" });
   };
 
-  const filtered = entries.filter((e: any) => e.tipo === tipo);
+  const filtered = entries.filter((e: any) => 
+    tipo === "espera" ? (!e.tipo || e.tipo === "espera") : e.tipo === tipo
+  );
 
   if (isLoading) return <p className="p-8 text-center text-muted-foreground">Carregando...</p>;
 
