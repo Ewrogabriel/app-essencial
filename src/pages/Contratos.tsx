@@ -257,13 +257,13 @@ const Contratos = () => {
                 <div className="prose prose-sm max-w-none text-foreground space-y-4 text-sm border rounded-lg p-6 bg-white dark:bg-muted/20 max-h-[70vh] overflow-y-auto">
                   <h2 className="text-center font-bold text-lg">{clinicNome.toUpperCase()}</h2>
                   {clinicCNPJ && <p className="text-center text-xs text-muted-foreground">CNPJ: {clinicCNPJ}</p>}
-                  <h3 className="text-center font-bold">CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE PILATES</h3>
+                  <h3 className="text-center font-bold">CONTRATO DE PRESTAÇÃO DE SERVIÇOS{matricula ? ` DE ${matricula.tipo_atendimento.toUpperCase()}` : plano ? ` DE ${(plano.modalidade || "PILATES").toUpperCase()}` : " DE PILATES"}</h3>
                   <p>Pelo presente instrumento particular, de um lado:</p>
                   <p><strong>CONTRATADA:</strong> {clinicNome}, pessoa jurídica de direito privado{clinicEnderecoFull ? `, com sede à ${clinicEnderecoFull}` : ""}{clinicTelefone ? `, telefone/WhatsApp ${clinicTelefone}` : ""}{clinicInstagram ? `, Instagram ${clinicInstagram}` : ""}.</p>
                   <p>E, de outro lado:</p>
                   <p><strong>CONTRATANTE:</strong> <span className="bg-primary/10 px-1 rounded font-semibold">{paciente?.nome || "___________________________"}</span>, CPF nº <span className="bg-primary/10 px-1 rounded">{paciente?.cpf || "_______________"}</span>, RG nº <span className="bg-primary/10 px-1 rounded">{paciente?.rg || "_______________"}</span>.</p>
                   <h4 className="font-bold mt-4">CLÁUSULA 1ª – DO OBJETO</h4>
-                  <p>Prestação de serviços de Pilates, conforme plano contratado, com dias e horários previamente agendados.</p>
+                  <p>Prestação de serviços de {matricula?.tipo_atendimento || plano?.modalidade || "Pilates"}, conforme plano contratado, com dias e horários previamente agendados.</p>
                   <h4 className="font-bold">CLÁUSULA 2ª – DA NATUREZA DO SERVIÇO</h4>
                   <p>O CONTRATANTE declara estar ciente de que o Pilates é um serviço mensal, não sendo contratado por aula, por dia ou por comparecimento.</p>
                   <p><em>Parágrafo único: Faltas não geram desconto ou devolução de valores.</em></p>
