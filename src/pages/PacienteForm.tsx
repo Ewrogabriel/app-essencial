@@ -21,6 +21,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import defaultAvatarImg from "@/assets/default-avatar.png";
+import defaultAvatarMale from "@/assets/default-avatar-male.png";
+import defaultAvatarFemale from "@/assets/default-avatar-female.png";
 
 const PacienteForm = () => {
   const navigate = useNavigate();
