@@ -350,6 +350,7 @@ const Agenda = () => {
             onReschedule={handleReschedule}
             onAppointmentClick={handleAppointmentClick}
             profColors={profColors}
+            onDrop={handleDragDrop}
           />
         )}
         {viewMode === "semanal" && (
@@ -363,6 +364,7 @@ const Agenda = () => {
             onReschedule={handleReschedule}
             onAppointmentClick={handleAppointmentClick}
             profColors={profColors}
+            onDrop={handleDragDrop}
           />
         )}
         {viewMode === "mensal" && (
@@ -376,6 +378,7 @@ const Agenda = () => {
             onReschedule={handleReschedule}
             onAppointmentClick={handleAppointmentClick}
             profColors={profColors}
+            onDrop={handleDragDrop}
           />
         )}
       </div>
