@@ -237,7 +237,9 @@ const MeusPlanos = () => {
 
   const openAgendar = (plano: any) => {
     setSelectedPlano(plano);
-    setDataHorario("");
+    setSelectedDate(undefined);
+    setSelectedTime("");
+    setAvailabilityResult(null);
     setAgendarOpen(true);
   };
 
