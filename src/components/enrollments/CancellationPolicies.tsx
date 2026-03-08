@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,9 @@ interface PolicyForm {
   multa_percentual: number;
   aplica_falta: boolean;
   aplica_cancelamento: boolean;
+  exige_justificativa: boolean;
+  prazo_reagendamento_dias: number;
+  prazo_remarcacao_dias: number;
   ativo: boolean;
 }
 
@@ -39,6 +42,9 @@ const emptyForm: PolicyForm = {
   multa_percentual: 0,
   aplica_falta: true,
   aplica_cancelamento: true,
+  exige_justificativa: true,
+  prazo_reagendamento_dias: 7,
+  prazo_remarcacao_dias: 30,
   ativo: true,
 };
 
@@ -73,6 +79,9 @@ export function CancellationPolicies() {
         multa_percentual: form.multa_percentual,
         aplica_falta: form.aplica_falta,
         aplica_cancelamento: form.aplica_cancelamento,
+        exige_justificativa: form.exige_justificativa,
+        prazo_reagendamento_dias: form.prazo_reagendamento_dias,
+        prazo_remarcacao_dias: form.prazo_remarcacao_dias,
         ativo: form.ativo,
       };
 
@@ -122,6 +131,9 @@ export function CancellationPolicies() {
       multa_percentual: Number(policy.multa_percentual),
       aplica_falta: policy.aplica_falta,
       aplica_cancelamento: policy.aplica_cancelamento,
+      exige_justificativa: policy.exige_justificativa ?? true,
+      prazo_reagendamento_dias: policy.prazo_reagendamento_dias ?? 7,
+      prazo_remarcacao_dias: policy.prazo_remarcacao_dias ?? 30,
       ativo: policy.ativo,
     });
     setFormOpen(true);
@@ -137,9 +149,9 @@ export function CancellationPolicies() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Políticas de Cancelamento</h3>
+          <h3 className="text-lg font-semibold">Políticas de Cancelamento e Remarcação</h3>
           <p className="text-sm text-muted-foreground">
-            Defina regras de multa e prazo para cancelamentos e faltas
+            Defina regras de prazo, justificativa, multa e vencimento para cancelamentos, faltas e remarcações
           </p>
         </div>
         {canEdit && (
@@ -170,8 +182,11 @@ export function CancellationPolicies() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Prazo de Aviso</TableHead>
-                  <TableHead>Multa (%)</TableHead>
+                  <TableHead>Prazo Aviso</TableHead>
+                  <TableHead>Multa</TableHead>
+                  <TableHead>Justificativa</TableHead>
+                  <TableHead>Reagendar</TableHead>
+                  <TableHead>Remarcar</TableHead>
                   <TableHead>Aplica em</TableHead>
                   <TableHead>Status</TableHead>
                   {canEdit && <TableHead>Ações</TableHead>}
@@ -188,11 +203,18 @@ export function CancellationPolicies() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{p.prazo_aviso_horas}h antes</TableCell>
+                    <TableCell>{p.prazo_aviso_horas}h</TableCell>
                     <TableCell>{Number(p.multa_percentual)}%</TableCell>
                     <TableCell>
+                      <Badge variant={p.exige_justificativa ? "default" : "secondary"} className="text-[10px]">
+                        {p.exige_justificativa ? "Obrigatória" : "Opcional"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{p.prazo_reagendamento_dias ?? 7}d</TableCell>
+                    <TableCell>{p.prazo_remarcacao_dias ?? 30}d</TableCell>
+                    <TableCell>
                       <div className="flex gap-1">
-                        {p.aplica_cancelamento && <Badge variant="outline" className="text-[10px]">Cancelamento</Badge>}
+                        {p.aplica_cancelamento && <Badge variant="outline" className="text-[10px]">Cancel.</Badge>}
                         {p.aplica_falta && <Badge variant="outline" className="text-[10px]">Falta</Badge>}
                       </div>
                     </TableCell>
@@ -223,32 +245,57 @@ export function CancellationPolicies() {
 
       {/* Form Dialog */}
       <Dialog open={formOpen} onOpenChange={(v) => { if (!v) { setFormOpen(false); setEditingId(null); } else setFormOpen(true); }}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Editar Política" : "Nova Política de Cancelamento"}</DialogTitle>
+            <DialogTitle>{editingId ? "Editar Política" : "Nova Política de Cancelamento / Remarcação"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
               <Label>Nome *</Label>
-              <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Cancelamento padrão" className="mt-1" />
+              <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Política padrão" className="mt-1" />
             </div>
             <div>
               <Label>Descrição</Label>
               <Textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Detalhes da política..." className="mt-1" rows={2} />
             </div>
+
+            {/* Prazos e Multa */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Prazo de Aviso (horas)</Label>
                 <Input type="number" min={0} value={form.prazo_aviso_horas} onChange={(e) => setForm({ ...form, prazo_aviso_horas: parseInt(e.target.value) || 0 })} className="mt-1" />
-                <p className="text-[10px] text-muted-foreground mt-1">Cancelamentos antes deste prazo não geram multa</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Cancelar antes deste prazo evita multa</p>
               </div>
               <div>
                 <Label>Multa (%)</Label>
                 <Input type="number" min={0} max={100} step={5} value={form.multa_percentual} onChange={(e) => setForm({ ...form, multa_percentual: parseFloat(e.target.value) || 0 })} className="mt-1" />
-                <p className="text-[10px] text-muted-foreground mt-1">Percentual do valor da sessão</p>
+                <p className="text-[10px] text-muted-foreground mt-1">% do valor da sessão cobrado como multa</p>
               </div>
             </div>
-            <div className="space-y-3 pt-2">
+
+            {/* Prazos de Reagendamento e Remarcação */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Prazo p/ Reagendar (dias)</Label>
+                <Input type="number" min={1} value={form.prazo_reagendamento_dias} onChange={(e) => setForm({ ...form, prazo_reagendamento_dias: parseInt(e.target.value) || 7 })} className="mt-1" />
+                <p className="text-[10px] text-muted-foreground mt-1">Dias que o paciente tem para reagendar uma sessão antes dela expirar</p>
+              </div>
+              <div>
+                <Label>Prazo p/ Remarcar (dias)</Label>
+                <Input type="number" min={1} value={form.prazo_remarcacao_dias} onChange={(e) => setForm({ ...form, prazo_remarcacao_dias: parseInt(e.target.value) || 30 })} className="mt-1" />
+                <p className="text-[10px] text-muted-foreground mt-1">Dias após cancelamento/falta para remarcar, senão a sessão vence</p>
+              </div>
+            </div>
+
+            {/* Switches */}
+            <div className="space-y-3 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Exige justificativa</Label>
+                  <p className="text-[10px] text-muted-foreground">Paciente precisa informar motivo ao cancelar</p>
+                </div>
+                <Switch checked={form.exige_justificativa} onCheckedChange={(v) => setForm({ ...form, exige_justificativa: v })} />
+              </div>
               <div className="flex items-center justify-between">
                 <Label>Aplica em cancelamentos</Label>
                 <Switch checked={form.aplica_cancelamento} onCheckedChange={(v) => setForm({ ...form, aplica_cancelamento: v })} />
@@ -262,6 +309,7 @@ export function CancellationPolicies() {
                 <Switch checked={form.ativo} onCheckedChange={(v) => setForm({ ...form, ativo: v })} />
               </div>
             </div>
+
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => setFormOpen(false)}>Cancelar</Button>
               <Button onClick={() => saveMutation.mutate()} disabled={!form.nome || saveMutation.isPending}>
