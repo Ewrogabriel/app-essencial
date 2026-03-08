@@ -5,17 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Brain, FileText, Sparkles, ClipboardList } from "lucide-react";
+import {
+  Brain,
+  FileText,
+  Sparkles,
+  ClipboardList,
+  BookOpen,
+  Stethoscope,
+  FileBarChart,
+  Paperclip,
+  Copy,
+  Download,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+type AIAction = "summarize" | "suggest_conduct" | "lesson_plan" | "treatment_plan" | "generate_report";
+
+const ACTION_LABELS: Record<AIAction, { label: string; icon: React.ReactNode; description: string }> = {
+  summarize: { label: "Resumo Clínico", icon: <FileText className="h-4 w-4" />, description: "Síntese do histórico e evolução" },
+  suggest_conduct: { label: "Sugestão de Conduta", icon: <Sparkles className="h-4 w-4" />, description: "Próximos passos e exercícios" },
+  lesson_plan: { label: "Plano de Aula", icon: <BookOpen className="h-4 w-4" />, description: "Aula personalizada por modalidade" },
+  treatment_plan: { label: "Plano de Tratamento", icon: <Stethoscope className="h-4 w-4" />, description: "Análise completa + plano terapêutico" },
+  generate_report: { label: "Gerar Relatório", icon: <FileBarChart className="h-4 w-4" />, description: "Relatório clínico formal" },
+};
 
 interface AIClinicalAssistantProps {
   pacienteId: string;
+  modalidade?: string;
 }
 
-export function AIClinicalAssistant({ pacienteId }: AIClinicalAssistantProps) {
+export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssistantProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
-  const [lastAction, setLastAction] = useState("");
+  const [lastAction, setLastAction] = useState<AIAction | "">("");
 
   const { data: evolutions = [] } = useQuery({
     queryKey: ["evolucoes-ai", pacienteId],
@@ -44,8 +66,22 @@ export function AIClinicalAssistant({ pacienteId }: AIClinicalAssistantProps) {
     enabled: !!pacienteId,
   });
 
-  const callAI = async (action: "summarize" | "suggest_conduct") => {
-    if (evolutions.length === 0) {
+  const { data: attachments = [] } = useQuery({
+    queryKey: ["attachments-ai", pacienteId],
+    queryFn: async () => {
+      const { data } = await (supabase.from("patient_attachments") as any)
+        .select("file_name, file_type, descricao, created_at")
+        .eq("paciente_id", pacienteId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return data || [];
+    },
+    enabled: !!pacienteId,
+  });
+
+  const callAI = async (action: AIAction) => {
+    // For treatment_plan and generate_report, allow even without evolutions
+    if (action !== "treatment_plan" && action !== "generate_report" && action !== "lesson_plan" && evolutions.length === 0) {
       toast({ title: "Sem evoluções para analisar", description: "Registre evoluções primeiro.", variant: "destructive" });
       return;
     }
@@ -60,7 +96,11 @@ export function AIClinicalAssistant({ pacienteId }: AIClinicalAssistantProps) {
         .join("\n\n");
 
       const evaluationText = evaluation
-        ? `Queixa: ${evaluation.queixa_principal}\nHistórico: ${evaluation.historico_doenca || "N/A"}\nAntecedentes: ${evaluation.antecedentes_pessoais || "N/A"}\nObjetivos: ${evaluation.objetivos_tratamento || "N/A"}`
+        ? `Queixa: ${evaluation.queixa_principal}\nHistórico: ${evaluation.historico_doenca || "N/A"}\nAntecedentes: ${evaluation.antecedentes_pessoais || "N/A"}\nObjetivos: ${evaluation.objetivos_tratamento || "N/A"}\nConduta Inicial: ${evaluation.conduta_inicial || "N/A"}`
+        : "";
+
+      const attachmentsInfo = attachments.length > 0
+        ? attachments.map((a: any) => `- ${a.file_name} (${a.file_type || "desconhecido"})${a.descricao ? ` — ${a.descricao}` : ""}`).join("\n")
         : "";
 
       const { data, error } = await supabase.functions.invoke("ai-clinical", {
@@ -69,6 +109,8 @@ export function AIClinicalAssistant({ pacienteId }: AIClinicalAssistantProps) {
           evolutions_text: evolutionsText,
           evaluation_text: evaluationText,
           action,
+          modalidade: modalidade || "",
+          attachments_info: attachmentsInfo,
         },
       });
 
@@ -81,67 +123,129 @@ export function AIClinicalAssistant({ pacienteId }: AIClinicalAssistantProps) {
     }
   };
 
+  const copyResult = () => {
+    navigator.clipboard.writeText(result);
+    toast({ title: "Copiado para a área de transferência!" });
+  };
+
+  const downloadResult = () => {
+    const actionLabel = lastAction ? ACTION_LABELS[lastAction as AIAction]?.label || "resultado" : "resultado";
+    const blob = new Blob([result], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${actionLabel.replace(/\s/g, "_")}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const hasData = evolutions.length > 0 || !!evaluation;
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Brain className="h-4 w-4 text-primary" />
           Assistente Clínico IA
+          {modalidade && (
+            <Badge variant="secondary" className="text-xs font-normal ml-2">
+              {modalidade}
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => callAI("summarize")}
-            disabled={loading || evolutions.length === 0}
-          >
-            <FileText className="h-4 w-4 mr-1" />
-            Resumo Clínico
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => callAI("suggest_conduct")}
-            disabled={loading || evolutions.length === 0}
-          >
-            <Sparkles className="h-4 w-4 mr-1" />
-            Sugestão de Conduta
-          </Button>
-          <Badge variant="secondary" className="text-xs">
-            <ClipboardList className="h-3 w-3 mr-1" />
+        {/* Stats */}
+        <div className="flex flex-wrap gap-2 text-xs">
+          <Badge variant="outline" className="gap-1">
+            <ClipboardList className="h-3 w-3" />
             {evolutions.length} evolução(ões)
           </Badge>
+          <Badge variant="outline" className="gap-1">
+            <Stethoscope className="h-3 w-3" />
+            {evaluation ? "Avaliação ✓" : "Sem avaliação"}
+          </Badge>
+          {attachments.length > 0 && (
+            <Badge variant="outline" className="gap-1">
+              <Paperclip className="h-3 w-3" />
+              {attachments.length} documento(s)
+            </Badge>
+          )}
         </div>
 
+        {/* Action Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {(Object.entries(ACTION_LABELS) as [AIAction, typeof ACTION_LABELS[AIAction]][]).map(([key, cfg]) => (
+            <Button
+              key={key}
+              size="sm"
+              variant="outline"
+              className="justify-start h-auto py-2 px-3"
+              onClick={() => callAI(key)}
+              disabled={loading || (!hasData && key !== "lesson_plan")}
+            >
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 shrink-0 text-primary">{cfg.icon}</span>
+                <div className="text-left">
+                  <p className="font-medium text-xs">{cfg.label}</p>
+                  <p className="text-[10px] text-muted-foreground font-normal">{cfg.description}</p>
+                </div>
+              </div>
+            </Button>
+          ))}
+        </div>
+
+        {/* Loading */}
         {loading && (
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
-            <p className="text-xs text-muted-foreground animate-pulse">Analisando histórico clínico...</p>
+            <p className="text-xs text-muted-foreground animate-pulse">
+              {lastAction === "lesson_plan" ? "Montando plano de aula personalizado..." :
+               lastAction === "treatment_plan" ? "Analisando prontuário e documentos..." :
+               lastAction === "generate_report" ? "Gerando relatório clínico..." :
+               "Analisando histórico clínico..."}
+            </p>
           </div>
         )}
 
+        {/* Result */}
         {result && !loading && (
           <div className="rounded-lg border bg-muted/30 p-4 prose prose-sm max-w-none dark:prose-invert">
-            <div className="flex items-center gap-2 mb-2">
-              <Brain className="h-4 w-4 text-primary" />
-              <span className="text-xs font-medium text-primary">
-                {lastAction === "summarize" ? "Resumo Clínico" : "Sugestão de Conduta"}
-              </span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Brain className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium text-primary">
+                  {lastAction ? ACTION_LABELS[lastAction as AIAction]?.label : "Resultado"}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={copyResult} title="Copiar">
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={downloadResult} title="Baixar .md">
+                  <Download className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
             <div
               className="text-sm whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{ __html: result.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/## (.*)/g, "<h3 class='text-sm font-bold mt-3 mb-1'>$1</h3>").replace(/\n/g, "<br/>") }}
+              dangerouslySetInnerHTML={{
+                __html: result
+                  .replace(/### (.*)/g, "<h4 class='text-sm font-bold mt-3 mb-1'>$1</h4>")
+                  .replace(/## (.*)/g, "<h3 class='text-sm font-bold mt-4 mb-1'>$1</h3>")
+                  .replace(/# (.*)/g, "<h2 class='text-base font-bold mt-4 mb-2'>$1</h2>")
+                  .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                  .replace(/\n/g, "<br/>"),
+              }}
             />
           </div>
         )}
 
-        {evolutions.length === 0 && (
+        {!hasData && (
           <p className="text-xs text-muted-foreground text-center py-2">
-            Registre evoluções para habilitar a análise por IA
+            Registre avaliações e evoluções para habilitar a análise completa por IA
           </p>
         )}
       </CardContent>
