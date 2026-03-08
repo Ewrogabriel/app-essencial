@@ -183,6 +183,14 @@ const ClinicSettings = () => {
         <TabsContent value="pagamento">
           <FormasPagamento />
         </TabsContent>
+
+        <TabsContent value="logs">
+          <AuditLogViewer />
+        </TabsContent>
+
+        <TabsContent value="backup">
+          <BackupExport />
+        </TabsContent>
       </Tabs>
     </div>
   );
