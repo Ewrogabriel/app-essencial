@@ -19,11 +19,12 @@ const ListaEspera = () => {
   const [dialogTipo, setDialogTipo] = useState<"espera" | "interesse_mudanca" | "interesse_novo">("espera");
 
   const { data: entries = [], isLoading } = useQuery({
-    queryKey: ["lista-espera"],
+    queryKey: ["lista-espera", activeClinicId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("lista_espera")
-        .select("*, pacientes(nome, telefone), matriculas(tipo_atendimento, status)")
-        .order("created_at", { ascending: true });
+      let query = supabase.from("lista_espera")
+        .select("*, pacientes(nome, telefone), matriculas(tipo_atendimento, status)");
+      if (activeClinicId) query = query.eq("clinic_id", activeClinicId);
+      const { data, error } = await query.order("created_at", { ascending: true });
       if (error) throw error;
       return data || [];
     },

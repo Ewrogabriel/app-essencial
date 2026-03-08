@@ -135,6 +135,7 @@ const Financeiro = () => {
         descricao: formData.descricao || null,
         observacoes: formData.observacoes || null,
         created_by: user.id,
+        clinic_id: activeClinicId,
       });
       if (error) throw error;
     },

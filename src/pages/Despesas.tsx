@@ -65,7 +65,7 @@ const Despesas = () => {
     const createMutation = useMutation({
         mutationFn: async () => {
             const { error } = await (supabase.from("expenses") as any).insert({
-                clinic_id: crypto.randomUUID(),
+                clinic_id: activeClinicId,
                 descricao: formData.descricao,
                 valor: parseFloat(formData.valor),
                 data_vencimento: formData.data_vencimento,

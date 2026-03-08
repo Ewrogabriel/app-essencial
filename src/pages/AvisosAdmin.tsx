@@ -50,6 +50,7 @@ const AvisosAdmin = () => {
       ativo: true,
       created_by: user.id,
       image_url: imageUrl || null,
+      clinic_id: activeClinicId,
     } as any);
 
     if (error) {

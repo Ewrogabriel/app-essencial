@@ -40,12 +40,12 @@ const NotasFiscais = () => {
   });
 
   const { data: emissoes = [] } = useQuery({
-    queryKey: ["emissoes-nf", mesRef],
+    queryKey: ["emissoes-nf", mesRef, activeClinicId],
     queryFn: async () => {
       const mesDate = `${mesRef}-01`;
-      const { data, error } = await (supabase.from("emissoes_nf") as any)
-        .select("*")
-        .eq("mes_referencia", mesDate);
+      let query = (supabase.from("emissoes_nf") as any).select("*").eq("mes_referencia", mesDate);
+      if (activeClinicId) query = query.eq("clinic_id", activeClinicId);
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
