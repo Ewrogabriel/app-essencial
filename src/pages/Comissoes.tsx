@@ -59,9 +59,14 @@ const Comissoes = () => {
     queryKey: ["prof-for-comissoes"],
     queryFn: async () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "profissional");
-      const ids = roles?.map(r => r.user_id) ?? [];
-      if (!ids.length) return [];
-      const { data } = await supabase.from("profiles").select("*").in("user_id", ids).order("nome");
+      const roleIds = roles?.map(r => r.user_id) ?? [];
+
+      const { data: agendProfs } = await supabase.from("agendamentos").select("profissional_id");
+      const agendIds = [...new Set((agendProfs || []).map((a: any) => a.profissional_id))];
+
+      const allIds = [...new Set([...roleIds, ...agendIds])];
+      if (!allIds.length) return [];
+      const { data } = await supabase.from("profiles").select("*").in("user_id", allIds).order("nome");
       return data ?? [];
     },
     enabled: canManage,
