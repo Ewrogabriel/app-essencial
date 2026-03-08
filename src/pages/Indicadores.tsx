@@ -36,7 +36,10 @@ const getAgeDistribution = (pacientes: any[]) => {
   return counts.filter(c => c.value > 0);
 };
 
+import { useClinic } from "@/hooks/useClinic";
+
 export default function Indicadores() {
+  const { activeClinicId } = useClinic();
   const agora = new Date();
   const mesAnterior = subMonths(agora, 1);
 
