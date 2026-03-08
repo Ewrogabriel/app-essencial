@@ -126,19 +126,8 @@ const MeusPlanos = () => {
     fetchMonthly();
   }, [selectedPlano?.profissional_id, currentMonth, selectedTime]);
 
-  // Fetch available slots when date is selected
-  useEffect(() => {
-    if (!selectedPlano?.profissional_id || !selectedDate) {
-      setAvailableSlots([]);
-      setSelectedTime("");
-      return;
-    }
-    const fetchSlots = async () => {
-      const slots = await getAvailableSlots(selectedPlano.profissional_id, selectedDate);
-      setAvailableSlots(slots);
-    };
-    fetchSlots();
-  }, [selectedPlano?.profissional_id, selectedDate]);
+  // Check availability when date and time are selected
+
 
   // Check availability when time is selected
   useEffect(() => {
