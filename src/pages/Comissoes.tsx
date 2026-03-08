@@ -93,6 +93,16 @@ const Comissoes = () => {
     enabled: canManage,
   });
 
+  // Planos data for commission calculation (plan value / total sessions)
+  const { data: planosData = [] } = useQuery({
+    queryKey: ["planos-comissoes", mesRef],
+    queryFn: async () => {
+      const { data } = await (supabase.from("planos") as any).select("id, valor, total_sessoes");
+      return data ?? [];
+    },
+    enabled: canManage,
+  });
+
   const { data: minhasComissoes = [] } = useQuery({
     queryKey: ["my-commissions", user?.id],
     queryFn: async () => {

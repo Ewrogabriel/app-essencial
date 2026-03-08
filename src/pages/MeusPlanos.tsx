@@ -473,7 +473,7 @@ const MeusPlanos = () => {
             <div className="space-y-4">
               <div className="rounded-lg border p-3 bg-muted/30 text-sm space-y-1">
                 <p><strong>Plano:</strong> <span className="capitalize">{selectedPlano.tipo_atendimento}</span></p>
-                <p><strong>Profissional:</strong> {selectedPlano.profiles?.nome || "N/A"}</p>
+                <p><strong>Profissional padrão:</strong> {selectedPlano.profiles?.nome || "N/A"}</p>
                 <p><strong>Créditos restantes:</strong> {selectedPlano.total_sessoes - selectedPlano.sessoes_utilizadas}</p>
               </div>
 
