@@ -512,6 +512,7 @@ const Profissionais = () => {
               <p className="text-lg font-medium">Nenhum membro encontrado</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -579,6 +580,7 @@ const Profissionais = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
