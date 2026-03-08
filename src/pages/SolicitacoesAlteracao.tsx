@@ -301,14 +301,65 @@ const SolicitacoesAlteracao = () => {
     onError: (err: any) => toast({ title: "Erro ao rejeitar", description: err.message, variant: "destructive" }),
   });
 
+  // ── Agendamento Mutations ──
+  const aprovarAgendamentoMutation = useMutation({
+    mutationFn: async (agend: any) => {
+      const { error } = await (supabase.from("agendamentos") as any)
+        .update({ status: "agendado" })
+        .eq("id", agend.id);
+      if (error) throw error;
+
+      if (agend.paciente_user_id) {
+        await supabase.from("notificacoes").insert({
+          user_id: agend.paciente_user_id,
+          tipo: "agendamento_aprovado",
+          titulo: "Agendamento aprovado! ✅",
+          resumo: `Sua sessão em ${format(new Date(agend.data_horario), "dd/MM 'às' HH:mm")} foi aprovada.`,
+        });
+      }
+    },
+    onSuccess: () => {
+      toast({ title: "Agendamento aprovado!" });
+      queryClient.invalidateQueries({ queryKey: ["agendamentos-pendentes-admin"] });
+      setDetailOpen(false);
+    },
+    onError: (err: any) => toast({ title: "Erro ao aprovar", description: err.message, variant: "destructive" }),
+  });
+
+  const rejeitarAgendamentoMutation = useMutation({
+    mutationFn: async ({ agend, motivo }: { agend: any; motivo: string }) => {
+      const { error } = await (supabase.from("agendamentos") as any)
+        .update({ status: "cancelado" })
+        .eq("id", agend.id);
+      if (error) throw error;
+
+      if (agend.paciente_user_id) {
+        await supabase.from("notificacoes").insert({
+          user_id: agend.paciente_user_id,
+          tipo: "agendamento_rejeitado",
+          titulo: "Agendamento recusado",
+          resumo: motivo || "Sua solicitação de agendamento foi recusada.",
+        });
+      }
+    },
+    onSuccess: () => {
+      toast({ title: "Agendamento rejeitado." });
+      queryClient.invalidateQueries({ queryKey: ["agendamentos-pendentes-admin"] });
+      setRejectOpen(false); setDetailOpen(false); setMotivoRejeicao("");
+    },
+    onError: (err: any) => toast({ title: "Erro ao rejeitar", description: err.message, variant: "destructive" }),
+  });
+
   // ── Helpers ──
   const statusBadge = (status: string) => {
     const map: Record<string, { label: string; variant: "default" | "destructive" | "outline" | "secondary" }> = {
       pendente: { label: "Pendente", variant: "secondary" },
       aprovado: { label: "Aprovado", variant: "default" },
       aprovada: { label: "Aprovada", variant: "default" },
+      agendado: { label: "Aprovado", variant: "default" },
       rejeitado: { label: "Rejeitado", variant: "destructive" },
       rejeitada: { label: "Rejeitada", variant: "destructive" },
+      cancelado: { label: "Rejeitado", variant: "destructive" },
     };
     const s = map[status] || { label: status, variant: "outline" as const };
     return <Badge variant={s.variant}>{s.label}</Badge>;
@@ -317,6 +368,7 @@ const SolicitacoesAlteracao = () => {
   const tipoBadge = (tipo: string) => {
     if (tipo === "remarcar") return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Remarcar</Badge>;
     if (tipo === "reserva") return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Reserva</Badge>;
+    if (tipo === "agendamento") return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Agendamento</Badge>;
     return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Reagendar</Badge>;
   };
 
@@ -340,9 +392,10 @@ const SolicitacoesAlteracao = () => {
   const pendentesRemarcar = remarcacoes.filter((s: any) => s.status === "pendente");
   const pendentesReservas = reservas.filter((r: any) => r.status === "pendente");
   const historicoReservas = reservas.filter((r: any) => r.status !== "pendente");
-  const totalPendentes = pendentesDados.length + pendentesReagendar.length + pendentesRemarcar.length + pendentesReservas.length;
+  const pendentesAgendamentos = agendamentosPendentes;
+  const totalPendentes = pendentesDados.length + pendentesReagendar.length + pendentesRemarcar.length + pendentesReservas.length + pendentesAgendamentos.length;
 
-  const isLoading = loadingDados || loadingRemarc || loadingReservas;
+  const isLoading = loadingDados || loadingRemarc || loadingReservas || loadingAgend;
 
   // ── Render Remarcação/Reagendamento table ──
   const renderRemarcTable = (items: any[], tipo: "reagendar" | "remarcar") => {
