@@ -264,17 +264,15 @@ const Planos = () => {
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          {plano.status === "ativo" && restante > 0 && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                              title="Agendar sessões"
-                              onClick={() => setSessoesPlano(plano)}
-                            >
-                              <CalendarPlus className="h-4 w-4" />
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            title="Ver sessões do plano"
+                            onClick={() => setSessoesPlano(plano)}
+                          >
+                            <CalendarPlus className="h-4 w-4" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
