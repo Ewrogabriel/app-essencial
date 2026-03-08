@@ -114,6 +114,7 @@ const App = () => (
               <Route path="/solicitacoes-alteracao" element={<SolicitacoesAlteracao />} />
               <Route path="/formas-pagamento" element={<ClinicSettings />} />
               <Route path="/lista-espera" element={<ListaEspera />} />
+              <Route path="/convenios" element={<Convenios />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
