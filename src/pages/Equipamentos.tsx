@@ -61,14 +61,14 @@ export default function Equipamentos() {
   const fetchItems = async () => {
     setLoading(true);
     let query = supabase.from("equipamentos").select("*").order("nome");
-    if (activeClinic) query = query.eq("clinic_id", activeClinic);
+    if (activeClinicId) query = query.eq("clinic_id", activeClinicId);
     const { data, error } = await query;
     if (error) { toast.error("Erro ao carregar equipamentos"); console.error(error); }
     else setItems((data as unknown as Equipamento[]) || []);
     setLoading(false);
   };
 
-  useEffect(() => { fetchItems(); }, [activeClinic]);
+  useEffect(() => { fetchItems(); }, [activeClinicId]);
 
   const handleSave = async () => {
     if (!form.nome.trim()) { toast.error("Nome é obrigatório"); return; }
