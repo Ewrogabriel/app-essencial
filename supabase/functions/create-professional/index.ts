@@ -51,17 +51,28 @@ serve(async (req) => {
 
     const targetRole = role || "profissional";
 
-    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { nome },
-    });
+    // Check if user already exists
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
 
-    if (authError) {
-      return new Response(JSON.stringify({ error: authError.message }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    let newUserId: string;
+
+    if (existingUser) {
+      newUserId = existingUser.id;
+    } else {
+      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { nome },
       });
+
+      if (authError) {
+        return new Response(JSON.stringify({ error: authError.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      newUserId = authData.user.id;
     }
 
     const newUserId = authData.user.id;
