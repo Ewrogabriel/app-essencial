@@ -60,7 +60,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
     const { data: paciente } = useQuery({
         queryKey: ["paciente-evol", pacienteId],
         queryFn: async () => {
-            const { data } = await (supabase.from("pacientes").select("tipo_atendimento").eq("id", pacienteId).single() as any);
+            const { data } = await supabase.from("pacientes").select("tipo_atendimento").eq("id", pacienteId).single();
             return data;
         },
         enabled: !!pacienteId && open,
