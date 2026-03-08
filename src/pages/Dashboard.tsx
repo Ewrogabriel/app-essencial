@@ -99,12 +99,14 @@ const Dashboard = () => {
   });
 
   const { data: alertCount = 0 } = useQuery({
-    queryKey: ["dashboard-alerts"],
+    queryKey: ["dashboard-alerts", activeClinicId],
     queryFn: async () => {
-      const { count } = await (supabase.from("pagamentos") as any)
+      let q = (supabase.from("pagamentos") as any)
         .select("id", { count: "exact", head: true })
         .eq("status", "pendente")
         .lte("data_vencimento", new Date().toISOString().split("T")[0]);
+      if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
+      const { count } = await q;
       return count ?? 0;
     },
   });
