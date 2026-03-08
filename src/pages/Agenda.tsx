@@ -161,6 +161,37 @@ const Agenda = () => {
         )}
       </div>
 
+      {/* Main Tabs: Agenda / Vagas / Lista de Espera */}
+      {isStaff && (
+        <Tabs value={mainTab} onValueChange={setMainTab}>
+          <TabsList>
+            <TabsTrigger value="agenda" className="gap-1.5">
+              <ChevronLeft className="h-3.5 w-3.5 hidden" />
+              Agenda
+            </TabsTrigger>
+            <TabsTrigger value="vagas" className="gap-1.5">
+              <CalendarCheck className="h-3.5 w-3.5" /> Vagas
+            </TabsTrigger>
+            <TabsTrigger value="lista-espera" className="gap-1.5">
+              <ListChecks className="h-3.5 w-3.5" /> Lista de Espera
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="vagas" className="mt-4">
+            <Suspense fallback={<LazyLoadFallback />}>
+              <VacancyCalendar />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="lista-espera" className="mt-4">
+            <Suspense fallback={<LazyLoadFallback />}>
+              <ListaEspera />
+            </Suspense>
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Professional Filter + Navigation + View Toggle (only visible on agenda tab) */}
+      {(mainTab === "agenda" || !isStaff) && <>
       {/* Professional Filter + Navigation + View Toggle */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
