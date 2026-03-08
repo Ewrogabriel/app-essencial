@@ -302,6 +302,15 @@ export function EnrollmentDetails({ enrollment }: Props) {
                     )}
                 </TabsContent>
 
+                {/* PAYMENTS TAB */}
+                <TabsContent value="payments" className="mt-3">
+                    <MatriculaPayments
+                        matriculaId={enrollment.id}
+                        pacienteId={enrollment.paciente_id}
+                        valorMensal={enrollment.valor_mensal}
+                    />
+                </TabsContent>
+
                 {/* CREDITS TAB */}
                 <TabsContent value="credits" className="mt-3">
                     {loadingCredits ? (
