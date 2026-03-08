@@ -218,6 +218,10 @@ const Agenda = () => {
               <FileDown className="h-4 w-4 mr-2" />
               Exportar PDF
             </Button>
+            <Button variant="outline" onClick={() => navigate("/matriculas")}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Nova Matrícula
+            </Button>
             <Button onClick={handleNewAgendamento}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Agendamento
