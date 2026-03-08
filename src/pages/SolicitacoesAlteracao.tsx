@@ -46,7 +46,7 @@ const SolicitacoesAlteracao = () => {
       if (error) throw error;
 
       // Buscar nomes dos pacientes
-      const pacienteIds = [...new Set((data || []).map((s: any) => s.paciente_id))];
+      const pacienteIds = [...new Set((data || []).map((s: any) => s.paciente_id))] as string[];
       if (pacienteIds.length === 0) return data || [];
 
       const { data: pacientes } = await supabase
