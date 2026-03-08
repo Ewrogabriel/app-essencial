@@ -15,6 +15,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useClinic } from "@/hooks/useClinic";
 import { MessageSquare, Bell, UserPlus, FileCheck, Send, Users, FileText, Download, Save, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";

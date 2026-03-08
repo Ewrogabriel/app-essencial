@@ -47,6 +47,7 @@ const GestaoClinicas = () => {
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
   const [form, setForm] = useState<ClinicaForm>(emptyForm);
   const [addUserId, setAddUserId] = useState("");
+  const [addUserRole, setAddUserRole] = useState("member");
 
   const { data: clinicas = [], isLoading } = useQuery({
     queryKey: ["gestao-clinicas"],
