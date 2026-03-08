@@ -145,7 +145,7 @@ const MeusPlanos = () => {
 
   // Check availability when time is selected
   useEffect(() => {
-    if (!selectedPlano?.profissional_id || !selectedDate || !selectedTime) {
+    if (!activeProfId || !selectedDate || !selectedTime) {
       setAvailabilityResult(null);
       return;
     }
@@ -153,7 +153,7 @@ const MeusPlanos = () => {
       const [h, m] = selectedTime.split(":").map(Number);
       const dt = new Date(selectedDate);
       dt.setHours(h, m, 0, 0);
-      const result = await checkAvailability(selectedPlano.profissional_id, dt);
+      const result = await checkAvailability(activeProfId, dt);
       setAvailabilityResult(result);
     }, 200);
     return () => clearTimeout(timer);
