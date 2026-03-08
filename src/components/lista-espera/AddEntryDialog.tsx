@@ -21,6 +21,7 @@ interface AddEntryDialogProps {
 
 const AddEntryDialog = ({ open, onOpenChange, tipo }: AddEntryDialogProps) => {
   const queryClient = useQueryClient();
+  const { activeClinicId } = useClinic();
   const [form, setForm] = useState({
     paciente_id: "",
     profissional_id: "",
