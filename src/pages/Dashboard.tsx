@@ -551,7 +551,7 @@ const Dashboard = () => {
                         title="Falar com Profissional"
                         className="h-7 w-7 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                         onClick={() => {
-                          const prof = item.profiles;
+                          const prof = profissionais.find((p: any) => p.user_id === item.profissional_id);
                           const cleanPhone = prof?.telefone?.replace(/\D/g, "");
                           if (cleanPhone) {
                             const fullPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
