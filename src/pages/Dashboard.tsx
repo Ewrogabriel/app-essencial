@@ -223,7 +223,7 @@ const Dashboard = () => {
       const todayStart = startOfDay(new Date()).toISOString();
       const todayEnd = endOfDay(new Date()).toISOString();
       const { data, error } = await (supabase.from("agendamentos") as any)
-        .select("*, pacientes(nome, telefone), profiles(nome, telefone)")
+        .select("*, pacientes(nome, telefone)")
         .gte("data_horario", todayStart)
         .lte("data_horario", todayEnd)
         .order("data_horario", { ascending: true });
