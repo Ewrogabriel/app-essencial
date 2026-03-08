@@ -127,15 +127,15 @@ const App = () => (
               <Route path="/equipamentos" element={<Inventario />} />
               <Route path="/financeiro" element={<Financeiro />} />
               <Route path="/relatorios" element={<Relatorios />} />
-              <Route path="/aniversariantes" element={<Aniversariantes />} />
+              <Route path="/aniversariantes" element={<Dashboard />} />
               <Route path="/modalidades" element={<Modalidades />} />
               <Route path="/profissionais" element={<Profissionais />} />
               <Route path="/automacoes" element={<Automacoes />} />
-              <Route path="/dicas-diarias" element={<DicasDiarias />} />
+              <Route path="/dicas-diarias" element={<Dashboard />} />
               <Route path="/avisos" element={<AvisosAdmin />} />
               <Route path="/disponibilidade" element={<Profissionais />} />
               <Route path="/contratos" element={<Contratos />} />
-              <Route path="/comissoes" element={<Comissoes />} />
+              <Route path="/comissoes" element={<Financeiro />} />
               <Route path="/perfil-profissional" element={<PerfilProfissional />} />
               <Route path="/profissional/:userId" element={<PerfilProfissionalPublico />} />
               <Route path="/clinica" element={<ClinicSettings />} />
