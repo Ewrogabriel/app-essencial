@@ -945,6 +945,37 @@ const SolicitacoesAlteracao = () => {
                     ))}
                   </div>
                 </>
+              ) : selectedType === "agendamento" ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Data/Hora Solicitada</Label>
+                      <p className="text-sm font-semibold text-primary">
+                        {format(new Date(selected.data_horario), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Tipo</Label>
+                      <p className="text-sm capitalize">{selected.tipo_atendimento}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Profissional</Label>
+                      <p className="text-sm">{selected.profissional_nome}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Duração</Label>
+                      <p className="text-sm">{selected.duracao_minutos} min</p>
+                    </div>
+                  </div>
+                  {selected.observacoes && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Observações</Label>
+                      <p className="text-sm">{selected.observacoes}</p>
+                    </div>
+                  )}
+                </>
               ) : selectedType === "reserva" ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
