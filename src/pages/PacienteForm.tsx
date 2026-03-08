@@ -262,6 +262,34 @@ const PacienteForm = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
+
+    // Validate patient CPF
+    const rawCpf = unmask(cpf);
+    if (rawCpf.length > 0) {
+      if (!isValidCPF(rawCpf)) {
+        toast({ title: "CPF inválido", description: "O CPF do paciente não é válido. Verifique os dígitos.", variant: "destructive" });
+        return;
+      }
+      const { data: existingPatient } = await supabase
+        .from("pacientes")
+        .select("id, nome")
+        .eq("cpf", cpf);
+      const dupPatient = (existingPatient ?? []).filter(p => !isEditing || p.id !== id);
+      if (dupPatient.length > 0) {
+        toast({ title: "CPF já cadastrado", description: `Este CPF já pertence ao paciente: ${dupPatient[0].nome}`, variant: "destructive" });
+        return;
+      }
+    }
+
+    // Validate responsible CPF
+    if (temResponsavel) {
+      const rawRespCpf = unmask(respCpf);
+      if (rawRespCpf.length > 0 && !isValidCPF(rawRespCpf)) {
+        toast({ title: "CPF do responsável inválido", description: "O CPF do responsável não é válido. Verifique os dígitos.", variant: "destructive" });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
