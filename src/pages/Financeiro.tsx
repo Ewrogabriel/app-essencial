@@ -79,21 +79,20 @@ const Financeiro = () => {
     },
   });
 
-  const { data: despesas = [] } = useQuery({
-    queryKey: ["despesas"],
+  const { data: despesasForDre = [] } = useQuery({
+    queryKey: ["despesas-dre"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("expenses").select("*");
+      const { data, error } = await supabase.from("expenses").select("valor, status");
       if (error) throw error;
       return data;
     },
     enabled: !isPatient,
   });
 
-  const { data: comissoes = [] } = useQuery({
-    queryKey: ["comissoes"],
+  const { data: comissoesForDre = [] } = useQuery({
+    queryKey: ["comissoes-dre"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("commissions")
-        .select("*");
+      const { data, error } = await supabase.from("commissions").select("valor");
       if (error) throw error;
       return data;
     },
@@ -129,8 +128,8 @@ const Financeiro = () => {
 
   const totalRecebido = (pagamentos || []).filter((p: any) => p.status === "pago").reduce((sum: number, p: any) => sum + Number(p.valor), 0);
   const totalPendente = (pagamentos || []).filter((p: any) => p.status === "pendente").reduce((sum: number, p: any) => sum + Number(p.valor), 0);
-  const totalDespesas = ((despesas as any[]) || []).filter((d) => d.status === "pago").reduce((sum: number, d) => sum + Number(d.valor), 0);
-  const totalComissoes = ((comissoes as any[]) || []).reduce((sum: number, c) => sum + Number(c.valor), 0);
+  const totalDespesas = ((despesasForDre as any[]) || []).filter((d) => d.status === "pago").reduce((sum: number, d) => sum + Number(d.valor), 0);
+  const totalComissoes = ((comissoesForDre as any[]) || []).reduce((sum: number, c) => sum + Number(c.valor), 0);
   
   const countPagos = (pagamentos || []).filter((p: any) => p.status === 'pago').length;
   const countPendentes = (pagamentos || []).filter((p: any) => p.status === 'pendente').length;

@@ -98,7 +98,7 @@ const App = () => (
               <Route path="/automacoes" element={<Automacoes />} />
               <Route path="/dicas-diarias" element={<DicasDiarias />} />
               <Route path="/avisos" element={<AvisosAdmin />} />
-              <Route path="/disponibilidade" element={<DisponibilidadeProfissional />} />
+              <Route path="/disponibilidade" element={<Profissionais />} />
               <Route path="/contratos" element={<Contratos />} />
               <Route path="/precos-planos" element={<PrecosPlanos />} />
               <Route path="/comissoes" element={<Financeiro />} />
@@ -107,7 +107,7 @@ const App = () => (
               <Route path="/clinica" element={<ClinicSettings />} />
               <Route path="/mensagens" element={<MensagensInternas />} />
               <Route path="/solicitacoes-alteracao" element={<SolicitacoesAlteracao />} />
-              <Route path="/formas-pagamento" element={<FormasPagamento />} />
+              <Route path="/formas-pagamento" element={<ClinicSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
