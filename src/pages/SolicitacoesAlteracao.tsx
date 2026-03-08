@@ -90,6 +90,39 @@ const SolicitacoesAlteracao = () => {
     },
   });
 
+  // ── Solicitações de Agendamento (pendente) ──
+  const { data: agendamentosPendentes = [], isLoading: loadingAgend } = useQuery({
+    queryKey: ["agendamentos-pendentes-admin"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("agendamentos") as any)
+        .select("id, data_horario, tipo_atendimento, duracao_minutos, status, paciente_id, profissional_id, observacoes, created_at")
+        .eq("status", "pendente")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      if (!data || data.length === 0) return [];
+
+      const pacienteIds = [...new Set(data.map((a: any) => a.paciente_id))] as string[];
+      const profIds = [...new Set(data.map((a: any) => a.profissional_id))] as string[];
+
+      const { data: pacientes } = await supabase.from("pacientes").select("id, nome, user_id").in("id", pacienteIds);
+      const pacMap: Record<string, any> = {};
+      (pacientes || []).forEach((p: any) => { pacMap[p.id] = p; });
+
+      let profMap: Record<string, string> = {};
+      if (profIds.length > 0) {
+        const { data: profs } = await supabase.from("profiles").select("user_id, nome").in("user_id", profIds);
+        (profs || []).forEach((p: any) => { profMap[p.user_id] = p.nome; });
+      }
+
+      return data.map((a: any) => ({
+        ...a,
+        paciente_nome: pacMap[a.paciente_id]?.nome || "—",
+        paciente_user_id: pacMap[a.paciente_id]?.user_id || null,
+        profissional_nome: profMap[a.profissional_id] || "—",
+      }));
+    },
+  });
+
   // ── Reservas de Produtos ──
   const { data: reservas = [], isLoading: loadingReservas } = useQuery({
     queryKey: ["reservas-produtos-admin"],
