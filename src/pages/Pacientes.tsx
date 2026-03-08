@@ -28,6 +28,7 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useClinic } from "@/hooks/useClinic";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -45,6 +46,7 @@ type Paciente = Tables<"pacientes">;
 const Pacientes = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { activeClinicId } = useClinic();
   const [busca, setBusca] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroStatus, setFiltroStatus] = useState("todos");
@@ -67,8 +69,22 @@ const Pacientes = () => {
   };
 
   const { data: pacientes = [], isLoading } = useQuery({
-    queryKey: ["pacientes"],
+    queryKey: ["pacientes", activeClinicId],
     queryFn: async () => {
+      if (activeClinicId) {
+        // Get patient IDs linked to this clinic
+        const { data: cpData } = await (supabase.from("clinic_pacientes") as any)
+          .select("paciente_id")
+          .eq("clinic_id", activeClinicId);
+        const ids = cpData?.map((cp: any) => cp.paciente_id) ?? [];
+        if (!ids.length) return [];
+        const { data, error } = await (supabase.from("pacientes") as any)
+          .select("*")
+          .in("id", ids)
+          .order("nome");
+        if (error) throw error;
+        return data as Paciente[];
+      }
       const { data, error } = await (supabase.from("pacientes") as any)
         .select("*")
         .order("nome");
