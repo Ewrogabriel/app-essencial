@@ -52,6 +52,8 @@ export function RescheduleDialog({ open, onOpenChange, agendamento, onSuccess }:
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [monthlyAvail, setMonthlyAvail] = useState<Record<number, number>>({});
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [suggestedSlots, setSuggestedSlots] = useState<SuggestedSlot[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   // Reseta campos quando o modal abre
   useEffect(() => {
