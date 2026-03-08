@@ -53,7 +53,7 @@ const AddEntryDialog = ({ open, onOpenChange, tipo }: AddEntryDialogProps) => {
     },
   });
 
-  const { modalidades = [] } = useModalidades();
+  const { data: modalidades = [] } = useModalidades({ ativo: true });
 
   const { data: matriculas = [] } = useQuery({
     queryKey: ["matriculas-paciente", form.paciente_id],
