@@ -128,11 +128,12 @@ const DisponibilidadeProfissional = () => {
   const vacancyProfName = profissionais.find((p) => p.user_id === effectiveVacancyProfId)?.nome || "Profissional";
 
   const { data: slots = [], refetch } = useQuery({
-    queryKey: ["disponibilidade", profId],
+    queryKey: ["disponibilidade", profId, activeClinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("disponibilidade_profissional")
-        .select("*").eq("profissional_id", profId).eq("ativo", true)
-        .order("dia_semana").order("hora_inicio");
+      let q = supabase.from("disponibilidade_profissional")
+        .select("*").eq("profissional_id", profId).eq("ativo", true);
+      if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
+      const { data } = await q.order("dia_semana").order("hora_inicio");
       return (data ?? []) as Slot[];
     },
     enabled: !!profId,

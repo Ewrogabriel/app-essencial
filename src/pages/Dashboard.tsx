@@ -259,17 +259,19 @@ const Dashboard = () => {
 
   // Past Sessions (Yesterday)
   const { data: pastAgenda = [] } = useQuery({
-    queryKey: ["dashboard-past-agenda"],
+    queryKey: ["dashboard-past-agenda", activeClinicId],
     queryFn: async () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const pastStart = startOfDay(yesterday).toISOString();
       const pastEnd = endOfDay(yesterday).toISOString();
-      const { data, error } = await (supabase.from("agendamentos") as any)
+      let q = (supabase.from("agendamentos") as any)
         .select("*, pacientes(nome, telefone)")
         .gte("data_horario", pastStart)
         .lte("data_horario", pastEnd)
         .order("data_horario", { ascending: false });
+      if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
