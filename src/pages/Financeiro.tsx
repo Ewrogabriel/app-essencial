@@ -225,11 +225,12 @@ const Financeiro = () => {
       {/* Tabs */}
       <Tabs defaultValue="fluxo" className="space-y-4">
         {!isPatient && (
-          <TabsList className="grid w-full grid-cols-5 lg:w-[700px]">
+          <TabsList className="flex flex-wrap w-full max-w-4xl gap-1">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="fluxo">Pagamentos</TabsTrigger>
             <TabsTrigger value="despesas">Despesas</TabsTrigger>
             <TabsTrigger value="comissoes">Comissões</TabsTrigger>
+            <TabsTrigger value="notas-fiscais">Notas Fiscais</TabsTrigger>
             <TabsTrigger value="dre">DRE</TabsTrigger>
           </TabsList>
         )}
