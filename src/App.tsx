@@ -37,7 +37,7 @@ import AvisosAdmin from "./pages/AvisosAdmin";
 import DisponibilidadeProfissional from "./pages/DisponibilidadeProfissional";
 import MeuPerfil from "./pages/MeuPerfil";
 import Contratos from "./pages/Contratos";
-// Comissoes is now a tab inside Financeiro
+import Comissoes from "./pages/Comissoes";
 import PerfilProfissional from "./pages/PerfilProfissional";
 import PerfilProfissionalPublico from "./pages/PerfilProfissionalPublico";
 import ClinicSettings from "./pages/ClinicSettings";
@@ -107,7 +107,7 @@ const App = () => (
               <Route path="/disponibilidade" element={<Profissionais />} />
               <Route path="/contratos" element={<Contratos />} />
               
-              <Route path="/comissoes" element={<Financeiro />} />
+              <Route path="/comissoes" element={<Comissoes />} />
               <Route path="/perfil-profissional" element={<PerfilProfissional />} />
               <Route path="/profissional/:userId" element={<PerfilProfissionalPublico />} />
               <Route path="/clinica" element={<ClinicSettings />} />
