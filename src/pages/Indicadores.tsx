@@ -178,13 +178,21 @@ export default function Indicadores() {
   });
 
   const { data: financeData } = useQuery({
-    queryKey: ["indicadores-finance"],
+    queryKey: ["indicadores-finance", activeClinicId],
     queryFn: async () => {
       const inicioMesStr = startOfMonth(agora).toISOString().split('T')[0];
       const fimMesStr = endOfMonth(agora).toISOString().split('T')[0];
-      const { data: pagamentos } = await (supabase.from("pagamentos") as any).select("valor, status").gte("data_pagamento", inicioMesStr).lte("data_pagamento", fimMesStr);
-      const { data: despesas } = await (supabase.from("expenses") as any).select("valor, status");
-      const { data: comissoes } = await (supabase.from("commissions") as any).select("valor");
+      let qPag = (supabase.from("pagamentos") as any).select("valor, status").gte("data_pagamento", inicioMesStr).lte("data_pagamento", fimMesStr);
+      let qDesp = (supabase.from("expenses") as any).select("valor, status");
+      let qCom = (supabase.from("commissions") as any).select("valor");
+      if (activeClinicId) {
+        qPag = qPag.eq("clinic_id", activeClinicId);
+        qDesp = qDesp.eq("clinic_id", activeClinicId);
+        qCom = qCom.eq("clinic_id", activeClinicId);
+      }
+      const { data: pagamentos } = await qPag;
+      const { data: despesas } = await qDesp;
+      const { data: comissoes } = await qCom;
 
       const receita = (pagamentos || [])?.filter((p: any) => p.status === 'pago').reduce((acc: number, p: any) => acc + Number(p.valor), 0) || 0;
       const custos = (despesas || [])?.filter((d: any) => d.status === 'pago').reduce((acc: number, d: any) => acc + Number(d.valor), 0) || 0;
