@@ -94,26 +94,26 @@ const Contratos = () => {
 
   const valorFinal = plano ? plano.valor * (1 - (desconto?.percentual_desconto || 0) / 100) : 0;
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!paciente) { toast({ title: "Selecione um paciente", variant: "destructive" }); return; }
-    const pdf = generateContractPDF(getContractData());
+    const pdf = await generateContractPDF(getContractData());
     pdf.save(`Contrato_${paciente.nome.replace(/\s/g, "_")}.pdf`);
     toast({ title: "Contrato gerado com sucesso!" });
   };
 
-  const handleWhatsAppSend = () => {
+  const handleWhatsAppSend = async () => {
     if (!paciente?.telefone) { toast({ title: "Paciente sem telefone cadastrado", variant: "destructive" }); return; }
-    handleDownload();
+    await handleDownload();
     const phone = paciente.telefone.replace(/\D/g, "");
     const fullPhone = phone.startsWith("55") ? phone : `55${phone}`;
     const msg = encodeURIComponent(`Olá ${paciente.nome}! Segue seu contrato da Essencial Fisio Pilates. Por favor, confira e assine. Qualquer dúvida estamos à disposição! 😊`);
     window.open(`https://wa.me/${fullPhone}?text=${msg}`, "_blank");
   };
 
-  const handleProfissionalDownload = () => {
+  const handleProfissionalDownload = async () => {
     if (!profissional) { toast({ title: "Selecione um profissional", variant: "destructive" }); return; }
     const endParts = [profissional.endereco, profissional.numero ? `nº ${profissional.numero}` : "", profissional.bairro, profissional.cidade, profissional.estado].filter(Boolean).join(", ");
-    const doc = generateProfessionalContractPDF({
+    const doc = await generateProfessionalContractPDF({
       profissionalNome: profissional.nome,
       registroProfissional: profissional.registro_profissional || "",
       tipoContratacao: profissional.tipo_contratacao || "autonomo",

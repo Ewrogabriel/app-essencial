@@ -246,13 +246,13 @@ const Financeiro = () => {
                         <TableCell className="text-right">
                           {pagamento.status === "pago" && (
                             <div className="flex gap-1 justify-end">
-                              <Button size="sm" variant="outline" className="h-8" onClick={() => {
+                              <Button size="sm" variant="outline" className="h-8" onClick={async () => {
                                 const numero = getReceiptNumber(pagamento.id, pagamento.created_at);
                                 const dataPgto = format(new Date(pagamento.data_pagamento), "dd/MM/yyyy");
                                 const ref = pagamento.data_vencimento
                                   ? format(new Date(pagamento.data_vencimento), "MMMM/yyyy", { locale: ptBR })
                                   : pagamento.descricao || "Serviço";
-                                const pdf = generateReceiptPDF({
+                                const pdf = await generateReceiptPDF({
                                   numero,
                                   pacienteNome: pagamento.pacientes?.nome || "—",
                                   cpf: "",
