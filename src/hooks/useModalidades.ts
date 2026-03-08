@@ -54,10 +54,10 @@ export function useCreateModalidade() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ nome, descricao, ativo, userId }: { nome: string; descricao?: string; ativo: boolean; userId: string }) => {
+    mutationFn: async ({ nome, descricao, ativo, userId, clinicId }: { nome: string; descricao?: string; ativo: boolean; userId: string; clinicId?: string | null }) => {
       const { error } = await supabase
         .from("modalidades")
-        .insert({ nome: nome.trim(), descricao: descricao || null, ativo, created_by: userId });
+        .insert({ nome: nome.trim(), descricao: descricao || null, ativo, created_by: userId, clinic_id: clinicId } as any);
       if (error) throw error;
     },
     onSuccess: () => {
