@@ -565,7 +565,7 @@ const Comissoes = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS_ATENDIMENTO.map(t => (
+                  {tiposAtendimento.map(t => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
                 </SelectContent>
