@@ -65,16 +65,16 @@ const Dashboard = () => {
     queryKey: ["pacientes", activeClinicId],
     queryFn: async () => {
       if (activeClinicId) {
-        const { data: cp } = await (supabase.from("clinic_pacientes") as any)
+        const { data: cp } = await supabase.from("clinic_pacientes")
           .select("paciente_id").eq("clinic_id", activeClinicId);
-        const ids = (cp || []).map((c: any) => c.paciente_id);
+        const ids = (cp || []).map((c) => c.paciente_id);
         if (!ids.length) return [];
-        const { data, error } = await (supabase.from("pacientes") as any)
+        const { data, error } = await supabase.from("pacientes")
           .select("*").in("id", ids).order("created_at", { ascending: false });
         if (error) throw error;
         return data;
       }
-      const { data, error } = await (supabase.from("pacientes") as any)
+      const { data, error } = await supabase.from("pacientes")
         .select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
