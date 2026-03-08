@@ -198,7 +198,7 @@ const Comissoes = () => {
   };
 
   const getProfName = (id: string) => profissionais.find((p: any) => p.user_id === id)?.nome || "—";
-  const getTipoLabel = (v: string) => TIPOS_ATENDIMENTO.find(t => t.value === v)?.label || v;
+  const getTipoLabel = (v: string) => tiposAtendimento.find(t => t.value === v)?.label || v;
 
   const filteredRegras = filterProf === "todos"
     ? regrasComissao
