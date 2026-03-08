@@ -31,8 +31,13 @@ const MeusPlanos = () => {
   const queryClient = useQueryClient();
   const [agendarOpen, setAgendarOpen] = useState(false);
   const [selectedPlano, setSelectedPlano] = useState<any>(null);
-  const [dataHorario, setDataHorario] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState("");
   const [duracao, setDuracao] = useState("50");
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [monthlyAvail, setMonthlyAvail] = useState<Record<number, number>>({});
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [availabilityResult, setAvailabilityResult] = useState<AvailabilityCheckResult | null>(null);
 
   // Planos de sessões
   const { data: planos = [] } = useQuery({
