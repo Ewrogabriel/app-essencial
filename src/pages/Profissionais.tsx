@@ -57,6 +57,9 @@ interface UserRecord {
   permissions: PermissionEntry[];
 }
 
+const toPermEntries = (keys: string[], level: "view" | "edit" = "edit"): PermissionEntry[] =>
+  keys.map(k => ({ resource: k, access_level: level }));
+
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
   profissional: "Profissional",
