@@ -18,6 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { maskCPF, maskPhone, maskCEP, maskRG, isValidCPF, unmask } from "@/lib/masks";
 import { useAuth } from "@/hooks/useAuth";
+import { useClinic } from "@/hooks/useClinic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const PacienteForm = () => {
