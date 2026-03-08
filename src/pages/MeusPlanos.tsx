@@ -8,6 +8,7 @@ import { getMonthlyAvailability, checkAvailability, type AvailabilityCheckResult
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
+import { useCrossBookingClinics } from "@/hooks/useCrossBooking";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
