@@ -20,6 +20,7 @@ import { PatientAgendaTab } from "@/components/patient/PatientAgendaTab";
 import { PatientFinanceTab } from "@/components/patient/PatientFinanceTab";
 import { PatientProdutosTab } from "@/components/patient/PatientProdutosTab";
 import { PatientInfoTab } from "@/components/patient/PatientInfoTab";
+import { PatientEvolutionsTab } from "@/components/patient/PatientEvolutionsTab";
 import { NpsSurvey } from "@/components/patient/NpsSurvey";
 
 const PatientDashboard = () => {
