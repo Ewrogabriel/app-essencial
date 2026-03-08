@@ -1599,6 +1599,7 @@ export type Database = {
           estado: string | null
           foto_url: string | null
           id: string
+          identidade_genero: string | null
           lgpd_consentimento: boolean | null
           lgpd_consentimento_data: string | null
           nf_cnpj_cpf: string | null
@@ -1607,6 +1608,7 @@ export type Database = {
           nf_inscricao_estadual: string | null
           nf_razao_social: string | null
           nome: string
+          nome_social: string | null
           numero: string | null
           observacoes: string | null
           profissional_id: string | null
@@ -1626,6 +1628,7 @@ export type Database = {
           responsavel_telefone: string | null
           rg: string | null
           rua: string | null
+          sexo: string | null
           solicita_nf: boolean | null
           status: Database["public"]["Enums"]["status_paciente"]
           telefone: string
@@ -1649,6 +1652,7 @@ export type Database = {
           estado?: string | null
           foto_url?: string | null
           id?: string
+          identidade_genero?: string | null
           lgpd_consentimento?: boolean | null
           lgpd_consentimento_data?: string | null
           nf_cnpj_cpf?: string | null
@@ -1657,6 +1661,7 @@ export type Database = {
           nf_inscricao_estadual?: string | null
           nf_razao_social?: string | null
           nome: string
+          nome_social?: string | null
           numero?: string | null
           observacoes?: string | null
           profissional_id?: string | null
@@ -1676,6 +1681,7 @@ export type Database = {
           responsavel_telefone?: string | null
           rg?: string | null
           rua?: string | null
+          sexo?: string | null
           solicita_nf?: boolean | null
           status?: Database["public"]["Enums"]["status_paciente"]
           telefone: string
@@ -1699,6 +1705,7 @@ export type Database = {
           estado?: string | null
           foto_url?: string | null
           id?: string
+          identidade_genero?: string | null
           lgpd_consentimento?: boolean | null
           lgpd_consentimento_data?: string | null
           nf_cnpj_cpf?: string | null
@@ -1707,6 +1714,7 @@ export type Database = {
           nf_inscricao_estadual?: string | null
           nf_razao_social?: string | null
           nome?: string
+          nome_social?: string | null
           numero?: string | null
           observacoes?: string | null
           profissional_id?: string | null
@@ -1726,6 +1734,7 @@ export type Database = {
           responsavel_telefone?: string | null
           rg?: string | null
           rua?: string | null
+          sexo?: string | null
           solicita_nf?: boolean | null
           status?: Database["public"]["Enums"]["status_paciente"]
           telefone?: string

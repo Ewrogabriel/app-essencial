@@ -21,6 +21,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import defaultAvatarImg from "@/assets/default-avatar.png";
+import defaultAvatarMale from "@/assets/default-avatar-male.png";
+import defaultAvatarFemale from "@/assets/default-avatar-female.png";
 
 const PacienteForm = () => {
   const navigate = useNavigate();
@@ -40,6 +42,9 @@ const PacienteForm = () => {
   const [dataNascimento, setDataNascimento] = useState("");
   const [fotoUrl, setFotoUrl] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [sexo, setSexo] = useState("");
+  const [identidadeGenero, setIdentidadeGenero] = useState("");
+  const [nomeSocial, setNomeSocial] = useState("");
 
   // Address
   const [cep, setCep] = useState("");
@@ -116,6 +121,9 @@ const PacienteForm = () => {
           setEmail(data.email || "");
           setDataNascimento(data.data_nascimento || "");
           setFotoUrl(data.foto_url || "");
+          setSexo(data.sexo || "");
+          setIdentidadeGenero(data.identidade_genero || "");
+          setNomeSocial(data.nome_social || "");
           setCep(data.cep || "");
           setRua(data.rua || "");
           setNumero(data.numero || "");
@@ -320,6 +328,9 @@ const PacienteForm = () => {
         email: email || null,
         data_nascimento: dataNascimento || null,
         foto_url: fotoUrl || null,
+        sexo: sexo || null,
+        identidade_genero: identidadeGenero || null,
+        nome_social: nomeSocial || null,
         cep: cep || null,
         rua: rua || null,
         numero: numero || null,
@@ -484,7 +495,11 @@ const PacienteForm = () => {
                 {fotoUrl ? (
                   <img src={fotoUrl} alt="Foto do paciente" className="w-full h-full object-cover" />
                 ) : (
-                  <img src={defaultAvatarImg} alt="Avatar padrão" className="w-full h-full object-cover opacity-60" />
+                  <img 
+                    src={sexo === "masculino" ? defaultAvatarMale : sexo === "feminino" ? defaultAvatarFemale : defaultAvatarImg} 
+                    alt="Avatar padrão" 
+                    className="w-full h-full object-cover opacity-60" 
+                  />
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera className="h-5 w-5 text-white" />
@@ -536,6 +551,35 @@ const PacienteForm = () => {
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input id="email" type="email" placeholder="email@exemplo.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nome_social">Nome Social</Label>
+                <Input id="nome_social" placeholder="Nome social (opcional)" value={nomeSocial} onChange={(e) => setNomeSocial(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sexo">Sexo</Label>
+                <Select value={sexo} onValueChange={setSexo}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="masculino">Masculino</SelectItem>
+                    <SelectItem value="feminino">Feminino</SelectItem>
+                    <SelectItem value="intersexo">Intersexo</SelectItem>
+                    <SelectItem value="prefiro_nao_informar">Prefiro não informar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="identidade_genero">Identidade de Gênero</Label>
+                <Select value={identidadeGenero} onValueChange={setIdentidadeGenero}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cisgênero">Cisgênero</SelectItem>
+                    <SelectItem value="transgênero">Transgênero</SelectItem>
+                    <SelectItem value="não-binário">Não-binário</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                    <SelectItem value="prefiro_nao_informar">Prefiro não informar</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>
