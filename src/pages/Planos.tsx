@@ -167,7 +167,7 @@ const Planos = () => {
     onError: (e: Error) => toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" }),
   });
 
-  const planosAtivos = (planos as any[]).filter((p) => p.status === "ativo");
+  const planosAtivos = planos.filter((p) => p.status === "ativo");
   const planosVencendo = planosAtivos.filter((p) => {
     if (!p.data_vencimento) return false;
     const diff = new Date(p.data_vencimento).getTime() - Date.now();
