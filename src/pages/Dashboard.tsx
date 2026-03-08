@@ -203,14 +203,14 @@ const Dashboard = () => {
   const { data: frequencyRanking = [] } = useQuery({
     queryKey: ["dashboard-frequency-ranking", activeClinicId],
     queryFn: async () => {
-      let q = (supabase.from("agendamentos") as any)
+      let q = supabase.from("agendamentos")
         .select("paciente_id, status, pacientes(nome)");
       if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
       const { data: agendamentos } = await q;
       if (!agendamentos) return [];
 
       const stats: Record<string, { nome: string; total: number; cancelados: number; realizados: number; checkins: number }> = {};
-      agendamentos.forEach((ag: any) => {
+      agendamentos.forEach((ag) => {
         const pid = ag.paciente_id;
         if (!stats[pid]) {
           stats[pid] = { nome: ag.pacientes?.nome || "?", total: 0, cancelados: 0, realizados: 0, checkins: 0 };
