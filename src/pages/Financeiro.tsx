@@ -28,6 +28,7 @@ import { generateReceiptPDF, getReceiptNumber } from "@/lib/generateReceiptPDF";
 import Despesas from "./Despesas";
 import { CommissionExtract } from "@/components/profissionais/CommissionExtract";
 import { useClinic } from "@/hooks/useClinic";
+import { FinanceDashboard } from "@/components/reports/FinanceDashboard";
 
 const statusBadge: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pago: { label: "Pago", variant: "default" },
@@ -220,13 +221,18 @@ const Financeiro = () => {
       {/* Tabs */}
       <Tabs defaultValue="fluxo" className="space-y-4">
         {!isPatient && (
-          <TabsList className="grid w-full grid-cols-4 lg:w-[560px]">
+          <TabsList className="grid w-full grid-cols-5 lg:w-[700px]">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="fluxo">Pagamentos</TabsTrigger>
             <TabsTrigger value="despesas">Despesas</TabsTrigger>
-            <TabsTrigger value="comissoes">Extrato Comissões</TabsTrigger>
-            <TabsTrigger value="dre">DRE Simples</TabsTrigger>
+            <TabsTrigger value="comissoes">Comissões</TabsTrigger>
+            <TabsTrigger value="dre">DRE</TabsTrigger>
           </TabsList>
         )}
+
+        <TabsContent value="dashboard">
+          <FinanceDashboard />
+        </TabsContent>
 
         <TabsContent value="fluxo" className="space-y-4">
           {/* Filters */}

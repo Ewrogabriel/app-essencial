@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { FileText } from "lucide-react";
+import { SignaturePad } from "./SignaturePad";
 
 const EVOLUTION_TEMPLATES = [
   {
@@ -52,6 +53,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
     const queryClient = useQueryClient();
     const [descricao, setDescricao] = useState("");
     const [conduta, setConduta] = useState("");
+    const [assinaturaUrl, setAssinaturaUrl] = useState("");
 
     const evolutionMutation = useMutation({
         mutationFn: async () => {
@@ -63,6 +65,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
                 profissional_id: user.id,
                 descricao,
                 conduta,
+                assinatura_url: assinaturaUrl || null,
                 data_evolucao: new Date().toISOString(),
             });
 
@@ -146,6 +149,11 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
                                 rows={3}
                             />
                         </div>
+                        {/* Digital Signature */}
+                        <SignaturePad onSave={setAssinaturaUrl} />
+                        {assinaturaUrl && (
+                            <p className="text-xs text-green-600 font-medium">✓ Assinatura capturada</p>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
