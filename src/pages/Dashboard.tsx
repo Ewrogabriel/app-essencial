@@ -297,15 +297,23 @@ const Dashboard = () => {
 
   // Professionals for the re-assignment dialog
   const { data: profissionais = [] } = useQuery({
-    queryKey: ["profissionais-dashboard"],
+    queryKey: ["profissionais-dashboard", activeClinicId],
     queryFn: async () => {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id")
         .in("role", ["profissional", "admin", "gestor"]);
 
-      const userIds = roles?.map(r => r.user_id) || [];
+      let userIds = roles?.map(r => r.user_id) || [];
       if (userIds.length === 0) return [];
+
+      if (activeClinicId) {
+        const { data: cu } = await (supabase.from("clinic_users") as any)
+          .select("user_id").eq("clinic_id", activeClinicId);
+        const clinicUserIds = new Set((cu || []).map((c: any) => c.user_id));
+        userIds = userIds.filter(id => clinicUserIds.has(id));
+        if (!userIds.length) return [];
+      }
 
       const { data, error } = await supabase
         .from("profiles")

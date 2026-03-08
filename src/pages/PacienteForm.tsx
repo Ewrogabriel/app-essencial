@@ -401,6 +401,14 @@ const PacienteForm = () => {
           ),
           duration: 10000,
         });
+
+        // Link patient to active clinic
+        if (activeClinicId && savedPatientId) {
+          await (supabase.from("clinic_pacientes") as any).insert({
+            clinic_id: activeClinicId,
+            paciente_id: savedPatientId,
+          });
+        }
       }
 
       // Try to create patient account if CPF exists
