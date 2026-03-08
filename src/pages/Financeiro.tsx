@@ -313,41 +313,12 @@ const Financeiro = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="despesas" className="space-y-4">
+          <Despesas />
+        </TabsContent>
+
         <TabsContent value="comissoes" className="space-y-4">
-          <Card>
-            <CardContent className="p-0">
-              {(comissoes || []).length === 0 ? (
-                <div className="p-12 text-center text-muted-foreground">Nenhuma comissão gerada ainda.</div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Profissional</TableHead>
-                      <TableHead>Paciente</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Valor Comissão</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(comissoes || []).map((c: any) => (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.profiles?.nome}</TableCell>
-                        <TableCell>{c.agendamentos?.pacientes?.nome || "—"}</TableCell>
-                        <TableCell>{format(new Date(c.created_at), "dd/MM/yyyy")}</TableCell>
-                        <TableCell>R$ {Number(c.valor).toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge variant={c.status === "pago" ? "outline" : "secondary"}>
-                            {c.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <Comissoes />
         </TabsContent>
       </Tabs>
 

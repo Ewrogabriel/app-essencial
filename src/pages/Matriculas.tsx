@@ -658,6 +658,11 @@ const Matriculas = () => {
           </Card>
         </TabsContent>
 
+        {/* PLANOS TAB */}
+        <TabsContent value="planos" className="mt-4">
+          <Planos />
+        </TabsContent>
+
         {/* REPORTS TAB */}
         <TabsContent value="relatorios" className="mt-4">
           <CommissionReport />

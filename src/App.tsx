@@ -101,7 +101,7 @@ const App = () => (
               <Route path="/disponibilidade" element={<DisponibilidadeProfissional />} />
               <Route path="/contratos" element={<Contratos />} />
               <Route path="/precos-planos" element={<PrecosPlanos />} />
-              <Route path="/comissoes" element={<Comissoes />} />
+              <Route path="/comissoes" element={<Financeiro />} />
               <Route path="/perfil-profissional" element={<PerfilProfissional />} />
               <Route path="/profissional/:userId" element={<PerfilProfissionalPublico />} />
               <Route path="/clinica" element={<ClinicSettings />} />
