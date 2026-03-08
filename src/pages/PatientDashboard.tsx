@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Activity, AlertCircle, Clock, TrendingUp, MessageCircle } from "lucide-react";
+import { Calendar, DollarSign, Activity, AlertCircle, Clock, MessageCircle, ShoppingBag } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +11,6 @@ import { ptBR } from "date-fns/locale";
 import { Progress } from "@/components/ui/progress";
 import { useClinicSettings } from "@/hooks/useClinicSettings";
 import { toast } from "@/hooks/use-toast";
-import { Lightbulb, RefreshCw } from "lucide-react";
 import { DashboardSkeleton } from "@/components/ui/skeletons";
 import { DailyTipsCard } from "@/components/dashboard/DailyTipsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -140,6 +139,7 @@ const PatientDashboard = () => {
     enabled: !!patientId,
   });
 
+  // Products - always fetch for the trending card
   const { data: produtosDisponiveis = [] } = useQuery({
     queryKey: ["produtos-disponiveis"],
     queryFn: async () => {
@@ -148,7 +148,21 @@ const PatientDashboard = () => {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: activeTab === "produtos",
+  });
+
+  // Patient's past reservations for trending
+  const { data: minhasReservas = [] } = useQuery({
+    queryKey: ["minhas-reservas", patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+      const { data, error } = await supabase
+        .from("reservas_produtos")
+        .select("produto_id")
+        .eq("paciente_id", patientId);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!patientId,
   });
 
   const { data: formasPagamento = [] } = useQuery({
@@ -251,7 +265,6 @@ const PatientDashboard = () => {
       
       if (reservaError) throw reservaError;
 
-      // Create notification for admins
       const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
       const adminIds = (adminRoles || []).map((r) => r.user_id);
       if (adminIds.length > 0) {
@@ -274,6 +287,7 @@ const PatientDashboard = () => {
       setSelectedProduto(null);
       setObservacao("");
       queryClient.invalidateQueries({ queryKey: ["produtos-disponiveis"] });
+      queryClient.invalidateQueries({ queryKey: ["minhas-reservas"] });
     },
     onError: (error) => {
       toast({ title: "Erro ao reservar", description: (error as any).message, variant: "destructive" });
@@ -288,7 +302,22 @@ const PatientDashboard = () => {
   const planoVencimento = planoAtivo?.data_vencimento ? new Date(planoAtivo.data_vencimento) : null;
   const diasParaVencer = planoVencimento ? differenceInDays(planoVencimento, hoje) : null;
 
-  // Static tips removed - using AI-powered DailyTipsCard instead
+  // Trending products: prioritize products the patient has reserved before, then fill with others
+  const getTrendingProducts = () => {
+    const reservedProductIds = minhasReservas.map((r: any) => r.produto_id);
+    const reservedCount: Record<string, number> = {};
+    reservedProductIds.forEach((id: string) => {
+      reservedCount[id] = (reservedCount[id] || 0) + 1;
+    });
+
+    const sorted = [...produtosDisponiveis].sort((a: any, b: any) => {
+      return (reservedCount[b.id] || 0) - (reservedCount[a.id] || 0);
+    });
+
+    return sorted.slice(0, 4);
+  };
+
+  const trendingProducts = getTrendingProducts();
 
   const openWhatsAppClinic = () => {
     const whatsapp = clinicSettings?.whatsapp?.replace(/\D/g, "") || "";
@@ -312,104 +341,129 @@ const PatientDashboard = () => {
           <h1 className="text-2xl font-bold tracking-tight">
             {saudacao}, {profile?.nome?.split(" ")[0]}! 👋
           </h1>
-          <p className="text-muted-foreground">
-            {format(hoje, "EEEE, dd 'de' MMMM", { locale: ptBR })} • {format(hoje, "HH:mm")}
+          <p className="text-muted-foreground text-sm">
+            {format(hoje, "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
-        <Button variant="outline" onClick={openWhatsAppClinic} className="gap-2">
+        <Button variant="outline" size="sm" onClick={openWhatsAppClinic} className="gap-2">
           <MessageCircle className="h-4 w-4" /> Suporte
         </Button>
       </div>
 
-      {/* Dicas do Dia - AI powered */}
-      <DailyTipsCard tipo="paciente" />
-
-      {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Sessões Restantes</CardTitle>
-            <Activity className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {planoAtivo ? `${sessoesRestantes} / ${planoAtivo.total_sessoes}` : "—"}
-            </div>
-            {planoAtivo && <Progress value={sessoesPercent} className="mt-2 h-2" />}
-            <p className="text-xs text-muted-foreground mt-1">
-              {planoAtivo ? `Plano de ${planoAtivo.tipo_atendimento}` : "Nenhum plano ativo"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Próxima Consulta</CardTitle>
-            <Calendar className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">
-              {agenda.length > 0 ? format(new Date(agenda[0].data_horario), "dd 'de' MMM, HH:mm", { locale: ptBR }) : "Nenhuma"}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {agenda.length > 0 ? `Com ${agenda[0].profiles?.nome}` : "Nenhuma sessão agendada"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Frequência</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{frequencyStats?.taxa ?? 0}%</div>
-            <Progress value={frequencyStats?.taxa ?? 0} className="mt-2 h-2" />
-            <p className="text-xs text-muted-foreground mt-1">
-              {frequencyStats?.realizados ?? 0} realizadas • {frequencyStats?.faltas ?? 0} faltas
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Financeiro</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            {pendencias.length > 0 ? (
-              <>
-                <Badge variant="destructive" className="mb-1">{pendencias.length} pendência(s)</Badge>
-                <p className="text-xs text-muted-foreground mt-1">
-                  R$ {pendencias.reduce((s: number, p: any) => s + Number(p.valor), 0).toFixed(2)} em aberto
-                </p>
-              </>
-            ) : (
-              <>
-                <Badge variant="outline" className="text-green-700 bg-green-50 border-green-200 mb-1">Em dia</Badge>
-                <p className="text-xs text-muted-foreground mt-1">Nenhuma pendência</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Plan warnings */}
+      {/* Plan warnings - compact */}
       {planoVencimento && diasParaVencer !== null && diasParaVencer <= 15 && diasParaVencer >= 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-          <Clock className="h-5 w-5 shrink-0 mt-0.5" />
-          <div>
-            <strong>Seu plano vence em {diasParaVencer} dia(s)!</strong>
-            <p className="text-xs mt-1">Vencimento: {format(planoVencimento, "dd/MM/yyyy")}. Entre em contato para renovação.</p>
-          </div>
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          <Clock className="h-4 w-4 shrink-0" />
+          <span><strong>Plano vence em {diasParaVencer} dia(s)</strong> — {format(planoVencimento, "dd/MM/yyyy")}</span>
         </div>
       )}
       {planoVencimento && diasParaVencer !== null && diasParaVencer < 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
-          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-          <div>
-            <strong>Seu plano está vencido!</strong>
-            <p className="text-xs mt-1">Venceu em {format(planoVencimento, "dd/MM/yyyy")}. Regularize junto à clínica.</p>
-          </div>
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span><strong>Plano vencido</strong> em {format(planoVencimento, "dd/MM/yyyy")} — regularize junto à clínica.</span>
         </div>
       )}
+
+      {/* KPI Cards - 3 columns, cleaner */}
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Sessões</p>
+              <p className="text-lg font-bold">
+                {planoAtivo ? `${sessoesRestantes}/${planoAtivo.total_sessoes}` : "—"}
+              </p>
+            </div>
+          </div>
+          {planoAtivo && <Progress value={sessoesPercent} className="mt-2 h-1.5" />}
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Próxima</p>
+              <p className="text-sm font-bold">
+                {agenda.length > 0 ? format(new Date(agenda[0].data_horario), "dd/MM HH:mm") : "—"}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Frequência</p>
+              <p className="text-lg font-bold">{frequencyStats?.taxa ?? 0}%</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Financeiro</p>
+              {pendencias.length > 0 ? (
+                <Badge variant="destructive" className="text-xs">{pendencias.length} pendência(s)</Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs border-green-300 text-green-700">Em dia</Badge>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Trending Products Card */}
+      {trendingProducts.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4 text-primary" />
+              Produtos para Você
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {trendingProducts.map((produto: any) => {
+                const isReserved = minhasReservas.some((r: any) => r.produto_id === produto.id);
+                return (
+                  <div
+                    key={produto.id}
+                    className="group relative flex flex-col rounded-xl border bg-card p-3 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => { setSelectedProduto(produto); setIsReservaDialogOpen(true); }}
+                  >
+                    {produto.foto_url ? (
+                      <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-2">
+                        <img src={produto.foto_url} alt={produto.nome} className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="aspect-square rounded-lg bg-muted/50 mb-2 flex items-center justify-center">
+                        <ShoppingBag className="h-8 w-8 text-muted-foreground/30" />
+                      </div>
+                    )}
+                    <h4 className="font-medium text-sm line-clamp-1">{produto.nome}</h4>
+                    <p className="text-primary font-bold text-sm mt-auto">R$ {Number(produto.preco).toFixed(2)}</p>
+                    {isReserved && (
+                      <Badge variant="secondary" className="absolute top-2 right-2 text-[10px]">⭐ Favorito</Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dicas do Dia */}
+      <DailyTipsCard tipo="paciente" />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
