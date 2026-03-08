@@ -117,19 +117,70 @@ const MeusPlanos = () => {
     enabled: !!selectedPlano?.id && !!patientId,
   });
 
+  // Fetch monthly availability when professional changes or month changes
+  useEffect(() => {
+    if (!selectedPlano?.profissional_id) {
+      setMonthlyAvail({});
+      return;
+    }
+    const fetchMonthly = async () => {
+      const result = await getMonthlyAvailability(
+        selectedPlano.profissional_id,
+        currentMonth.getFullYear(),
+        currentMonth.getMonth()
+      );
+      setMonthlyAvail(result);
+    };
+    fetchMonthly();
+  }, [selectedPlano?.profissional_id, currentMonth]);
+
+  // Fetch available slots when date is selected
+  useEffect(() => {
+    if (!selectedPlano?.profissional_id || !selectedDate) {
+      setAvailableSlots([]);
+      setSelectedTime("");
+      return;
+    }
+    const fetchSlots = async () => {
+      const slots = await getAvailableSlots(selectedPlano.profissional_id, selectedDate);
+      setAvailableSlots(slots);
+    };
+    fetchSlots();
+  }, [selectedPlano?.profissional_id, selectedDate]);
+
+  // Check availability when time is selected
+  useEffect(() => {
+    if (!selectedPlano?.profissional_id || !selectedDate || !selectedTime) {
+      setAvailabilityResult(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const [h, m] = selectedTime.split(":").map(Number);
+      const dt = new Date(selectedDate);
+      dt.setHours(h, m, 0, 0);
+      const result = await checkAvailability(selectedPlano.profissional_id, dt);
+      setAvailabilityResult(result);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [selectedPlano?.profissional_id, selectedDate, selectedTime]);
+
   const solicitarAgendamento = useMutation({
     mutationFn: async () => {
-      if (!dataHorario || !selectedPlano || !patientId) throw new Error("Dados incompletos");
+      if (!selectedDate || !selectedTime || !selectedPlano || !patientId) throw new Error("Dados incompletos");
       
       const sessoesAgendadas = sessoesPlan.filter((s: any) => ["agendado", "confirmado"].includes(s.status)).length;
       const restante = selectedPlano.total_sessoes - selectedPlano.sessoes_utilizadas;
       if (sessoesAgendadas >= restante) throw new Error("Sem créditos disponíveis");
 
+      const [h, m] = selectedTime.split(":").map(Number);
+      const dataHorario = new Date(selectedDate);
+      dataHorario.setHours(h, m, 0, 0);
+
       // Create the appointment
       const { error } = await supabase.from("agendamentos").insert({
         paciente_id: patientId,
         profissional_id: selectedPlano.profissional_id,
-        data_horario: new Date(dataHorario).toISOString(),
+        data_horario: dataHorario.toISOString(),
         duracao_minutos: parseInt(duracao),
         tipo_atendimento: selectedPlano.tipo_atendimento,
         tipo_sessao: "individual",
@@ -147,7 +198,7 @@ const MeusPlanos = () => {
             user_id: a.user_id,
             tipo: "agendamento_plano",
             titulo: "Agendamento via plano",
-            resumo: `Paciente solicitou agendamento para ${format(new Date(dataHorario), "dd/MM HH:mm")}`,
+            resumo: `Paciente solicitou agendamento para ${format(dataHorario, "dd/MM HH:mm")}`,
             link: "/agenda",
           }))
         );
@@ -157,7 +208,9 @@ const MeusPlanos = () => {
       queryClient.invalidateQueries({ queryKey: ["sessoes-plano-paciente"] });
       queryClient.invalidateQueries({ queryKey: ["meus-planos"] });
       setAgendarOpen(false);
-      setDataHorario("");
+      setSelectedDate(undefined);
+      setSelectedTime("");
+      setAvailabilityResult(null);
       toast({ title: "Sessão agendada com sucesso!" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
