@@ -493,9 +493,32 @@ const MeusPlanos = () => {
                 <p><strong>Créditos restantes:</strong> {selectedPlano.total_sessoes - selectedPlano.sessoes_utilizadas}</p>
               </div>
 
-              {/* Step 1: Select time */}
+              {/* Step 0: Select professional */}
               <div>
-                <Label className="mb-2 block">1. Selecione o horário</Label>
+                <Label className="mb-2 block">1. Selecione o profissional</Label>
+                <Select value={selectedProfId} onValueChange={(v) => {
+                  setSelectedProfId(v);
+                  setSelectedTime("");
+                  setSelectedDate(undefined);
+                  setAvailabilityResult(null);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allProfissionais.map((p: any) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>
+                        {p.nome} {p.user_id === selectedPlano?.profissional_id ? "(padrão)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Step 1: Select time */}
+              {selectedProfId && (
+              <div>
+                <Label className="mb-2 block">2. Selecione o horário</Label>
                 <div className="flex flex-wrap gap-2">
                   {hourlyOptions.map((time) => (
                     <Button
