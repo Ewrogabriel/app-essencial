@@ -123,7 +123,7 @@ export async function suggestAvailableSlots(
             horario,
             vagas,
             maxCapacity: slot.max_pacientes,
-            dayLabel: format(slotDate, "EEE dd/MM", { locale: (await import("date-fns/locale")).ptBR }),
+            dayLabel: format(slotDate, "EEE dd/MM", { locale: ptBR }),
           });
         }
       }
