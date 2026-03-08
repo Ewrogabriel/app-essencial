@@ -110,10 +110,10 @@ const Contratos = () => {
     window.open(`https://wa.me/${fullPhone}?text=${msg}`, "_blank");
   };
 
-  const handleProfissionalDownload = () => {
+  const handleProfissionalDownload = async () => {
     if (!profissional) { toast({ title: "Selecione um profissional", variant: "destructive" }); return; }
     const endParts = [profissional.endereco, profissional.numero ? `nº ${profissional.numero}` : "", profissional.bairro, profissional.cidade, profissional.estado].filter(Boolean).join(", ");
-    const doc = generateProfessionalContractPDF({
+    const doc = await generateProfessionalContractPDF({
       profissionalNome: profissional.nome,
       registroProfissional: profissional.registro_profissional || "",
       tipoContratacao: profissional.tipo_contratacao || "autonomo",
