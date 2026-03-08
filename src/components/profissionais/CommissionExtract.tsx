@@ -296,7 +296,7 @@ export function CommissionExtract() {
               Extrato — {format(new Date(`${mesRef}-01`), "MMMM yyyy", { locale: ptBR })}
             </CardTitle>
             <CardDescription>
-              Comissões calculadas com base nas regras configuradas na aba Equipe.
+              Comissões previstas para todas as sessões e consultas agendadas no mês.
             </CardDescription>
           </div>
           {summary.length > 0 && (
