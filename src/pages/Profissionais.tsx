@@ -787,6 +787,10 @@ const Profissionais = () => {
         <TabsContent value="disponibilidade">
           <DisponibilidadeProfissional />
         </TabsContent>
+
+        <TabsContent value="comissoes">
+          <CommissionRules />
+        </TabsContent>
       </Tabs>
     </div>
   );

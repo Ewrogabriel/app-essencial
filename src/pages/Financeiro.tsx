@@ -319,7 +319,7 @@ const Financeiro = () => {
         </TabsContent>
 
         <TabsContent value="comissoes" className="space-y-4">
-          <Comissoes />
+          <CommissionExtract />
         </TabsContent>
       </Tabs>
 
