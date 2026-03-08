@@ -139,6 +139,38 @@ const Dashboard = () => {
       return Math.min(100, Math.round(((agendamentosMes || []).length / totalSlots) * 100));
     },
   });
+
+  // Monthly sessions chart data (last 6 months)
+  const { data: monthlyChart = [] } = useQuery({
+    queryKey: ["dashboard-monthly-chart"],
+    queryFn: async () => {
+      const months: { label: string; start: string; end: string }[] = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        months.push({
+          label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+          start: d.toISOString().split("T")[0],
+          end: end.toISOString().split("T")[0],
+        });
+      }
+      const results = [];
+      for (const m of months) {
+        const { data } = await (supabase.from("agendamentos") as any)
+          .select("status")
+          .gte("data_horario", `${m.start}T00:00:00`)
+          .lte("data_horario", `${m.end}T23:59:59`);
+        const all = data || [];
+        results.push({
+          mes: m.label,
+          realizadas: all.filter((a: any) => a.status === "realizado").length,
+          faltas: all.filter((a: any) => a.status === "falta").length,
+          canceladas: all.filter((a: any) => a.status === "cancelado").length,
+        });
+      }
+      return results;
+    },
+  });
   // Ranking de frequência - pacientes que menos cancelam
   const { data: frequencyRanking = [] } = useQuery({
     queryKey: ["dashboard-frequency-ranking"],
