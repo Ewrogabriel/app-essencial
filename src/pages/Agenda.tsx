@@ -54,11 +54,12 @@ const Agenda = () => {
   const [pacientesMap, setPacientesMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const mapped = agendamentosData.map((item) => ({
+    const mapped: Agendamento[] = agendamentosData.map((item) => ({
       ...item,
+      observacoes: item.observacoes ?? null,
       pacientes: item.pacientes,
       profiles: { nome: profissionais.find((p) => p.user_id === item.profissional_id)?.nome || "Profissional" },
-    }));
+    } as Agendamento));
     setAgendamentos(mapped);
 
     const telMap: Record<string, string> = {};
