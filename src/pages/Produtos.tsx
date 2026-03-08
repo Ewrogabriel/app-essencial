@@ -56,7 +56,7 @@ const Produtos = () => {
       endDate.setMonth(endDate.getMonth() + 1);
       endDate.setDate(0);
       const end = format(endDate, "yyyy-MM-dd");
-      const { data, error } = await (supabase.from("vendas_produtos") as any)
+      const { data, error } = await supabase.from("vendas_produtos")
         .select("*, produtos(nome), pacientes(nome)")
         .gte("data_venda", start)
         .lte("data_venda", end)
