@@ -113,7 +113,7 @@ const Financeiro = () => {
         descricao: formData.descricao || null,
         observacoes: formData.observacoes || null,
         created_by: user.id,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {

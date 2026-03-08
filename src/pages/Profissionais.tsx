@@ -186,23 +186,14 @@ const Profissionais = () => {
     setLoading(true);
 
     try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: createEmail.trim(),
-        password: createPassword.trim(),
-      });
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Erro ao criar usuário");
-
-      // Create profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          user_id: authData.user.id,
-          nome: nome.trim(),
+      // Call edge function to create professional (preserves admin session)
+      const { data: result, error: fnError } = await supabase.functions.invoke("create-professional", {
+        body: {
           email: createEmail.trim(),
+          password: createPassword.trim(),
+          nome: nome.trim(),
           telefone: telefone || null,
-          especialidade: especialidade,
+          especialidade,
           commission_rate: parseFloat(commissionRate) || 0,
           commission_fixed: parseFloat(commissionFixed) || 0,
           cor_agenda: corAgenda,
@@ -219,26 +210,15 @@ const Profissionais = () => {
           cidade: cidade || null,
           estado: estado || null,
           cep: cep || null,
-        } as any);
-      if (profileError) throw profileError;
+        },
+      });
 
-      // Set user role as profissional
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: authData.user.id,
-          role: "profissional",
-        });
-      if (roleError) throw roleError;
+      if (fnError) throw new Error(fnError.message || "Erro ao criar profissional");
+      if (result?.error) throw new Error(result.error);
 
-      toast({ title: "Profissional criado com sucesso!", description: "Um email de confirmação foi enviado." });
+      toast({ title: "Profissional criado com sucesso!", description: "O profissional já pode fazer login." });
       await queryClient.invalidateQueries({ queryKey: ["profissionais"] });
       setDialogOpen(false);
-      setNome("");
-      setCreateEmail("");
-      setCreatePassword("");
-      setCreatePasswordConfirm("");
-      setTelefone("");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast({ title: "Erro", description: errorMessage, variant: "destructive" });
