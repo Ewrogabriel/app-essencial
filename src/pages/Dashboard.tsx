@@ -213,9 +213,9 @@ const Dashboard = () => {
       agendamentos.forEach((ag) => {
         const pid = ag.paciente_id;
         if (!stats[pid]) {
-          stats[pid] = { nome: ag.pacientes?.nome || "?", total: 0, cancelados: 0, realizados: 0, checkins: 0 };
-        }
-        stats[pid].total++;
+          const pacNome = ag.pacientes && typeof ag.pacientes === 'object' && 'nome' in ag.pacientes
+            ? (ag.pacientes as { nome: string }).nome : "?";
+          stats[pid] = { nome: pacNome, total: 0, cancelados: 0, realizados: 0, checkins: 0 };
         if (ag.status === "cancelado" || ag.status === "falta") stats[pid].cancelados++;
         if (ag.status === "realizado") stats[pid].realizados++;
       });
