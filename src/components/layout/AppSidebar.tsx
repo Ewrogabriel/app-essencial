@@ -88,6 +88,7 @@ const menuConfig = [
   { title: "Contratos", url: "/contratos", icon: FileText },
   { title: "Automações", url: "/automacoes", icon: Send },
   { title: "Clínica & Pagamento", url: "/clinica", icon: Activity },
+  { title: "Unidades", url: "/gestao-clinicas", icon: Building2 },
 ];
 
 /* ── Patient menu ── */
