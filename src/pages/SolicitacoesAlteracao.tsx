@@ -557,6 +557,29 @@ const SolicitacoesAlteracao = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {pendentesAgendamentos.map((a: any) => (
+                      <TableRow key={`agend-${a.id}`}>
+                        <TableCell>{tipoBadge("agendamento")}</TableCell>
+                        <TableCell className="font-medium">{a.paciente_nome}</TableCell>
+                        <TableCell>{format(new Date(a.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
+                        <TableCell className="text-sm">
+                          {format(new Date(a.data_horario), "dd/MM HH:mm")} • {a.tipo_atendimento} • {a.profissional_nome}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" variant="outline" onClick={() => { setSelected(a); setSelectedType("agendamento"); setDetailOpen(true); }}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" onClick={() => aprovarAgendamentoMutation.mutate(a)} disabled={aprovarAgendamentoMutation.isPending}>
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => { setSelected(a); setSelectedType("agendamento"); setRejectOpen(true); }}>
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                     {pendentesDados.map((s: any) => {
                       const changes = getChangedFields(s.dados_atuais, s.dados_novos);
                       return (
