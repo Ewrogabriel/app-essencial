@@ -11,7 +11,9 @@ import {
     Plus,
     Stethoscope,
     Calendar,
-    DollarSign
+    DollarSign,
+    FileCheck,
+    Brain,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +26,8 @@ import { EvolutionForm } from "@/components/clinical/EvolutionForm";
 import { EvaluationForm } from "@/components/clinical/EvaluationForm";
 import { PatientScheduleTab } from "@/components/clinical/PatientScheduleTab";
 import { PatientAttachments } from "@/components/clinical/PatientAttachments";
+import { AIClinicalAssistant } from "@/components/clinical/AIClinicalAssistant";
+import { DigitalContractDialog } from "@/components/contracts/DigitalContractDialog";
 
 const PacienteDetalhes = () => {
     const { id } = useParams<{ id: string }>();
@@ -33,6 +37,7 @@ const PacienteDetalhes = () => {
     const [activeTab, setActiveTab] = useState("prontuario");
     const [evolutionOpen, setEvolutionOpen] = useState(false);
     const [evaluationOpen, setEvaluationOpen] = useState(false);
+    const [contractOpen, setContractOpen] = useState(false);
 
     const { data: paciente, isLoading: loadingPaciente } = useQuery({
         queryKey: ["paciente", id],
@@ -206,6 +211,25 @@ const PacienteDetalhes = () => {
                     </Card>
 
                     <PatientAttachments pacienteId={id!} />
+
+                    {/* AI Clinical Assistant */}
+                    <AIClinicalAssistant pacienteId={id!} />
+
+                    {/* Digital Contract */}
+                    <Card>
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <FileCheck className="h-5 w-5 text-primary" />
+                                <div>
+                                    <p className="font-medium text-sm">Contrato Digital</p>
+                                    <p className="text-xs text-muted-foreground">Gere e assine contratos digitalmente</p>
+                                </div>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => setContractOpen(true)}>
+                                Gerar Contrato
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
 
                 <TabsContent value="evolucoes" className="space-y-4">
@@ -340,6 +364,13 @@ const PacienteDetalhes = () => {
                 open={evaluationOpen}
                 onOpenChange={setEvaluationOpen}
                 pacienteId={id!}
+            />
+            <DigitalContractDialog
+                open={contractOpen}
+                onOpenChange={setContractOpen}
+                pacienteId={id!}
+                pacienteNome={paciente?.nome || ""}
+                pacienteCpf={paciente?.cpf}
             />
         </div>
     );
