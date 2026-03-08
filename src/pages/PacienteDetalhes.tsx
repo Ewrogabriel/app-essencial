@@ -35,6 +35,7 @@ const PacienteDetalhes = () => {
     const [activeTab, setActiveTab] = useState("prontuario");
     const [evolutionOpen, setEvolutionOpen] = useState(false);
     const [evaluationOpen, setEvaluationOpen] = useState(false);
+    const [contractOpen, setContractOpen] = useState(false);
 
     const { data: paciente, isLoading: loadingPaciente } = useQuery({
         queryKey: ["paciente", id],
