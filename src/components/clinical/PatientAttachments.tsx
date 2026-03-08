@@ -55,11 +55,11 @@ export const PatientAttachments = ({ pacienteId }: PatientAttachmentsProps) => {
   const { data: attachments = [], isLoading } = useQuery({
     queryKey: ["patient-attachments", pacienteId],
     queryFn: async () => {
-      const { data, error } = await (supabase
+      const { data, error } = await supabase
         .from("patient_attachments")
         .select("*")
         .eq("paciente_id", pacienteId)
-        .order("created_at", { ascending: false }) as any);
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
