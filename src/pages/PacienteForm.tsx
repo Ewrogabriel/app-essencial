@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Link as LinkIcon, Copy, Camera, Upload, User } from "lucide-react";
+import { ArrowLeft, Link as LinkIcon, Copy, Camera, Upload, User, ShieldCheck } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
