@@ -289,7 +289,7 @@ const Convenios = () => {
             </div>
             <div>
               <Label>Descrição</Label>
-              <Textarea value={form.descricao} onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} placeholder="Descreva o convênio/parceria..." rows={3} />
+              <Textarea value={form.descricao} onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} placeholder="Descreva a parceria..." rows={3} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
