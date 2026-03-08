@@ -29,6 +29,11 @@ import Despesas from "./Despesas";
 import { CommissionExtract } from "@/components/profissionais/CommissionExtract";
 import { useClinic } from "@/hooks/useClinic";
 import { FinanceDashboard } from "@/components/reports/FinanceDashboard";
+import { lazy, Suspense } from "react";
+import { LazyLoadFallback } from "@/components/LazyLoadFallback";
+
+const NotasFiscais = lazy(() => import("./NotasFiscais"));
+const Comissoes = lazy(() => import("./Comissoes"));
 
 const statusBadge: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pago: { label: "Pago", variant: "default" },
