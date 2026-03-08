@@ -207,6 +207,20 @@ const Dashboard = () => {
   // Upcoming Birthdays
   const birthdays: any[] = []; // get_upcoming_birthdays RPC not yet created
 
+  // Pending plan sessions (pendente status)
+  const { data: pendingSessions = [] } = useQuery({
+    queryKey: ["dashboard-pending-sessions"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("agendamentos") as any)
+        .select("id, data_horario, status, tipo_atendimento, pacientes(nome), observacoes")
+        .eq("status", "pendente")
+        .order("data_horario", { ascending: true })
+        .limit(10);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Today's Detailed Agenda
   const { data: todayAgenda = [] } = useQuery({
     queryKey: ["dashboard-today-agenda"],
@@ -273,6 +287,7 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard-today-agenda"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-past-agenda"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-today-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-pending-sessions"] });
       toast({ title: "Status atualizado!" });
     },
   });
@@ -445,6 +460,57 @@ const Dashboard = () => {
                 <Bar dataKey="canceladas" name="Canceladas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending Sessions Highlight */}
+      {pendingSessions.length > 0 && (
+        <Card className="border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-700">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <Clock className="h-5 w-5" />
+              Sessões Pendentes de Aprovação ({pendingSessions.length})
+            </CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/agenda")}>
+              Ver agenda <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingSessions.map((item: any) => (
+                <div key={item.id} className="flex items-center justify-between p-3 rounded-lg border bg-background group">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm">
+                      {item.pacientes?.nome || "Paciente"} — {format(new Date(item.data_horario), "dd/MM HH:mm", { locale: ptBR })}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">{item.tipo_atendimento}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        updateStatus.mutate({ id: item.id, status: "agendado" });
+                      }}
+                    >
+                      <CheckCircle2 className="h-3 w-3 mr-1" /> Aprovar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        updateStatus.mutate({ id: item.id, status: "cancelado" });
+                      }}
+                    >
+                      <XCircle className="h-3 w-3 mr-1" /> Rejeitar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
