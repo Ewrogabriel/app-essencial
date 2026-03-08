@@ -116,8 +116,8 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut, isAdmin, isGestor, isPatient, isProfissional, isSecretario, hasPermission } = useAuth();
-  const isStaff = isAdmin || isGestor || isProfissional || isSecretario;
+  const { profile, signOut, isAdmin, isGestor, isPatient, isProfissional, isSecretario, isMaster, hasPermission } = useAuth();
+  const isStaff = isAdmin || isGestor || isProfissional || isSecretario || isMaster;
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
