@@ -514,8 +514,8 @@ const Matriculas = () => {
           <TabsTrigger value="planos" className="gap-2">
             <BarChart2 className="h-4 w-4" /> Planos de Sessões
           </TabsTrigger>
-          <TabsTrigger value="relatorios" className="gap-2">
-            <BarChart2 className="h-4 w-4" /> Relatórios
+          <TabsTrigger value="cancelamento" className="gap-2">
+            <ShieldAlert className="h-4 w-4" /> Políticas
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="admin" className="gap-2">
