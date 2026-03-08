@@ -56,7 +56,7 @@ const MeusPagamentos = () => {
     .filter((p: any) => p.status === 'pendente')
     .reduce((acc: number, p: any) => acc + Number(p.valor), 0);
 
-  const handleDownloadReceipt = (pagamento: any) => {
+  const handleDownloadReceipt = async (pagamento: any) => {
     const numero = getReceiptNumber(pagamento.id, pagamento.created_at);
     const dataPgto = pagamento.data_pagamento
       ? format(new Date(pagamento.data_pagamento), "dd/MM/yyyy")
@@ -66,7 +66,7 @@ const MeusPagamentos = () => {
       ? format(new Date(pagamento.data_vencimento), "MMMM/yyyy", { locale: ptBR })
       : pagamento.descricao || "Serviço";
 
-    const pdf = generateReceiptPDF({
+    const pdf = await generateReceiptPDF({
       numero,
       pacienteNome: paciente?.nome || "—",
       cpf: paciente?.cpf || "",
