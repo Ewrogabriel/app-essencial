@@ -198,11 +198,11 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
   const freqLabel = freqSemanal === 1 ? "1x" : freqSemanal === 2 ? "2x" : freqSemanal === 3 ? "3x" : `${freqSemanal}x`;
 
   const fetchPacientes = async () => {
-    const { data } = await (supabase.from("pacientes") as any)
+    const { data } = await supabase.from("pacientes")
       .select("id, nome")
       .eq("status", "ativo")
       .order("nome");
-    setPacientes(data ?? []);
+    setPacientes((data ?? []) as Paciente[]);
   };
 
   const fetchProfissionais = async () => {
