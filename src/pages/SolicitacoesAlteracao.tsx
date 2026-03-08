@@ -657,6 +657,64 @@ const SolicitacoesAlteracao = () => {
           )}
         </TabsContent>
 
+        {/* Tab Agendamentos */}
+        <TabsContent value="agendamentos" className="mt-4 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5" /> Agendamentos Pendentes ({pendentesAgendamentos.length})
+              </CardTitle>
+              <CardDescription>Sessões solicitadas por pacientes aguardando aprovação</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loadingAgend ? (
+                <div className="p-8 text-center text-muted-foreground">Carregando...</div>
+              ) : pendentesAgendamentos.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">Nenhum agendamento pendente.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Paciente</TableHead>
+                      <TableHead>Profissional</TableHead>
+                      <TableHead>Data/Hora</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Solicitado em</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendentesAgendamentos.map((a: any) => (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">{a.paciente_nome}</TableCell>
+                        <TableCell>{a.profissional_nome}</TableCell>
+                        <TableCell className="font-medium text-primary">
+                          {format(new Date(a.data_horario), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="capitalize">{a.tipo_atendimento}</TableCell>
+                        <TableCell>{format(new Date(a.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" variant="outline" onClick={() => { setSelected(a); setSelectedType("agendamento"); setDetailOpen(true); }}>
+                              <Eye className="h-4 w-4 mr-1" /> Ver
+                            </Button>
+                            <Button size="sm" onClick={() => aprovarAgendamentoMutation.mutate(a)} disabled={aprovarAgendamentoMutation.isPending}>
+                              <CheckCircle2 className="h-4 w-4 mr-1" /> Aprovar
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => { setSelected(a); setSelectedType("agendamento"); setRejectOpen(true); }}>
+                              <XCircle className="h-4 w-4 mr-1" /> Rejeitar
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Tab Dados */}
         <TabsContent value="dados" className="mt-4 space-y-6">
           <Card>
