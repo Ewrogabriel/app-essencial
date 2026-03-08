@@ -382,6 +382,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
             observacoes: values.observacoes || null,
             created_by: user.id,
             valor_sessao: values.valor_sessao || null,
+            clinic_id: activeClinicId,
           });
           if (error) throw error;
           toast({ title: "Agendamento criado com sucesso!" });
