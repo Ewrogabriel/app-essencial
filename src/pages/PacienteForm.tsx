@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Link as LinkIcon, Copy, Camera, Upload, User } from "lucide-react";
+import { ArrowLeft, Link as LinkIcon, Copy, Camera, Upload, User, ShieldCheck } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +81,7 @@ const PacienteForm = () => {
 
   const [rg, setRg] = useState("");
   const [codigoAcesso, setCodigoAcesso] = useState<string | null>(null);
+  const [lgpdConsentimento, setLgpdConsentimento] = useState(false);
 
   const { data: modalidades = [] } = useQuery({
     queryKey: ["modalidades-ativas"],
@@ -146,6 +147,7 @@ const PacienteForm = () => {
           setNfEndereco(data.nf_endereco || "");
           setNfInscricaoEstadual(data.nf_inscricao_estadual || "");
           setNfEmail(data.nf_email || "");
+          setLgpdConsentimento(data.lgpd_consentimento || false);
           setLoadingData(false);
         });
     }
@@ -348,6 +350,8 @@ const PacienteForm = () => {
         nf_endereco: solicitaNf ? nfEndereco || null : null,
         nf_inscricao_estadual: solicitaNf ? nfInscricaoEstadual || null : null,
         nf_email: solicitaNf ? nfEmail || null : null,
+        lgpd_consentimento: lgpdConsentimento,
+        lgpd_consentimento_data: lgpdConsentimento ? new Date().toISOString() : null,
       };
 
       let savedPatientId = id;
@@ -774,6 +778,35 @@ const PacienteForm = () => {
               <Label htmlFor="observacoes">Observações Clínicas</Label>
               <Textarea id="observacoes" placeholder="Anotações sobre o paciente, histórico clínico, restrições..." rows={4} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* LGPD Consent */}
+        <Card className="border-primary/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <div>
+                  <CardTitle className="text-lg">Consentimento LGPD</CardTitle>
+                  <CardDescription>Lei Geral de Proteção de Dados Pessoais</CardDescription>
+                </div>
+              </div>
+              <Switch checked={lgpdConsentimento} onCheckedChange={setLgpdConsentimento} />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Ao ativar, o paciente declara que autoriza a coleta, armazenamento e processamento
+              de seus dados pessoais e de saúde para fins de atendimento clínico, conforme a
+              Lei nº 13.709/2018 (LGPD). Os dados serão utilizados exclusivamente para
+              prontuário eletrônico, agendamentos e comunicação relacionada ao tratamento.
+            </p>
+            {lgpdConsentimento && (
+              <p className="text-xs text-green-600 mt-2 font-medium">
+                ✓ Consentimento registrado
+              </p>
+            )}
           </CardContent>
         </Card>
 

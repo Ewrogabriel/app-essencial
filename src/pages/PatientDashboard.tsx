@@ -20,6 +20,7 @@ import { PatientAgendaTab } from "@/components/patient/PatientAgendaTab";
 import { PatientFinanceTab } from "@/components/patient/PatientFinanceTab";
 import { PatientProdutosTab } from "@/components/patient/PatientProdutosTab";
 import { PatientInfoTab } from "@/components/patient/PatientInfoTab";
+import { NpsSurvey } from "@/components/patient/NpsSurvey";
 
 const PatientDashboard = () => {
   const { profile, patientId, loading } = useAuth();
@@ -494,6 +495,9 @@ const PatientDashboard = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* NPS Survey */}
+      {patientId && <NpsSurvey pacienteId={patientId} />}
 
       {/* Dicas do Dia */}
       <DailyTipsCard tipo="paciente" />
