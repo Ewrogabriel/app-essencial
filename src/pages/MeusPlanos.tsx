@@ -102,7 +102,13 @@ const MeusPlanos = () => {
     enabled: !!selectedPlano?.id && !!patientId,
   });
 
-  // Fetch monthly availability when professional changes or month changes
+  // Generate hourly time options (7:00 to 21:00)
+  const hourlyOptions = Array.from({ length: 15 }, (_, i) => {
+    const h = 7 + i;
+    return `${String(h).padStart(2, "0")}:00`;
+  });
+
+  // Fetch monthly availability when professional/time changes or month changes
   useEffect(() => {
     if (!selectedPlano?.profissional_id) {
       setMonthlyAvail({});
@@ -112,12 +118,13 @@ const MeusPlanos = () => {
       const result = await getMonthlyAvailability(
         selectedPlano.profissional_id,
         currentMonth.getFullYear(),
-        currentMonth.getMonth()
+        currentMonth.getMonth(),
+        selectedTime || undefined
       );
       setMonthlyAvail(result);
     };
     fetchMonthly();
-  }, [selectedPlano?.profissional_id, currentMonth]);
+  }, [selectedPlano?.profissional_id, currentMonth, selectedTime]);
 
   // Fetch available slots when date is selected
   useEffect(() => {
