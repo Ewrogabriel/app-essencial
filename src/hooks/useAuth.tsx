@@ -11,13 +11,16 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   roles: AppRole[];
+  permissions: string[];
   loading: boolean;
   isAdmin: boolean;
   isGestor: boolean;
   isPatient: boolean;
   isProfissional: boolean;
+  isSecretario: boolean;
   clinicId: string | null;
   patientId: string | null;
+  hasPermission: (resource: string) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string, nome: string) => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
