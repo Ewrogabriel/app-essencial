@@ -346,6 +346,25 @@ const PatientDashboard = () => {
     return <DashboardSkeleton />;
   }
 
+  if (!patientId) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+            </div>
+            <CardTitle>Conta não vinculada</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center text-muted-foreground">
+            <p>Sua conta ainda não está vinculada a um cadastro de paciente.</p>
+            <p className="mt-2">Entre em contato com a clínica para configurar seu acesso.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
