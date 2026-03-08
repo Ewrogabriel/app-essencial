@@ -53,6 +53,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
     const queryClient = useQueryClient();
     const [descricao, setDescricao] = useState("");
     const [conduta, setConduta] = useState("");
+    const [assinaturaUrl, setAssinaturaUrl] = useState("");
 
     const evolutionMutation = useMutation({
         mutationFn: async () => {
