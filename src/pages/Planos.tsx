@@ -256,8 +256,9 @@ const Planos = () => {
               </TableHeader>
               <TableBody>
                 {planos.map((plano) => {
-                  const pct = plano.total_sessoes > 0 ? (plano.sessoes_utilizadas / plano.total_sessoes) * 100 : 0;
-                  const restante = plano.total_sessoes - plano.sessoes_utilizadas;
+                  const agendadas = agendadasMap[plano.id] || 0;
+                  const pct = plano.total_sessoes > 0 ? ((plano.sessoes_utilizadas + agendadas) / plano.total_sessoes) * 100 : 0;
+                  const restante = plano.total_sessoes - plano.sessoes_utilizadas - agendadas;
                   const st = statusConfig[plano.status] || statusConfig.ativo;
                   return (
                     <TableRow
