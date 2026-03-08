@@ -79,21 +79,20 @@ const Financeiro = () => {
     },
   });
 
-  const { data: despesas = [] } = useQuery({
-    queryKey: ["despesas"],
+  const { data: despesasForDre = [] } = useQuery({
+    queryKey: ["despesas-dre"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("expenses").select("*");
+      const { data, error } = await supabase.from("expenses").select("valor, status");
       if (error) throw error;
       return data;
     },
     enabled: !isPatient,
   });
 
-  const { data: comissoes = [] } = useQuery({
-    queryKey: ["comissoes"],
+  const { data: comissoesForDre = [] } = useQuery({
+    queryKey: ["comissoes-dre"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("commissions")
-        .select("*");
+      const { data, error } = await supabase.from("commissions").select("valor");
       if (error) throw error;
       return data;
     },
