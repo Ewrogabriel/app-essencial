@@ -124,7 +124,7 @@ const Convenios = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["convenios"] });
-      toast({ title: "Convênio removido" });
+      toast({ title: "Parceiro removido" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
