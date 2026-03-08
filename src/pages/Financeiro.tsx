@@ -142,13 +142,13 @@ const Financeiro = () => {
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  const totalRecebido = (pagamentos || []).filter((p: any) => p.status === "pago").reduce((sum: number, p: any) => sum + Number(p.valor), 0);
-  const totalPendente = (pagamentos || []).filter((p: any) => p.status === "pendente").reduce((sum: number, p: any) => sum + Number(p.valor), 0);
-  const totalDespesas = ((despesasForDre as any[]) || []).filter((d) => d.status === "pago").reduce((sum: number, d) => sum + Number(d.valor), 0);
-  const totalComissoes = ((comissoesForDre as any[]) || []).reduce((sum: number, c) => sum + Number(c.valor), 0);
+  const totalRecebido = pagamentos.filter((p) => p.status === "pago").reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalPendente = pagamentos.filter((p) => p.status === "pendente").reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalDespesas = (despesasForDre || []).filter((d) => d.status === "pago").reduce((sum, d) => sum + Number(d.valor), 0);
+  const totalComissoes = (comissoesForDre || []).reduce((sum, c) => sum + Number(c.valor), 0);
   
-  const countPagos = (pagamentos || []).filter((p: any) => p.status === 'pago').length;
-  const countPendentes = (pagamentos || []).filter((p: any) => p.status === 'pendente').length;
+  const countPagos = pagamentos.filter((p) => p.status === 'pago').length;
+  const countPendentes = pagamentos.filter((p) => p.status === 'pendente').length;
 
   const lucroLiquido = totalRecebido - totalDespesas - totalComissoes;
 
