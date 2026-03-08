@@ -506,6 +506,8 @@ const PatientDashboard = () => {
             formasPagamento={formasPagamento}
             configPixMap={configPixMap}
             matriculaPayments={matriculaPayments}
+            pacienteNome={paciente?.nome || profile?.nome || ""}
+            pacienteCpf={paciente?.cpf || ""}
           />
         </TabsContent>
 
