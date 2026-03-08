@@ -29,7 +29,7 @@ export function ChurnPrediction() {
       const threeMonthsAgo = subMonths(new Date(), 3).toISOString();
 
       // Fetch patients
-      const { data: pacientes } = await (supabase.from("pacientes") as any)
+      const { data: pacientes } = await supabase.from("pacientes")
         .select("id, nome, telefone, status")
         .eq("status", "ativo");
 
