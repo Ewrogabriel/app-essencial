@@ -146,7 +146,7 @@ const Automacoes = () => {
     if (!nextAppointmentMap[ag.paciente_id]) {
       nextAppointmentMap[ag.paciente_id] = {
         data_horario: ag.data_horario,
-        profissional_nome: ag.profiles?.nome || "Profissional",
+        profissional_nome: "Profissional",
         id: ag.id,
       };
     }
