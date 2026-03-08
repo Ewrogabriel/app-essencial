@@ -150,7 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const isAdmin = roles.includes("admin");
+  const isMaster = roles.includes("master");
+  const isAdmin = roles.includes("admin") || isMaster;
   const isGestor = roles.includes("gestor");
   const isPatient = roles.includes("paciente");
   const isProfissional = roles.includes("profissional");
