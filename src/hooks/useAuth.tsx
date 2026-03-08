@@ -4,20 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
-type AppRole = "admin" | "profissional" | "paciente" | "gestor";
+type AppRole = "admin" | "profissional" | "paciente" | "gestor" | "secretario";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   roles: AppRole[];
+  permissions: string[];
   loading: boolean;
   isAdmin: boolean;
   isGestor: boolean;
   isPatient: boolean;
   isProfissional: boolean;
+  isSecretario: boolean;
   clinicId: string | null;
   patientId: string | null;
+  hasPermission: (resource: string) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string, nome: string) => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
@@ -31,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [patientId, setPatientId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +63,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles(data?.map((r) => r.role) ?? []);
   };
 
+  const fetchPermissions = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_permissions")
+      .select("resource")
+      .eq("user_id", userId)
+      .eq("enabled", true);
+    setPermissions(data?.map((p) => (p as any).resource) ?? []);
+  };
+
   useEffect(() => {
     // Set up auth listener BEFORE checking session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -67,14 +80,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Use setTimeout to avoid Supabase deadlocks
           setTimeout(() => {
             fetchProfile(session.user.id);
             fetchRoles(session.user.id);
+            fetchPermissions(session.user.id);
           }, 0);
         } else {
           setProfile(null);
           setRoles([]);
+          setPermissions([]);
         }
         setLoading(false);
       }
@@ -87,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchRoles(session.user.id);
+        fetchPermissions(session.user.id);
       }
       setLoading(false);
     });
@@ -117,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRoles([]);
+    setPermissions([]);
   };
 
   const resetPassword = async (email: string) => {
@@ -130,14 +146,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isGestor = roles.includes("gestor");
   const isPatient = roles.includes("paciente");
   const isProfissional = roles.includes("profissional");
+  const isSecretario = roles.includes("secretario");
   const clinicId = (profile as any)?.clinic_id || null;
+
+  const hasPermission = (resource: string) => {
+    if (isAdmin) return true;
+    return permissions.includes(resource);
+  };
 
   return (
     <AuthContext.Provider
       value={{
-        user, session, profile, roles, loading,
-        isAdmin, isGestor, isPatient, isProfissional,
+        user, session, profile, roles, permissions, loading,
+        isAdmin, isGestor, isPatient, isProfissional, isSecretario,
         clinicId, patientId,
+        hasPermission,
         signIn, signUp, resetPassword, signOut
       }}
     >
