@@ -129,10 +129,12 @@ const Agenda = () => {
 
 
 
-  // Apply professional filter
-  const filteredAgendamentos = filterProfId === "all"
-    ? agendamentos
-    : agendamentos.filter(ag => ag.profissional_id === filterProfId);
+  // Apply filters
+  const filteredAgendamentos = agendamentos.filter(ag => {
+    const matchProf = filterProfId === "all" || ag.profissional_id === filterProfId;
+    const matchStatus = filterStatus === "all" || ag.status === filterStatus;
+    return matchProf && matchStatus;
+  });
 
   const handleSlotClick = (date: Date) => {
     if (!isPatient || isAdmin || isGestor) {
