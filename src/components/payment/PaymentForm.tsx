@@ -69,13 +69,7 @@ export const PaymentForm = ({
       toast({ title: "PIX copiado para clipboard!" });
     }
 
-    // Log payment intent (in real app, this would integrate with payment gateway)
     // TODO: integrate with payment gateway
-      tipo,
-      forma: forma.nome,
-      items: selectedItems,
-      total: totalValor
-    });
 
     toast({ title: "Instrções de pagamento enviadas!", description: "Verifique seu email para mais detalhes." });
     onPaymentComplete?.();
