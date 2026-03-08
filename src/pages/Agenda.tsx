@@ -15,13 +15,14 @@ import { AppointmentDetailDialog } from "@/components/agenda/AppointmentDetailDi
 import { DailyView, WeeklyView, MonthlyView, type Agendamento } from "@/components/agenda/AgendaViews";
 import { generateWeeklyPDF } from "@/lib/generateAgendaPDF";
 import { toast } from "@/hooks/use-toast";
+import { usePersistedFilter } from "@/hooks/usePersistedFilter";
 
 type ViewMode = "diario" | "semanal" | "mensal";
 
 const Agenda = () => {
   const { user, isPatient, isAdmin, isGestor, clinicId } = useAuth();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<ViewMode>("semanal");
+  const [viewMode, setViewMode] = usePersistedFilter<ViewMode>("agenda-view", "semanal");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [pacientesMap, setPacientesMap] = useState<Record<string, string>>({});
@@ -31,8 +32,8 @@ const Agenda = () => {
   const [rescheduleAg, setRescheduleAg] = useState<Agendamento | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailAg, setDetailAg] = useState<Agendamento | null>(null);
-  const [filterProfId, setFilterProfId] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterProfId, setFilterProfId] = usePersistedFilter("agenda-prof", "all");
+  const [filterStatus, setFilterStatus] = usePersistedFilter("agenda-status", "all");
 
   const isStaff = isAdmin || isGestor;
 
@@ -205,6 +206,20 @@ const Agenda = () => {
 
   const goToToday = () => setCurrentDate(new Date());
 
+  const handleDragDrop = async (agId: string, newDate: Date) => {
+    try {
+      const { error } = await supabase
+        .from("agendamentos")
+        .update({ data_horario: newDate.toISOString() })
+        .eq("id", agId);
+      if (error) throw error;
+      toast({ title: "Sessão reagendada! 📅", description: format(newDate, "dd/MM/yyyy 'às' HH:mm") });
+      refetchAgendamentos();
+    } catch {
+      toast({ title: "Erro ao mover sessão", variant: "destructive" });
+    }
+  };
+
   const getTitle = () => {
     if (viewMode === "diario") return format(currentDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     if (viewMode === "semanal") return format(currentDate, "MMMM yyyy", { locale: ptBR });
@@ -292,18 +307,35 @@ const Agenda = () => {
         </div>
       </div>
 
-      {/* Color Legend */}
-      {isStaff && (profissionais as any[]).length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <span className="text-muted-foreground font-medium">Legenda:</span>
-          {(profissionais as any[]).map((p: any) => (
-            <div key={p.user_id} className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: p.cor_agenda || '#3b82f6' }} />
-              <span>{p.nome}</span>
+      {/* Status + Color Legend */}
+      <div className="flex flex-wrap items-center gap-4 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground font-medium">Status:</span>
+          {[
+            { key: "agendado", label: "Agendado", color: "hsl(199 89% 48%)" },
+            { key: "confirmado", label: "Confirmado", color: "hsl(168 65% 38%)" },
+            { key: "realizado", label: "Realizado", color: "hsl(142 71% 45%)" },
+            { key: "cancelado", label: "Cancelado", color: "hsl(0 72% 51%)" },
+            { key: "falta", label: "Falta", color: "hsl(38 92% 50%)" },
+          ].map(s => (
+            <div key={s.key} className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+              <span>{s.label}</span>
             </div>
           ))}
         </div>
-      )}
+        {isStaff && (profissionais as any[]).length > 0 && (
+          <div className="flex items-center gap-2 border-l border-border pl-4">
+            <span className="text-muted-foreground font-medium">Profissionais:</span>
+            {(profissionais as any[]).map((p: any) => (
+              <div key={p.user_id} className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: p.cor_agenda || '#3b82f6' }} />
+                <span>{p.nome}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Calendar View */}
       <div>
@@ -318,6 +350,7 @@ const Agenda = () => {
             onReschedule={handleReschedule}
             onAppointmentClick={handleAppointmentClick}
             profColors={profColors}
+            onDrop={handleDragDrop}
           />
         )}
         {viewMode === "semanal" && (
@@ -331,6 +364,7 @@ const Agenda = () => {
             onReschedule={handleReschedule}
             onAppointmentClick={handleAppointmentClick}
             profColors={profColors}
+            onDrop={handleDragDrop}
           />
         )}
         {viewMode === "mensal" && (
@@ -344,6 +378,7 @@ const Agenda = () => {
             onReschedule={handleReschedule}
             onAppointmentClick={handleAppointmentClick}
             profColors={profColors}
+            onDrop={handleDragDrop}
           />
         )}
       </div>

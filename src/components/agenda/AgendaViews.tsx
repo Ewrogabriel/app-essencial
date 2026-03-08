@@ -42,6 +42,7 @@ interface ViewProps {
   onReschedule?: (ag: Agendamento) => void;
   onAppointmentClick?: (ag: Agendamento) => void;
   profColors?: Record<string, string>;
+  onDrop?: (agId: string, newDate: Date) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -80,6 +81,11 @@ function AppointmentCard({
     <div
       className="rounded-md bg-card p-2 text-xs shadow-sm relative group cursor-pointer hover:shadow-md transition-all border-l-4 overflow-hidden"
       style={{ borderLeftColor: color }}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("agendamento-id", ag.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
       onClick={(e) => {
         e.stopPropagation();
         onAppointmentClick?.(ag);
@@ -179,10 +185,21 @@ export function DailyView({
   onReschedule,
   onAppointmentClick,
   profColors = {},
+  onDrop,
 }: ViewProps) {
   const dayAgendamentos = agendamentos.filter((ag) =>
     isSameDay(new Date(ag.data_horario), currentDate)
   );
+
+  const handleDrop = (e: React.DragEvent, hour: number) => {
+    e.preventDefault();
+    const agId = e.dataTransfer.getData("agendamento-id");
+    if (agId && onDrop) {
+      const d = new Date(currentDate);
+      d.setHours(hour, 0, 0, 0);
+      onDrop(agId, d);
+    }
+  };
 
   return (
     <div className="border rounded-lg overflow-hidden bg-card">
@@ -205,6 +222,9 @@ export function DailyView({
                 d.setHours(hour, 0, 0, 0);
                 onSlotClick?.(d);
               }}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+              onDragLeave={(e) => { e.currentTarget.classList.remove("bg-primary/10"); }}
+              onDrop={(e) => { e.currentTarget.classList.remove("bg-primary/10"); handleDrop(e, hour); }}
             >
               <div className="w-14 shrink-0 text-xs text-muted-foreground py-2 text-right pr-2 border-r">
                 {String(hour).padStart(2, "0")}:00
@@ -242,6 +262,7 @@ export function WeeklyView({
   onReschedule,
   onAppointmentClick,
   profColors = {},
+  onDrop,
 }: ViewProps) {
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -258,14 +279,26 @@ export function WeeklyView({
         const isToday = isSameDay(day, new Date());
 
         return (
-          <div
-            key={day.toISOString()}
-            className={cn(
-              "bg-card p-1.5 min-h-[180px] cursor-pointer hover:bg-muted/20 transition-colors flex flex-col",
-              isToday && "ring-2 ring-primary ring-inset"
-            )}
-            onClick={() => onSlotClick?.(day)}
-          >
+            <div
+              key={day.toISOString()}
+              className={cn(
+                "bg-card p-1.5 min-h-[180px] cursor-pointer hover:bg-muted/20 transition-colors flex flex-col",
+                isToday && "ring-2 ring-primary ring-inset"
+              )}
+              onClick={() => onSlotClick?.(day)}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+              onDragLeave={(e) => { e.currentTarget.classList.remove("bg-primary/10"); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove("bg-primary/10");
+                const agId = e.dataTransfer.getData("agendamento-id");
+                if (agId && onDrop) {
+                  const d = new Date(day);
+                  d.setHours(9, 0, 0, 0);
+                  onDrop(agId, d);
+                }
+              }}
+            >
             <div className="text-center mb-1.5 pb-1 border-b">
               <div className="text-[10px] uppercase text-muted-foreground leading-tight">
                 {format(day, "EEE", { locale: ptBR })}
@@ -316,6 +349,7 @@ export function MonthlyView({
   onReschedule,
   onAppointmentClick,
   profColors = {},
+  onDrop,
 }: ViewProps) {
   const monthDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
