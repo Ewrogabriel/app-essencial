@@ -51,13 +51,7 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Loading check moved after all hooks (below)
 
   const { data: pacientes = [] } = useQuery({
     queryKey: ["pacientes"],
@@ -350,6 +344,14 @@ const Dashboard = () => {
       color: alertCount > 0 ? "text-red-600 bg-red-50" : "text-amber-600 bg-amber-50",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

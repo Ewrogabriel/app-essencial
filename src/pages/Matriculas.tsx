@@ -4,7 +4,7 @@ import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Plus, Pause, X, ChevronRight, BarChart2, Calendar,
-  RefreshCw, User, DollarSign, Settings
+  RefreshCw, User, DollarSign, Settings, ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,8 +34,8 @@ import {
   EnrollmentForm, EnrollmentFormData, WeeklyScheduleEntry
 } from "@/components/enrollments/EnrollmentForm";
 import { EnrollmentDetails } from "@/components/enrollments/EnrollmentDetails";
-import { CommissionReport } from "@/components/reports/CommissionReport";
 import { EnrollmentAdminPanel } from "@/components/enrollments/EnrollmentAdminPanel";
+import { CancellationPolicies } from "@/components/enrollments/CancellationPolicies";
 import Planos from "./Planos";
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -514,8 +514,8 @@ const Matriculas = () => {
           <TabsTrigger value="planos" className="gap-2">
             <BarChart2 className="h-4 w-4" /> Planos de Sessões
           </TabsTrigger>
-          <TabsTrigger value="relatorios" className="gap-2">
-            <BarChart2 className="h-4 w-4" /> Relatórios
+          <TabsTrigger value="cancelamento" className="gap-2">
+            <ShieldAlert className="h-4 w-4" /> Políticas
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="admin" className="gap-2">
@@ -663,9 +663,9 @@ const Matriculas = () => {
           <Planos />
         </TabsContent>
 
-        {/* REPORTS TAB */}
-        <TabsContent value="relatorios" className="mt-4">
-          <CommissionReport />
+        {/* CANCELLATION POLICIES TAB */}
+        <TabsContent value="cancelamento" className="mt-4">
+          <CancellationPolicies />
         </TabsContent>
 
         {/* ADMIN TAB */}
