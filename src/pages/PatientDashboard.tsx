@@ -236,23 +236,24 @@ const PatientDashboard = () => {
   const reservarProduto = useMutation({
     mutationFn: async () => {
       if (!patientId || !selectedProduto) throw new Error("Dados inválidos");
-      const { data: reserva, error: reservaError } = await (supabase
-        .from("reservas_produtos" as any) as any)
-        .insert([{ paciente_id: patientId, produto_id: selectedProduto.id, quantidade: 1, observacao: observacao || null, status: "pendente" }])
-        .select().single();
+      
+      const { data: reserva, error: reservaError } = await supabase
+        .from("reservas_produtos")
+        .insert([{ 
+          paciente_id: patientId, 
+          produto_id: selectedProduto.id, 
+          quantidade: 1, 
+          observacao: observacao || null, 
+          status: "pendente" 
+        }])
+        .select()
+        .single();
+      
       if (reservaError) throw reservaError;
-
-      // Create aviso
-      await (supabase.from("avisos" as any) as any).insert([{
-        tipo: "reserva_produto",
-        titulo: `Nova reserva de ${selectedProduto.nome}`,
-        mensagem: `${profile?.nome || "Paciente"} reservou ${selectedProduto.nome}${observacao ? ` - ${observacao}` : ""}`,
-        reserva_id: reserva?.id, lido: false
-      }]);
 
       // Create notification for admins
       const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
-      const adminIds = (adminRoles || []).map((r: any) => r.user_id);
+      const adminIds = (adminRoles || []).map((r) => r.user_id);
       if (adminIds.length > 0) {
         const notifications = adminIds.map((adminId: string) => ({
           user_id: adminId,

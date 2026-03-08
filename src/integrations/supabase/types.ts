@@ -1650,6 +1650,54 @@ export type Database = {
         }
         Relationships: []
       }
+      reservas_produtos: {
+        Row: {
+          created_at: string
+          id: string
+          observacao: string | null
+          paciente_id: string
+          produto_id: string
+          quantidade: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          paciente_id: string
+          produto_id: string
+          quantidade?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          paciente_id?: string
+          produto_id?: string
+          quantidade?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservas_produtos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservas_produtos_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solicitacoes_alteracao_dados: {
         Row: {
           approved_at: string | null
