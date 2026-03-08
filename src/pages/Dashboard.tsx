@@ -223,7 +223,7 @@ const Dashboard = () => {
       const todayStart = startOfDay(new Date()).toISOString();
       const todayEnd = endOfDay(new Date()).toISOString();
       const { data, error } = await (supabase.from("agendamentos") as any)
-        .select("*, pacientes(nome, telefone), profiles(nome, telefone)")
+        .select("*, pacientes(nome, telefone)")
         .gte("data_horario", todayStart)
         .lte("data_horario", todayEnd)
         .order("data_horario", { ascending: true });
@@ -241,7 +241,7 @@ const Dashboard = () => {
       const pastStart = startOfDay(yesterday).toISOString();
       const pastEnd = endOfDay(yesterday).toISOString();
       const { data, error } = await (supabase.from("agendamentos") as any)
-        .select("*, pacientes(nome, telefone), profiles(nome, telefone)")
+        .select("*, pacientes(nome, telefone)")
         .gte("data_horario", pastStart)
         .lte("data_horario", pastEnd)
         .order("data_horario", { ascending: false });
@@ -264,7 +264,7 @@ const Dashboard = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, nome")
+        .select("user_id, nome, telefone")
         .in("user_id", userIds);
 
       if (error) throw error;
@@ -551,7 +551,7 @@ const Dashboard = () => {
                         title="Falar com Profissional"
                         className="h-7 w-7 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                         onClick={() => {
-                          const prof = item.profiles;
+                          const prof = profissionais.find((p: any) => p.user_id === item.profissional_id);
                           const cleanPhone = prof?.telefone?.replace(/\D/g, "");
                           if (cleanPhone) {
                             const fullPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
@@ -639,7 +639,7 @@ const Dashboard = () => {
                           {item.status}
                         </Badge>
                         <span className="text-[10px] text-muted-foreground truncate">
-                          Prof: {item.profiles?.nome || "Não definido"}
+                          Prof: {profissionais.find((p: any) => p.user_id === item.profissional_id)?.nome || "Não definido"}
                         </span>
                       </div>
                     </div>

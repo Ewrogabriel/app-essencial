@@ -57,13 +57,28 @@ export function NotificationBell() {
     refetchInterval: 30000,
   });
 
-  // Realtime subscription
+  // Realtime subscription + browser notifications
   useEffect(() => {
     if (!user) return;
+
+    // Request browser notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
     const channel = supabase
       .channel("notificacoes-bell")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notificacoes", filter: `user_id=eq.${user.id}` }, () => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notificacoes", filter: `user_id=eq.${user.id}` }, (payload: any) => {
         queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
+        
+        // Show browser notification
+        if ("Notification" in window && Notification.permission === "granted") {
+          const data = payload.new;
+          new Notification(data.titulo || "Nova notificação", {
+            body: data.resumo || "",
+            icon: "/favicon.ico",
+          });
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
