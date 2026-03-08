@@ -55,6 +55,7 @@ type Props = {
     enrollment: {
         id: string;
         valor_mensal: number;
+        paciente_id: string;
         pacientes?: { nome: string };
     };
 };
