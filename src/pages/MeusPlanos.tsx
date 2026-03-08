@@ -36,7 +36,7 @@ const MeusPlanos = () => {
   const [duracao, setDuracao] = useState("50");
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [monthlyAvail, setMonthlyAvail] = useState<Record<number, number>>({});
-  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [availabilityResult, setAvailabilityResult] = useState<AvailabilityCheckResult | null>(null);
   const [availabilityResult, setAvailabilityResult] = useState<AvailabilityCheckResult | null>(null);
 
   // Planos de sessões
