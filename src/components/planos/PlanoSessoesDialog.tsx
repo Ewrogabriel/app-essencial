@@ -96,6 +96,7 @@ export const PlanoSessoesDialog = ({ open, onOpenChange, plano, userId }: PlanoS
         status: "agendado",
         observacoes: `plano:${plano.id}`,
         created_by: userId,
+        clinic_id: activeClinicId,
       });
       if (error) throw error;
     },
