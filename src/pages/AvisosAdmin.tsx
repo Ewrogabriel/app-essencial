@@ -18,6 +18,7 @@ const AvisosAdmin = () => {
   const queryClient = useQueryClient();
   const [titulo, setTitulo] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: avisos = [], isLoading } = useQuery({
