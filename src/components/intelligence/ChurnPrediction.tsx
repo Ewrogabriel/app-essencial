@@ -38,14 +38,14 @@ export function ChurnPrediction() {
       const pacienteIds = pacientes.map((p) => p.id);
 
       // Fetch recent appointments
-      const { data: agendamentos } = await (supabase.from("agendamentos") as any)
+      const { data: agendamentos } = await supabase.from("agendamentos")
         .select("paciente_id, data_horario, status")
         .in("paciente_id", pacienteIds)
         .gte("data_horario", threeMonthsAgo)
         .order("data_horario", { ascending: false });
 
       // Fetch overdue payments
-      const { data: pagamentos } = await (supabase.from("pagamentos") as any)
+      const { data: pagamentos } = await supabase.from("pagamentos")
         .select("paciente_id, status, data_vencimento")
         .in("paciente_id", pacienteIds)
         .eq("status", "pendente");
