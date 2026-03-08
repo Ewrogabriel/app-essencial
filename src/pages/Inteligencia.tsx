@@ -12,6 +12,8 @@ import { Brain, TrendingUp, Users, Target, AlertTriangle, Sparkles, Loader2 } fr
 import { Badge } from "@/components/ui/badge";
 import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ChurnPrediction } from "@/components/intelligence/ChurnPrediction";
+import { OccupancyReport } from "@/components/intelligence/OccupancyReport";
 
 const Inteligencia = () => {
   const { clinicId } = useAuth();
