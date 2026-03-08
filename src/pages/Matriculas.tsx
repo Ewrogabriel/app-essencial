@@ -71,6 +71,16 @@ function getEmptyEditForm(): EnrollmentEditData {
   };
 }
 
+// Helper: get local timezone offset string like "-03:00"
+function getLocalTZOffset(dateStr: string, timeStr: string): string {
+  const d = new Date(`${dateStr}T${timeStr}:00`);
+  const offset = -d.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const h = String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0");
+  const m = String(Math.abs(offset) % 60).padStart(2, "0");
+  return `${sign}${h}:${m}`;
+}
+
 // Helper: generate agendamentos dates from weekly_schedules for a period
 function getDatesForWeekday(startDateStr: string, endDateStr: string, weekday: number): string[] {
   const dates: string[] = [];
@@ -212,7 +222,7 @@ const Matriculas = () => {
           toInsert.push({
             paciente_id: editData.paciente_id,
             profissional_id: s.professional_id,
-            data_horario: `${dt}T${s.time}:00`,
+            data_horario: `${dt}T${s.time}:00${getLocalTZOffset(dt, s.time)}`,
             duracao_minutos: s.session_duration,
             tipo_atendimento: editData.tipo_atendimento,
             status: "agendado",
@@ -301,7 +311,7 @@ const Matriculas = () => {
             toInsert.push({
               paciente_id: formData.paciente_id,
               profissional_id: s.professional_id,
-              data_horario: `${dt}T${s.time}:00`,
+              data_horario: `${dt}T${s.time}:00${getLocalTZOffset(dt, s.time)}`,
               duracao_minutos: s.session_duration,
               tipo_atendimento: formData.tipo_atendimento,
               status: "agendado",
