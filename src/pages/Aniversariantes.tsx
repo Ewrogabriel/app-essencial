@@ -64,7 +64,7 @@ export default function Aniversariantes() {
     setSendingId(paciente.id);
     try {
       // Aqui você poderia integrar com seu serviço de mensagens
-      console.log("Enviando mensagem para:", paciente.nome);
+      // TODO: integrar com serviço de mensagens
       // await enviarMensagem(paciente.id, "Parabéns pelo seu aniversário!");
     } finally {
       setSendingId(null);
