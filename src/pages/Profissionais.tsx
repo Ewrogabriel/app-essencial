@@ -18,7 +18,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Pencil, Plus, Shield, UserCheck, Search, KeyRound, Eye, PenLine } from "lucide-react";
+import { Pencil, Plus, Shield, UserCheck, Search, KeyRound, Eye, PenLine, Calculator } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
