@@ -72,7 +72,8 @@ const Planos = () => {
         .select("*, pacientes(nome), profiles(nome)");
       
       if (filterStatus) {
-        query = query.eq("status", filterStatus);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        query = query.eq("status", filterStatus as any);
       }
       if (filterPaciente) {
         query = query.ilike("pacientes.nome", `%${filterPaciente}%`);
