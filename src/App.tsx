@@ -53,8 +53,8 @@ import DashboardPaciente from "./pages/DashboardPaciente";
 const queryClient = new QueryClient();
 
 const DashboardToggle = () => {
-  const { isPatient, isAdmin, isGestor, isProfissional } = useAuth();
-  const isStaff = isAdmin || isGestor || isProfissional;
+  const { isPatient, isAdmin, isGestor, isProfissional, isSecretario } = useAuth();
+  const isStaff = isAdmin || isGestor || isProfissional || isSecretario;
   return isStaff ? <Dashboard /> : <PatientDashboard />;
 };
 
