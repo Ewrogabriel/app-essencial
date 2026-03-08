@@ -12,9 +12,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { useClinic } from "@/hooks/useClinic";
 
 const AvisosAdmin = () => {
   const { user } = useAuth();
+  const { activeClinicId } = useClinic();
   const queryClient = useQueryClient();
   const [titulo, setTitulo] = useState("");
   const [mensagem, setMensagem] = useState("");
