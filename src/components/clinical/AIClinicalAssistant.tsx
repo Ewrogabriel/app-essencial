@@ -16,12 +16,14 @@ import {
   Paperclip,
   Copy,
   Download,
+  Search,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-type AIAction = "summarize" | "suggest_conduct" | "lesson_plan" | "treatment_plan" | "generate_report";
+type AIAction = "summarize" | "suggest_conduct" | "lesson_plan" | "treatment_plan" | "generate_report" | "analyze_all";
 
 const ACTION_LABELS: Record<AIAction, { label: string; icon: React.ReactNode; description: string }> = {
+  analyze_all: { label: "Análise Completa", icon: <Search className="h-4 w-4" />, description: "Prontuário + evoluções + documentos" },
   summarize: { label: "Resumo Clínico", icon: <FileText className="h-4 w-4" />, description: "Síntese do histórico e evolução" },
   suggest_conduct: { label: "Sugestão de Conduta", icon: <Sparkles className="h-4 w-4" />, description: "Próximos passos e exercícios" },
   lesson_plan: { label: "Plano de Aula", icon: <BookOpen className="h-4 w-4" />, description: "Aula personalizada por modalidade" },
@@ -46,7 +48,7 @@ export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssist
         .select("descricao, conduta, data_evolucao")
         .eq("paciente_id", pacienteId)
         .order("data_evolucao", { ascending: false })
-        .limit(20);
+        .limit(30);
       return data || [];
     },
     enabled: !!pacienteId,
@@ -80,9 +82,8 @@ export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssist
   });
 
   const callAI = async (action: AIAction) => {
-    // For treatment_plan and generate_report, allow even without evolutions
-    if (action !== "treatment_plan" && action !== "generate_report" && action !== "lesson_plan" && evolutions.length === 0) {
-      toast({ title: "Sem evoluções para analisar", description: "Registre evoluções primeiro.", variant: "destructive" });
+    if (!evolutions.length && !evaluation && action !== "lesson_plan") {
+      toast({ title: "Sem dados para analisar", description: "Registre avaliações ou evoluções primeiro.", variant: "destructive" });
       return;
     }
 
@@ -173,26 +174,39 @@ export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssist
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Highlight: Analyze All */}
+        <Button
+          size="sm"
+          className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={() => callAI("analyze_all")}
+          disabled={loading || !hasData}
+        >
+          <Search className="h-4 w-4" />
+          📊 Análise Completa do Prontuário (IA)
+        </Button>
+
+        {/* Action Buttons Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {(Object.entries(ACTION_LABELS) as [AIAction, typeof ACTION_LABELS[AIAction]][]).map(([key, cfg]) => (
-            <Button
-              key={key}
-              size="sm"
-              variant="outline"
-              className="justify-start h-auto py-2 px-3"
-              onClick={() => callAI(key)}
-              disabled={loading || (!hasData && key !== "lesson_plan")}
-            >
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 shrink-0 text-primary">{cfg.icon}</span>
-                <div className="text-left">
-                  <p className="font-medium text-xs">{cfg.label}</p>
-                  <p className="text-[10px] text-muted-foreground font-normal">{cfg.description}</p>
+          {(Object.entries(ACTION_LABELS) as [AIAction, typeof ACTION_LABELS[AIAction]][])
+            .filter(([key]) => key !== "analyze_all")
+            .map(([key, cfg]) => (
+              <Button
+                key={key}
+                size="sm"
+                variant="outline"
+                className="justify-start h-auto py-2 px-3"
+                onClick={() => callAI(key as AIAction)}
+                disabled={loading || (!hasData && key !== "lesson_plan")}
+              >
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 shrink-0 text-primary">{cfg.icon}</span>
+                  <div className="text-left">
+                    <p className="font-medium text-xs">{cfg.label}</p>
+                    <p className="text-[10px] text-muted-foreground font-normal">{cfg.description}</p>
+                  </div>
                 </div>
-              </div>
-            </Button>
-          ))}
+              </Button>
+            ))}
         </div>
 
         {/* Loading */}
@@ -201,8 +215,10 @@ export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssist
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-5/6" />
             <p className="text-xs text-muted-foreground animate-pulse">
-              {lastAction === "lesson_plan" ? "Montando plano de aula personalizado..." :
+              {lastAction === "analyze_all" ? "🔍 Analisando prontuário completo, evoluções e documentos..." :
+               lastAction === "lesson_plan" ? "Montando plano de aula personalizado..." :
                lastAction === "treatment_plan" ? "Analisando prontuário e documentos..." :
                lastAction === "generate_report" ? "Gerando relatório clínico..." :
                "Analisando histórico clínico..."}
