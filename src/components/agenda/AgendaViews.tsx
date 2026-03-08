@@ -279,14 +279,26 @@ export function WeeklyView({
         const isToday = isSameDay(day, new Date());
 
         return (
-          <div
-            key={day.toISOString()}
-            className={cn(
-              "bg-card p-1.5 min-h-[180px] cursor-pointer hover:bg-muted/20 transition-colors flex flex-col",
-              isToday && "ring-2 ring-primary ring-inset"
-            )}
-            onClick={() => onSlotClick?.(day)}
-          >
+            <div
+              key={day.toISOString()}
+              className={cn(
+                "bg-card p-1.5 min-h-[180px] cursor-pointer hover:bg-muted/20 transition-colors flex flex-col",
+                isToday && "ring-2 ring-primary ring-inset"
+              )}
+              onClick={() => onSlotClick?.(day)}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+              onDragLeave={(e) => { e.currentTarget.classList.remove("bg-primary/10"); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove("bg-primary/10");
+                const agId = e.dataTransfer.getData("agendamento-id");
+                if (agId && onDrop) {
+                  const d = new Date(day);
+                  d.setHours(9, 0, 0, 0);
+                  onDrop(agId, d);
+                }
+              }}
+            >
             <div className="text-center mb-1.5 pb-1 border-b">
               <div className="text-[10px] uppercase text-muted-foreground leading-tight">
                 {format(day, "EEE", { locale: ptBR })}
