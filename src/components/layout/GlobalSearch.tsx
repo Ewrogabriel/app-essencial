@@ -80,7 +80,7 @@ export function GlobalSearch() {
       });
 
       // Search payments
-      const { data: pagamentos } = await (supabase.from("pagamentos") as any)
+      const { data: pagamentos } = await supabase.from("pagamentos")
         .select("id, valor, descricao, pacientes(nome)")
         .or(`descricao.ilike.%${q}%`)
         .limit(5);

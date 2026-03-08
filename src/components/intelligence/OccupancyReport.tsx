@@ -42,7 +42,7 @@ export function OccupancyReport() {
     queryFn: async () => {
       const start = startOfWeek(new Date(), { weekStartsOn: 1 });
       const end = addDays(start, 6);
-      let query = (supabase.from("agendamentos") as any)
+      let query = supabase.from("agendamentos")
         .select("data_horario, profissional_id, status")
         .gte("data_horario", start.toISOString())
         .lte("data_horario", end.toISOString())

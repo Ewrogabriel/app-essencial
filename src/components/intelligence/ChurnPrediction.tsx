@@ -51,7 +51,7 @@ export function ChurnPrediction() {
         .eq("status", "pendente");
 
       // Calculate risk per patient
-      const risks: ChurnRisk[] = pacientes.map((p: any) => {
+      const risks: ChurnRisk[] = pacientes.map((p) => {
         const pAgendamentos = (agendamentos || []).filter((a: any) => a.paciente_id === p.id);
         const pPagamentos = (pagamentos || []).filter((pg: any) => pg.paciente_id === p.id);
 

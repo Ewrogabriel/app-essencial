@@ -48,7 +48,7 @@ export function PatientEvolutionsTab({ pacienteId }: { pacienteId: string }) {
   const { data: attachments = [] } = useQuery({
     queryKey: ["patient-attachments-portal", pacienteId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("patient_attachments") as any)
+      const { data, error } = await supabase.from("patient_attachments")
         .select("id, file_name, file_type, descricao, created_at")
         .eq("paciente_id", pacienteId)
         .order("created_at", { ascending: false })

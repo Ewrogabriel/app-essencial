@@ -116,7 +116,7 @@ export function DigitalContractDialog({
       if (!user || !activeClinicId) throw new Error("Não autenticado");
       if (!signatureUrl) throw new Error("Assinatura obrigatória");
 
-      const { error } = await (supabase.from("contratos_digitais") as any).insert({
+      const { error } = await supabase.from("contratos_digitais").insert({
         clinic_id: activeClinicId,
         paciente_id: pacienteId,
         titulo: title,
