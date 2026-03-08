@@ -79,12 +79,12 @@ const Financeiro = () => {
   }
 
   const { data: pagamentos = [], isLoading } = useQuery<PagamentoRow[]>({
-    queryKey: ["pagamentos"],
+    queryKey: ["pagamentos", activeClinicId],
     queryFn: async () => {
-      const query = supabase
+      let query = supabase
         .from("pagamentos")
         .select("*, pacientes(nome)");
-
+      if (activeClinicId) query = query.eq("clinic_id", activeClinicId);
       const { data, error } = await query.order("data_pagamento", { ascending: false });
       if (error) throw error;
       return data;
