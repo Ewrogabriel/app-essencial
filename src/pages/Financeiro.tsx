@@ -355,6 +355,7 @@ const Financeiro = () => {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
                 );
               })()}
             </CardContent>

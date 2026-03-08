@@ -580,6 +580,7 @@ const Profissionais = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

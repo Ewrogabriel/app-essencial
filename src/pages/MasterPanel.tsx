@@ -597,7 +597,7 @@ function MasterDashboardTab() {
   });
 
   return (
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
       <Card>
         <CardContent className="p-4 flex items-center gap-3">
           <Building2 className="h-8 w-8 text-primary" />
