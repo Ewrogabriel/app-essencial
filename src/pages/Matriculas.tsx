@@ -102,6 +102,7 @@ function getDatesForWeekday(startDateStr: string, endDateStr: string, weekday: n
 
 const Matriculas = () => {
   const { user, isAdmin } = useAuth();
+  const { activeClinicId } = useClinic();
   const navigate = (path: string) => window.location.href = path;
   const queryClient = useQueryClient();
 
