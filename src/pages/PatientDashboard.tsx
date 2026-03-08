@@ -268,13 +268,7 @@ const PatientDashboard = () => {
   const planoVencimento = planoAtivo?.data_vencimento ? new Date(planoAtivo.data_vencimento) : null;
   const diasParaVencer = planoVencimento ? differenceInDays(planoVencimento, hoje) : null;
 
-  const dicasPaciente = [
-    { titulo: "Hidratação e Bem-estar", conteudo: "Beba pelo menos 2 litros de água por dia para melhorar a flexibilidade muscular." },
-    { titulo: "Respiração Correta", conteudo: "Inspire pelo nariz e expire pela boca durante os exercícios de pilates." },
-    { titulo: "Postura no Dia a Dia", conteudo: "Mantenha a coluna reta ao sentar para reduzir dores nas costas." },
-    { titulo: "Alimentação Pré-aula", conteudo: "Evite refeições pesadas 2 horas antes da aula." },
-  ];
-  const dailyTip = dicasPaciente[hoje.getDate() % dicasPaciente.length];
+  // Static tips removed - using AI-powered DailyTipsCard instead
 
   const openWhatsAppClinic = () => {
     const whatsapp = clinicSettings?.whatsapp?.replace(/\D/g, "") || "";
