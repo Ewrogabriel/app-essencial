@@ -174,6 +174,20 @@ const ProfessionalDashboard = () => {
           {format(hoje, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
         </p>
       </div>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-2"
+          onClick={() => {
+            const link = `${window.location.origin}/pre-cadastro`;
+            const msg = `Olá! 👋\n\nPara agilizar seu cadastro em nossa clínica, preencha o formulário abaixo:\n\n📋 ${link}\n\nÉ rápido e fácil! Qualquer dúvida, estamos à disposição. 😊`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+          }}
+        >
+          <UserPlus className="h-4 w-4" /> Enviar Pré-Cadastro
+        </Button>
+      </div>
 
       <DailyTipsCard tipo="profissional" />
 
