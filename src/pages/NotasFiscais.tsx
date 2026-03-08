@@ -14,9 +14,11 @@ import { FileText, CheckCircle2, Search, Eye, Upload, Download, Send, RefreshCw,
 import { toast } from "@/hooks/use-toast";
 import { format, endOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useClinic } from "@/hooks/useClinic";
 
 const NotasFiscais = () => {
   const { user } = useAuth();
+  const { activeClinicId } = useClinic();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
