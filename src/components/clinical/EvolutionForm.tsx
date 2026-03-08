@@ -32,7 +32,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
             if (!user) throw new Error("Usuário não autenticado");
 
             const { error } = await (supabase.from("evolutions") as any).insert({
-                clinic_id: user.id,
+                clinic_id: activeClinicId,
                 paciente_id: pacienteId,
                 profissional_id: user.id,
                 descricao,
