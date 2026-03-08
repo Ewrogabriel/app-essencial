@@ -57,6 +57,7 @@ const AvisosAdmin = () => {
        toast({ title: "Aviso publicado no mural dos pacientes!" });
        setTitulo("");
        setMensagem("");
+       setImageUrl("");
        queryClient.invalidateQueries({ queryKey: ["admin-avisos"] });
        queryClient.invalidateQueries({ queryKey: ["avisos-ativos"] });
     }
