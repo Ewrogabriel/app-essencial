@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Plus, DollarSign, TrendingUp, AlertCircle, CheckCircle, Download, Send, Filter } from "lucide-react";
+import { FinanceExportButton } from "@/components/reports/FinanceExportButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
