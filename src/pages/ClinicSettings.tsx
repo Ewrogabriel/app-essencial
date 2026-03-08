@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { maskCNPJ, maskPhone, maskCEP } from "@/lib/masks";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FormasPagamento from "./FormasPagamento";
+import { AuditLogViewer } from "@/components/settings/AuditLogViewer";
+import { BackupExport } from "@/components/settings/BackupExport";
 
 const ClinicSettings = () => {
   const { data: settings, isLoading } = useClinicSettings();
