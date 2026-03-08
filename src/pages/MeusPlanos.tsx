@@ -29,6 +29,7 @@ import { toast } from "@/hooks/use-toast";
 
 const MeusPlanos = () => {
   const { user, patientId } = useAuth();
+  const { activeClinicId } = useClinic();
   const queryClient = useQueryClient();
   const [agendarOpen, setAgendarOpen] = useState(false);
   const [selectedPlano, setSelectedPlano] = useState<any>(null);
