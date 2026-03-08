@@ -37,7 +37,7 @@ import DisponibilidadeProfissional from "./pages/DisponibilidadeProfissional";
 import MeuPerfil from "./pages/MeuPerfil";
 import Contratos from "./pages/Contratos";
 import PrecosPlanos from "./pages/PrecosPlanos";
-import Comissoes from "./pages/Comissoes";
+// Comissoes is now a tab inside Financeiro
 import PerfilProfissional from "./pages/PerfilProfissional";
 import PerfilProfissionalPublico from "./pages/PerfilProfissionalPublico";
 import ClinicSettings from "./pages/ClinicSettings";
