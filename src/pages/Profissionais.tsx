@@ -559,11 +559,11 @@ const Profissionais = () => {
           </DialogHeader>
           <ScrollArea className="max-h-[70vh] pr-4">
             <Tabs defaultValue="dados" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsList className={`grid w-full mb-4 ${isCreating ? 'grid-cols-4' : 'grid-cols-3'}`}>
                 <TabsTrigger value="dados">Dados</TabsTrigger>
+                <TabsTrigger value="endereco">Endereço</TabsTrigger>
                 <TabsTrigger value="profissional">Profissional</TabsTrigger>
                 {isCreating && <TabsTrigger value="acesso">Acesso</TabsTrigger>}
-                {!isCreating && <TabsTrigger value="endereco">Endereço</TabsTrigger>}
               </TabsList>
 
               <TabsContent value="dados" className="space-y-4">
