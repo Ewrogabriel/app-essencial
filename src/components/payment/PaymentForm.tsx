@@ -70,7 +70,7 @@ export const PaymentForm = ({
     }
 
     // Log payment intent (in real app, this would integrate with payment gateway)
-    console.log("[v0] Payment Intent:", {
+    // TODO: integrate with payment gateway
       tipo,
       forma: forma.nome,
       items: selectedItems,
