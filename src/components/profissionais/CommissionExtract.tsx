@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Calculator, Lock, CheckCircle2, AlertTriangle, Gift } from "lucide-react";
+import { Download, Calculator, Lock, CheckCircle2, AlertTriangle, Gift, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import { getClinicSettings, addLogoToPDF, formatClinicAddress } from "@/lib/pdfLogo";
@@ -38,6 +38,7 @@ export function CommissionExtract() {
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
   const [filterProf, setFilterProf] = useState("todos");
   const [filterModalidade, setFilterModalidade] = useState("todos");
+  const [expandedProf, setExpandedProf] = useState<string | null>(null);
   const [closingProf, setClosingProf] = useState<ProfSummary | null>(null);
   const [closingNotes, setClosingNotes] = useState("");
   const [compensacaoValor, setCompensacaoValor] = useState("");
@@ -292,7 +293,36 @@ export function CommissionExtract() {
   const summary = calcSummary();
   const totalComissoes = summary.reduce((s, item) => s + item.comissao, 0);
 
-  // Close commission mutation
+  // Per-session commission detail calculator
+  const getSessionCommission = (profId: string, atendimento: any) => {
+    const prof = profissionais.find((p: any) => p.user_id === profId);
+    const profRegras = regrasComissao.filter((r: any) => r.profissional_id === profId && r.ativo);
+    let valorSessao = Number(atendimento.valor_sessao || 0);
+    if (valorSessao === 0 && atendimento.observacoes?.startsWith("plano:")) {
+      const planoId = atendimento.observacoes.replace("plano:", "").trim();
+      const plano = planosData.find((pl: any) => pl.id === planoId);
+      if (plano && plano.total_sessoes > 0) valorSessao = Number(plano.valor) / plano.total_sessoes;
+    }
+    let percentual = 0;
+    let fixo = 0;
+    let comissao = 0;
+    if (profRegras.length > 0) {
+      const tipoRegra = profRegras.find((r: any) => r.tipo_atendimento === atendimento.tipo_atendimento)
+        || profRegras.find((r: any) => r.tipo_atendimento === "geral");
+      if (tipoRegra) {
+        percentual = Number(tipoRegra.percentual || 0);
+        fixo = Number(tipoRegra.valor_fixo || 0);
+        comissao = (valorSessao * percentual / 100) + fixo;
+      }
+    } else if (prof) {
+      percentual = Number(prof.commission_rate || 0);
+      fixo = Number(prof.commission_fixed || 0);
+      comissao = (valorSessao * percentual / 100) + fixo;
+    }
+    return { valorSessao, percentual, fixo, comissao };
+  };
+
+
   const closeMutation = useMutation({
     mutationFn: async (prof: ProfSummary) => {
       if (!user) throw new Error("Não autenticado");
@@ -680,11 +710,11 @@ export function CommissionExtract() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8"></TableHead>
                     <TableHead>Profissional</TableHead>
-                    <TableHead className="text-center">Atendimentos</TableHead>
+                    <TableHead className="text-center">Atend.</TableHead>
                     <TableHead>Valor Total</TableHead>
                     <TableHead>Comissão</TableHead>
-                    <TableHead>Fonte</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -693,58 +723,106 @@ export function CommissionExtract() {
                   {summary.map((s) => {
                     const closed = isClosed(s.userId);
                     const fechamento = fechamentos.find((f: any) => f.profissional_id === s.userId);
+                    const isExpanded = expandedProf === s.userId;
+                    const sortedAtendimentos = [...s.atendimentosDetail].sort((a: any, b: any) => a.data_horario.localeCompare(b.data_horario));
+
                     return (
-                      <TableRow key={s.userId}>
-                        <TableCell className="font-medium">{s.nome}</TableCell>
-                        <TableCell className="text-center">
-                          {s.totalAtendimentos}
-                          {s.realizados < s.totalAtendimentos && (
-                            <span className="text-xs text-muted-foreground ml-1">({s.realizados} realizados)</span>
-                          )}
-                        </TableCell>
-                        <TableCell>R$ {s.totalValor.toFixed(2)}</TableCell>
-                        <TableCell className="font-bold text-primary">
-                          R$ {closed ? Number(fechamento?.valor_final || s.comissao).toFixed(2) : s.comissao.toFixed(2)}
-                          {closed && Number(fechamento?.compensacao_anterior) !== 0 && (
-                            <span className="text-xs text-muted-foreground block">
-                              (comp. R$ {Number(fechamento.compensacao_anterior).toFixed(2)})
-                            </span>
-                          )}
-                          {closed && Number(fechamento?.bonus_valor) !== 0 && (
-                            <span className="text-xs text-green-600 block">
-                              (bônus R$ {Number(fechamento.bonus_valor).toFixed(2)})
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={s.regras.length > 0 ? "default" : "secondary"}>
-                            {s.regras.length > 0 ? "Regra" : "Perfil"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {closed ? (
-                            <Badge variant="default" className="gap-1">
-                              <Lock className="h-3 w-3" /> Fechado
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="gap-1">
-                              <AlertTriangle className="h-3 w-3" /> Aberto
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {!closed && (
-                              <Button size="sm" variant="default" onClick={() => openClosing(s)} className="gap-1">
-                                <CheckCircle2 className="h-3.5 w-3.5" /> Fechar
-                              </Button>
+                      <React.Fragment key={s.userId}>
+                        <TableRow
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => setExpandedProf(isExpanded ? null : s.userId)}
+                        >
+                          <TableCell className="w-8 px-2">
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </TableCell>
+                          <TableCell className="font-medium">{s.nome}</TableCell>
+                          <TableCell className="text-center">
+                            {s.totalAtendimentos}
+                            {s.realizados < s.totalAtendimentos && (
+                              <span className="text-xs text-muted-foreground ml-1">({s.realizados} real.)</span>
                             )}
-                            <Button size="sm" variant="outline" onClick={() => generateClosingReceipt(s, closed ? Number(fechamento?.valor_final || s.comissao) : s.comissao, closed ? Number(fechamento?.compensacao_anterior || 0) : 0, closed ? Number(fechamento?.bonus_valor || 0) : 0)} className="gap-1">
-                              <Download className="h-3.5 w-3.5" /> PDF
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                          </TableCell>
+                          <TableCell>R$ {s.totalValor.toFixed(2)}</TableCell>
+                          <TableCell className="font-bold text-primary">
+                            R$ {closed ? Number(fechamento?.valor_final || s.comissao).toFixed(2) : s.comissao.toFixed(2)}
+                            {closed && Number(fechamento?.bonus_valor) !== 0 && (
+                              <span className="text-xs text-green-600 block">
+                                (bônus R$ {Number(fechamento.bonus_valor).toFixed(2)})
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {closed ? (
+                              <Badge variant="default" className="gap-1">
+                                <Lock className="h-3 w-3" /> Fechado
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="gap-1">
+                                <AlertTriangle className="h-3 w-3" /> Aberto
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                              {!closed && (
+                                <Button size="sm" variant="default" onClick={() => openClosing(s)} className="gap-1">
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Fechar
+                                </Button>
+                              )}
+                              <Button size="sm" variant="outline" onClick={() => generateClosingReceipt(s, closed ? Number(fechamento?.valor_final || s.comissao) : s.comissao, closed ? Number(fechamento?.compensacao_anterior || 0) : 0, closed ? Number(fechamento?.bonus_valor || 0) : 0)} className="gap-1">
+                                <Download className="h-3.5 w-3.5" /> PDF
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Expanded detail rows */}
+                        {isExpanded && (
+                          <>
+                            <TableRow className="bg-muted/30">
+                              <TableHead></TableHead>
+                              <TableHead className="text-xs">Data / Hora</TableHead>
+                              <TableHead className="text-xs">Paciente</TableHead>
+                              <TableHead className="text-xs">Tipo</TableHead>
+                              <TableHead className="text-xs">Valor Sessão</TableHead>
+                              <TableHead className="text-xs">% / Fixo</TableHead>
+                              <TableHead className="text-xs text-right">Comissão</TableHead>
+                            </TableRow>
+                            {sortedAtendimentos.map((a: any) => {
+                              const sc = getSessionCommission(s.userId, a);
+                              return (
+                                <TableRow key={a.id} className="bg-muted/10 text-sm">
+                                  <TableCell></TableCell>
+                                  <TableCell className="text-xs">
+                                    {format(new Date(a.data_horario), "dd/MM/yyyy HH:mm")}
+                                  </TableCell>
+                                  <TableCell className="text-xs">{a.pacientes?.nome || "—"}</TableCell>
+                                  <TableCell className="text-xs">
+                                    <Badge variant="outline" className="text-[10px]">{a.tipo_atendimento || "—"}</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs">R$ {sc.valorSessao.toFixed(2)}</TableCell>
+                                  <TableCell className="text-xs">
+                                    {sc.percentual > 0 ? `${sc.percentual}%` : ""}
+                                    {sc.percentual > 0 && sc.fixo > 0 ? " + " : ""}
+                                    {sc.fixo > 0 ? `R$ ${sc.fixo.toFixed(2)}` : ""}
+                                    {sc.percentual === 0 && sc.fixo === 0 ? "—" : ""}
+                                  </TableCell>
+                                  <TableCell className="text-xs font-medium text-right text-primary">
+                                    R$ {sc.comissao.toFixed(2)}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                            <TableRow className="bg-muted/20 border-b-2">
+                              <TableCell colSpan={5}></TableCell>
+                              <TableCell className="text-xs font-bold text-right">Subtotal:</TableCell>
+                              <TableCell className="text-xs font-bold text-right text-primary">
+                                R$ {s.comissao.toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          </>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </TableBody>
