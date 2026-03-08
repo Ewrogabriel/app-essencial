@@ -3,7 +3,7 @@ import {
   LogOut, Activity, Layers, UserCog, Receipt, Brain, Send, Megaphone,
   Clock, FileText, Tag, CreditCard, User, Calculator, MessageSquare,
   Cake, Lightbulb, FileCheck, Wallet, ListChecks, Handshake, CalendarCheck,
-  Building2, Crown,
+  Building2, Crown, Upload, Trophy, Stethoscope,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -73,6 +73,8 @@ const menuEquipeFinanceiro = [
 
 const menuInteligencia = [
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+  { title: "Metas & Ranking", url: "/metas", icon: Trophy },
+  { title: "Importação", url: "/importacao", icon: Upload },
 ];
 
 const menuComunicacao = [
@@ -104,6 +106,7 @@ const menuPatient = [
   { title: "Minha Agenda", url: "/minha-agenda", icon: Calendar },
   { title: "Meus Planos", url: "/meus-planos", icon: ClipboardList },
   { title: "Histórico", url: "/meu-historico", icon: ClipboardList },
+  { title: "Prontuário", url: "/prontuarios", icon: Stethoscope },
   { title: "Pagamentos", url: "/meus-pagamentos", icon: CreditCard },
   { title: "Parceiros", url: "/convenios", icon: Handshake },
   { title: "Mensagens", url: "/mensagens", icon: MessageSquare },

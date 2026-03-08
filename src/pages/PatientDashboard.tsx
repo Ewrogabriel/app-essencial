@@ -20,6 +20,7 @@ import { PatientAgendaTab } from "@/components/patient/PatientAgendaTab";
 import { PatientFinanceTab } from "@/components/patient/PatientFinanceTab";
 import { PatientProdutosTab } from "@/components/patient/PatientProdutosTab";
 import { PatientInfoTab } from "@/components/patient/PatientInfoTab";
+import { PatientEvolutionsTab } from "@/components/patient/PatientEvolutionsTab";
 import { NpsSurvey } from "@/components/patient/NpsSurvey";
 
 const PatientDashboard = () => {
@@ -506,11 +507,12 @@ const PatientDashboard = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="agenda">Agenda</TabsTrigger>
+          <TabsTrigger value="prontuario">Prontuário</TabsTrigger>
           <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
-          <TabsTrigger value="info">Informações</TabsTrigger>
+          <TabsTrigger value="info">Info</TabsTrigger>
         </TabsList>
 
         <TabsContent value="agenda" className="mt-4">
@@ -522,6 +524,10 @@ const PatientDashboard = () => {
             openWhatsAppProfissional={openWhatsAppProfissional}
             onReschedule={(item) => { setRescheduleData(item); setIsRescheduleOpen(true); }}
           />
+        </TabsContent>
+
+        <TabsContent value="prontuario" className="mt-4">
+          {patientId && <PatientEvolutionsTab pacienteId={patientId} />}
         </TabsContent>
 
         <TabsContent value="financeiro" className="mt-4">
