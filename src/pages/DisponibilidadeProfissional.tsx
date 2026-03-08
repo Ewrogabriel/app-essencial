@@ -119,11 +119,11 @@ const DisponibilidadeProfissional = () => {
   });
 
   const currentProfName = canManage
-    ? (profissionais as any[]).find((p: any) => p.user_id === profId)?.nome || "Profissional"
+    ? profissionais.find((p) => p.user_id === profId)?.nome || "Profissional"
     : "Minha Grade";
 
   const effectiveVacancyProfId = vacancyProfId || profId;
-  const vacancyProfName = (profissionais as any[]).find((p: any) => p.user_id === effectiveVacancyProfId)?.nome || "Profissional";
+  const vacancyProfName = profissionais.find((p) => p.user_id === effectiveVacancyProfId)?.nome || "Profissional";
 
   const { data: slots = [], refetch } = useQuery({
     queryKey: ["disponibilidade", profId],

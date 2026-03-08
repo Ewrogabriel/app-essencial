@@ -30,7 +30,7 @@ export function OccupancyReport() {
   const { data: disponibilidades = [] } = useQuery({
     queryKey: ["occ-disp", filterProfId],
     queryFn: async () => {
-      let query = (supabase.from("disponibilidade_profissional") as any).select("*").eq("ativo", true);
+      let query = supabase.from("disponibilidade_profissional").select("*").eq("ativo", true);
       if (filterProfId !== "all") query = query.eq("profissional_id", filterProfId);
       const { data } = await query;
       return data || [];

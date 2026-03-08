@@ -47,7 +47,7 @@ const Contratos = () => {
   const { data: planos = [] } = useQuery({
     queryKey: ["precos-planos-contrato"],
     queryFn: async () => {
-      const { data } = await supabase.from("precos_planos").select("*").eq("ativo", true).order("nome") as any;
+      const { data } = await supabase.from("precos_planos").select("*").eq("ativo", true).order("nome");
       return data ?? [];
     },
   });
