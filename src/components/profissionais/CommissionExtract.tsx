@@ -51,7 +51,7 @@ export function CommissionExtract() {
       const endDate = `${mesRef}-${endMonth.getDate()}T23:59:59`;
       const { data } = await (supabase.from("agendamentos") as any)
         .select("*, pacientes(nome)")
-        .eq("status", "realizado")
+        .in("status", ["agendado", "confirmado", "pendente", "realizado"])
         .gte("data_horario", startDate)
         .lte("data_horario", endDate);
       return data ?? [];
