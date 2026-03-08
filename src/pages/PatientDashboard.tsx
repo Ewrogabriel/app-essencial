@@ -305,21 +305,8 @@ const PatientDashboard = () => {
         </Button>
       </div>
 
-      {/* Daily Tip */}
-      <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-lg overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <Lightbulb className="h-24 w-24" />
-        </div>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2 text-primary-foreground">
-            <Lightbulb className="h-5 w-5" /> Dica do Dia
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <h3 className="font-bold text-xl mb-1">{dailyTip.titulo}</h3>
-          <p className="opacity-90 italic text-sm">"{dailyTip.conteudo}"</p>
-        </CardContent>
-      </Card>
+      {/* Dicas do Dia - AI powered */}
+      <DailyTipsCard tipo="paciente" />
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
