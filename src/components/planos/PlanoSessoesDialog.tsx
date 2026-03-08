@@ -48,6 +48,7 @@ const statusBadge: Record<string, { label: string; variant: "default" | "seconda
 
 export const PlanoSessoesDialog = ({ open, onOpenChange, plano, userId }: PlanoSessoesDialogProps) => {
   const queryClient = useQueryClient();
+  const { activeClinicId } = useClinic();
   const restante = plano.total_sessoes - plano.sessoes_utilizadas;
   const pct = plano.total_sessoes > 0 ? Math.round((plano.sessoes_utilizadas / plano.total_sessoes) * 100) : 0;
 
