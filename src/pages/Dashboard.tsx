@@ -202,10 +202,12 @@ const Dashboard = () => {
   });
   // Ranking de frequência - pacientes que menos cancelam
   const { data: frequencyRanking = [] } = useQuery({
-    queryKey: ["dashboard-frequency-ranking"],
+    queryKey: ["dashboard-frequency-ranking", activeClinicId],
     queryFn: async () => {
-      const { data: agendamentos } = await (supabase.from("agendamentos") as any)
+      let q = (supabase.from("agendamentos") as any)
         .select("paciente_id, status, pacientes(nome)");
+      if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
+      const { data: agendamentos } = await q;
       if (!agendamentos) return [];
 
       const stats: Record<string, { nome: string; total: number; cancelados: number; realizados: number; checkins: number }> = {};
