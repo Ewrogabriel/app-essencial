@@ -215,6 +215,23 @@ const MeusPlanos = () => {
   const planoAtivo = planos.find((p: any) => p.status === "ativo");
   const matriculaAtiva = matriculas.find((m: any) => m.status === "ativa");
 
+  // Fetch scheduled sessions for active plan to show correct available credits
+  const { data: sessoesAtivas = [] } = useQuery({
+    queryKey: ["sessoes-ativas-plano", planoAtivo?.id],
+    queryFn: async () => {
+      if (!planoAtivo?.id || !patientId) return [];
+      const { data } = await supabase
+        .from("agendamentos")
+        .select("id, status")
+        .eq("paciente_id", patientId)
+        .in("status", ["agendado", "confirmado", "pendente"] as any[])
+        .ilike("observacoes", `%plano:${planoAtivo.id}%`);
+      return data || [];
+    },
+    enabled: !!planoAtivo?.id && !!patientId,
+  });
+  const creditosReais = planoAtivo ? planoAtivo.total_sessoes - planoAtivo.sessoes_utilizadas - sessoesAtivas.length : 0;
+
 
 
   const statusPlano: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -259,13 +276,16 @@ const MeusPlanos = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-4xl font-bold text-primary">
-                    {planoAtivo.total_sessoes - planoAtivo.sessoes_utilizadas}
+                    {Math.max(0, creditosReais)}
                   </p>
                   <p className="text-sm text-muted-foreground">Sessões disponíveis</p>
+                  {sessoesAtivas.length > 0 && (
+                    <p className="text-xs text-muted-foreground">{sessoesAtivas.length} agendadas</p>
+                  )}
                 </div>
               </div>
               <Progress
-                value={(planoAtivo.sessoes_utilizadas / planoAtivo.total_sessoes) * 100}
+                value={((planoAtivo.sessoes_utilizadas + sessoesAtivas.length) / planoAtivo.total_sessoes) * 100}
                 className="h-3"
               />
               <div className="grid grid-cols-2 gap-4 pt-2 border-t">
@@ -282,7 +302,7 @@ const MeusPlanos = () => {
                   </p>
                 </div>
               </div>
-              {(planoAtivo.total_sessoes - planoAtivo.sessoes_utilizadas) > 0 && (
+              {creditosReais > 0 && (
                 <Button className="w-full gap-2" onClick={() => openAgendar(planoAtivo)}>
                   <CalendarPlus className="h-4 w-4" />
                   Agendar Consulta
@@ -493,9 +513,32 @@ const MeusPlanos = () => {
                 <p><strong>Créditos restantes:</strong> {selectedPlano.total_sessoes - selectedPlano.sessoes_utilizadas}</p>
               </div>
 
-              {/* Step 1: Select time */}
+              {/* Step 0: Select professional */}
               <div>
-                <Label className="mb-2 block">1. Selecione o horário</Label>
+                <Label className="mb-2 block">1. Selecione o profissional</Label>
+                <Select value={selectedProfId} onValueChange={(v) => {
+                  setSelectedProfId(v);
+                  setSelectedTime("");
+                  setSelectedDate(undefined);
+                  setAvailabilityResult(null);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allProfissionais.map((p: any) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>
+                        {p.nome} {p.user_id === selectedPlano?.profissional_id ? "(padrão)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Step 1: Select time */}
+              {selectedProfId && (
+              <div>
+                <Label className="mb-2 block">2. Selecione o horário</Label>
                 <div className="flex flex-wrap gap-2">
                   {hourlyOptions.map((time) => (
                     <Button
@@ -516,11 +559,12 @@ const MeusPlanos = () => {
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Step 2: Calendar with availability (only after time selected) */}
               {selectedTime && (
                 <div>
-                  <Label className="mb-2 block">2. Selecione a data (vagas para {selectedTime})</Label>
+                  <Label className="mb-2 block">3. Selecione a data (vagas para {selectedTime})</Label>
                   <Calendar
                     mode="single"
                     locale={ptBR}

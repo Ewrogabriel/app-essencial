@@ -79,6 +79,28 @@ const Planos = () => {
     },
   });
 
+  // Fetch scheduled (non-completed) sessions count per plano
+  const { data: agendadasMap = {} } = useQuery<Record<string, number>>({
+    queryKey: ["planos-agendadas", planos.map(p => p.id).join(",")],
+    queryFn: async () => {
+      if (planos.length === 0) return {};
+      const { data } = await supabase
+        .from("agendamentos")
+        .select("observacoes, status")
+        .in("status", ["agendado", "confirmado", "pendente"] as any[])
+        .ilike("observacoes", "plano:%");
+      const map: Record<string, number> = {};
+      (data || []).forEach((a: any) => {
+        const match = a.observacoes?.match(/plano:([0-9a-f-]+)/);
+        if (match) {
+          map[match[1]] = (map[match[1]] || 0) + 1;
+        }
+      });
+      return map;
+    },
+    enabled: planos.length > 0,
+  });
+
   const { data: pacientes = [] } = useQuery({
     queryKey: ["pacientes-ativos"],
     queryFn: async () => {
@@ -234,8 +256,9 @@ const Planos = () => {
               </TableHeader>
               <TableBody>
                 {planos.map((plano) => {
-                  const pct = plano.total_sessoes > 0 ? (plano.sessoes_utilizadas / plano.total_sessoes) * 100 : 0;
-                  const restante = plano.total_sessoes - plano.sessoes_utilizadas;
+                  const agendadas = agendadasMap[plano.id] || 0;
+                  const pct = plano.total_sessoes > 0 ? ((plano.sessoes_utilizadas + agendadas) / plano.total_sessoes) * 100 : 0;
+                  const restante = plano.total_sessoes - plano.sessoes_utilizadas - agendadas;
                   const st = statusConfig[plano.status] || statusConfig.ativo;
                   return (
                     <TableRow
@@ -244,7 +267,7 @@ const Planos = () => {
                     >
                       <TableCell className="font-medium">{plano.pacientes?.nome ?? "—"}</TableCell>
                       <TableCell className="capitalize">{plano.tipo_atendimento}</TableCell>
-                      <TableCell>{plano.sessoes_utilizadas}/{plano.total_sessoes} <span className="text-xs text-muted-foreground">({restante} restantes)</span></TableCell>
+                      <TableCell>{plano.sessoes_utilizadas}/{plano.total_sessoes} <span className="text-xs text-muted-foreground">({Math.max(0, restante)} disponíveis{agendadas > 0 ? `, ${agendadas} agendadas` : ""})</span></TableCell>
                       <TableCell className="w-32">
                         <Progress value={pct} className="h-2" />
                       </TableCell>
