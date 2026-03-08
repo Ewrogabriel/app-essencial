@@ -58,7 +58,23 @@ const Financeiro = () => {
     observacoes: "",
   });
 
-  const { data: pagamentos = [], isLoading } = useQuery({
+  interface PagamentoRow {
+    id: string;
+    valor: number;
+    data_pagamento: string;
+    data_vencimento: string | null;
+    status: string;
+    forma_pagamento: string | null;
+    descricao: string | null;
+    observacoes: string | null;
+    created_at: string;
+    paciente_id: string;
+    profissional_id: string;
+    plano_id: string | null;
+    pacientes: { nome: string } | null;
+  }
+
+  const { data: pagamentos = [], isLoading } = useQuery<PagamentoRow[]>({
     queryKey: ["pagamentos"],
     queryFn: async () => {
       const query = supabase
@@ -102,7 +118,8 @@ const Financeiro = () => {
   const createPagamento = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
-      const { error } = await supabase.from("pagamentos").insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("pagamentos") as any).insert({
         paciente_id: formData.paciente_id,
         profissional_id: user.id,
         plano_id: formData.plano_id || null,
@@ -114,7 +131,7 @@ const Financeiro = () => {
         descricao: formData.descricao || null,
         observacoes: formData.observacoes || null,
         created_by: user.id,
-      } as any);
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -126,13 +143,13 @@ const Financeiro = () => {
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  const totalRecebido = (pagamentos || []).filter((p: any) => p.status === "pago").reduce((sum: number, p: any) => sum + Number(p.valor), 0);
-  const totalPendente = (pagamentos || []).filter((p: any) => p.status === "pendente").reduce((sum: number, p: any) => sum + Number(p.valor), 0);
-  const totalDespesas = ((despesasForDre as any[]) || []).filter((d) => d.status === "pago").reduce((sum: number, d) => sum + Number(d.valor), 0);
-  const totalComissoes = ((comissoesForDre as any[]) || []).reduce((sum: number, c) => sum + Number(c.valor), 0);
+  const totalRecebido = pagamentos.filter((p) => p.status === "pago").reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalPendente = pagamentos.filter((p) => p.status === "pendente").reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalDespesas = (despesasForDre || []).filter((d) => d.status === "pago").reduce((sum, d) => sum + Number(d.valor), 0);
+  const totalComissoes = (comissoesForDre || []).reduce((sum, c) => sum + Number(c.valor), 0);
   
-  const countPagos = (pagamentos || []).filter((p: any) => p.status === 'pago').length;
-  const countPendentes = (pagamentos || []).filter((p: any) => p.status === 'pendente').length;
+  const countPagos = pagamentos.filter((p) => p.status === 'pago').length;
+  const countPendentes = pagamentos.filter((p) => p.status === 'pendente').length;
 
   const lucroLiquido = totalRecebido - totalDespesas - totalComissoes;
 
@@ -228,7 +245,7 @@ const Financeiro = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(pagamentos as any[]).map((pagamento) => (
+                    {pagamentos.map((pagamento) => (
                       <TableRow key={pagamento.id}>
                         {!isPatient && <TableCell className="font-medium">{pagamento.pacientes?.nome ?? "—"}</TableCell>}
                         <TableCell>{pagamento.descricao || "—"}</TableCell>

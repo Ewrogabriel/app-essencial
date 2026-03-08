@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("user_id", userId)
       .eq("enabled", true);
     setPermissions(
-      data?.map((p: any) => ({ resource: p.resource, access_level: p.access_level || "edit" })) ?? []
+      data?.map((p: { resource: string; access_level: string }) => ({ resource: p.resource, access_level: (p.access_level || "edit") as "view" | "edit" })) ?? []
     );
   };
 
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isPatient = roles.includes("paciente");
   const isProfissional = roles.includes("profissional");
   const isSecretario = roles.includes("secretario");
-  const clinicId = (profile as any)?.clinic_id || null;
+  const clinicId = (profile as Record<string, unknown>)?.clinic_id as string | null || null;
 
   const hasPermission = (resource: string) => {
     if (isAdmin) return true;

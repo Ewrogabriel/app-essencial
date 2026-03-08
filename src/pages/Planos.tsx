@@ -47,7 +47,24 @@ const Planos = () => {
   const [filterPaciente, setFilterPaciente] = useState("");
   const [filterStatus, setFilterStatus] = useState("ativo");
 
-  const { data: planos = [], isLoading } = useQuery({
+  interface PlanoRow {
+    id: string;
+    paciente_id: string;
+    profissional_id: string;
+    tipo_atendimento: string;
+    total_sessoes: number;
+    sessoes_utilizadas: number;
+    valor: number;
+    status: string;
+    data_inicio: string;
+    data_vencimento: string | null;
+    observacoes: string | null;
+    created_at: string;
+    pacientes: { nome: string } | null;
+    profiles: { nome: string } | null;
+  }
+
+  const { data: planos = [], isLoading } = useQuery<PlanoRow[]>({
     queryKey: ["planos", filterPaciente, filterStatus],
     queryFn: async () => {
       let query = supabase
@@ -55,6 +72,7 @@ const Planos = () => {
         .select("*, pacientes(nome), profiles(nome)");
       
       if (filterStatus) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         query = query.eq("status", filterStatus as any);
       }
       if (filterPaciente) {
@@ -63,7 +81,7 @@ const Planos = () => {
 
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return (data || []) as PlanoRow[];
     },
   });
 
@@ -91,6 +109,7 @@ const Planos = () => {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createPlano = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
@@ -128,7 +147,7 @@ const Planos = () => {
       setFormData({ paciente_id: "", tipo_atendimento: "", total_sessoes: 10, valor: "", data_inicio: format(new Date(), "yyyy-MM-dd"), data_vencimento: "", observacoes: "" });
       toast({ title: "Plano criado com sucesso!" });
     },
-    onError: (e: Error | any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
   const confirmPayment = useMutation({
@@ -145,10 +164,10 @@ const Planos = () => {
       queryClient.invalidateQueries({ queryKey: ["pagamentos"] });
       toast({ title: "Pagamento confirmado!" });
     },
-    onError: (e: any) => toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" }),
   });
 
-  const planosAtivos = (planos as any[]).filter((p) => p.status === "ativo");
+  const planosAtivos = planos.filter((p) => p.status === "ativo");
   const planosVencendo = planosAtivos.filter((p) => {
     if (!p.data_vencimento) return false;
     const diff = new Date(p.data_vencimento).getTime() - Date.now();
@@ -261,7 +280,7 @@ const Planos = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(planos as any[]).map((plano) => {
+                {planos.map((plano) => {
                   const pct = plano.total_sessoes > 0 ? (plano.sessoes_utilizadas / plano.total_sessoes) * 100 : 0;
                   const restante = plano.total_sessoes - plano.sessoes_utilizadas;
                   const st = statusConfig[plano.status] || statusConfig.ativo;
@@ -313,7 +332,7 @@ const Planos = () => {
               <Select value={formData.paciente_id} onValueChange={(v) => setFormData(p => ({ ...p, paciente_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {(pacientes as any[]).map((p) => (
+                  {pacientes.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
                   ))}
                 </SelectContent>
@@ -322,10 +341,10 @@ const Planos = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Modalidade</Label>
-                <Select value={formData.tipo_atendimento} onValueChange={(v: any) => setFormData(p => ({ ...p, tipo_atendimento: v }))}>
+                <Select value={formData.tipo_atendimento} onValueChange={(v) => setFormData(p => ({ ...p, tipo_atendimento: v }))}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    {(modalidades as any[]).map((mod) => (
+                    {modalidades.map((mod) => (
                       <SelectItem key={mod.id} value={mod.nome.toLowerCase()}>{mod.nome}</SelectItem>
                     ))}
                   </SelectContent>
