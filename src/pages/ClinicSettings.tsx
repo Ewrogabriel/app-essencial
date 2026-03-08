@@ -3,13 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Building2, Save, Upload, CreditCard, Settings2 } from "lucide-react";
+import { Building2, Save, Upload, CreditCard, Settings2, Shield, Database } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useClinicSettings, useUpdateClinicSettings } from "@/hooks/useClinicSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { maskCNPJ, maskPhone, maskCEP } from "@/lib/masks";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FormasPagamento from "./FormasPagamento";
+import { AuditLogViewer } from "@/components/settings/AuditLogViewer";
+import { BackupExport } from "@/components/settings/BackupExport";
 
 const ClinicSettings = () => {
   const { data: settings, isLoading } = useClinicSettings();
@@ -106,12 +108,18 @@ const ClinicSettings = () => {
       </div>
 
       <Tabs defaultValue="dados" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
           <TabsTrigger value="dados" className="gap-2">
-            <Settings2 className="h-4 w-4" /> Dados da Clínica
+            <Settings2 className="h-4 w-4" /> Dados
           </TabsTrigger>
           <TabsTrigger value="pagamento" className="gap-2">
-            <CreditCard className="h-4 w-4" /> Formas de Pagamento
+            <CreditCard className="h-4 w-4" /> Pagamento
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="gap-2">
+            <Shield className="h-4 w-4" /> Logs
+          </TabsTrigger>
+          <TabsTrigger value="backup" className="gap-2">
+            <Database className="h-4 w-4" /> Backup
           </TabsTrigger>
         </TabsList>
 
@@ -174,6 +182,14 @@ const ClinicSettings = () => {
 
         <TabsContent value="pagamento">
           <FormasPagamento />
+        </TabsContent>
+
+        <TabsContent value="logs">
+          <AuditLogViewer />
+        </TabsContent>
+
+        <TabsContent value="backup">
+          <BackupExport />
         </TabsContent>
       </Tabs>
     </div>
