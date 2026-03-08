@@ -112,7 +112,7 @@ const Convenios = () => {
       queryClient.invalidateQueries({ queryKey: ["convenios"] });
       setFormOpen(false);
       resetForm();
-      toast({ title: editId ? "Convênio atualizado!" : "Convênio cadastrado!" });
+      toast({ title: editId ? "Parceiro atualizado!" : "Parceiro cadastrado!" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
@@ -124,7 +124,7 @@ const Convenios = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["convenios"] });
-      toast({ title: "Convênio removido" });
+      toast({ title: "Parceiro removido" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
@@ -180,11 +180,11 @@ const Convenios = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Convênios & Parceiros</h1>
-          <p className="text-muted-foreground">Gerencie empresas parceiras e convênios</p>
+          <h1 className="text-2xl font-bold tracking-tight">Parceiros</h1>
+          <p className="text-muted-foreground">Gerencie empresas parceiras</p>
         </div>
         <Button onClick={() => { resetForm(); setFormOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" /> Novo Convênio
+          <Plus className="h-4 w-4 mr-2" /> Novo Parceiro
         </Button>
       </div>
 
@@ -195,9 +195,9 @@ const Convenios = () => {
           ) : convenios.length === 0 ? (
             <div className="flex flex-col items-center py-16 text-muted-foreground">
               <Globe className="h-12 w-12 mb-4 opacity-40" />
-              <p className="text-lg font-medium">Nenhum convênio cadastrado</p>
+              <p className="text-lg font-medium">Nenhum parceiro cadastrado</p>
               <Button className="mt-4" onClick={() => { resetForm(); setFormOpen(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Cadastrar primeiro
+                <Plus className="h-4 w-4 mr-2" /> Cadastrar primeiro parceiro
               </Button>
             </div>
           ) : (
@@ -253,7 +253,7 @@ const Convenios = () => {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Remover convênio?</AlertDialogTitle>
+                              <AlertDialogTitle>Remover parceiro?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Essa ação não pode ser desfeita.
                               </AlertDialogDescription>
@@ -280,7 +280,7 @@ const Convenios = () => {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editId ? "Editar Convênio" : "Novo Convênio"}</DialogTitle>
+            <DialogTitle>{editId ? "Editar Parceiro" : "Novo Parceiro"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -289,7 +289,7 @@ const Convenios = () => {
             </div>
             <div>
               <Label>Descrição</Label>
-              <Textarea value={form.descricao} onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} placeholder="Descreva o convênio/parceria..." rows={3} />
+              <Textarea value={form.descricao} onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} placeholder="Descreva a parceria..." rows={3} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
