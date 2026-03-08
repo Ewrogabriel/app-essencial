@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { getMonthlyAvailability, checkAvailability, type AvailabilityCheckResult } from "@/lib/availabilityCheck";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useClinic } from "@/hooks/useClinic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import { toast } from "@/hooks/use-toast";
 
 const MeusPlanos = () => {
   const { user, patientId } = useAuth();
+  const { activeClinicId } = useClinic();
   const queryClient = useQueryClient();
   const [agendarOpen, setAgendarOpen] = useState(false);
   const [selectedPlano, setSelectedPlano] = useState<any>(null);
@@ -182,6 +184,7 @@ const MeusPlanos = () => {
         status: "pendente" as any,
         observacoes: `plano:${selectedPlano.id}`,
         created_by: user!.id,
+        clinic_id: activeClinicId,
       }).select("id").single();
       if (error) throw error;
 

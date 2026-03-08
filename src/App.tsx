@@ -53,6 +53,8 @@ import VacancyCalendar from "./pages/VacancyCalendar";
 import PreCadastro from "./pages/PreCadastro";
 import PreCadastrosAdmin from "./pages/PreCadastrosAdmin";
 import NotasFiscais from "./pages/NotasFiscais";
+import GestaoClinicas from "./pages/GestaoClinicas";
+import SelecionarClinica from "./pages/SelecionarClinica";
 // Despesas is now a tab inside Financeiro
 
 const queryClient = new QueryClient();
@@ -80,6 +82,9 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/pre-cadastro" element={<PreCadastro />} />
             <Route path="/" element={<Index />} />
+            <Route path="/selecionar-clinica" element={
+              <ProtectedRoute><SelecionarClinica /></ProtectedRoute>
+            } />
             <Route
               element={
                 <ProtectedRoute>
@@ -125,6 +130,7 @@ const App = () => (
               <Route path="/vagas" element={<VacancyCalendar />} />
               <Route path="/pre-cadastros" element={<PreCadastrosAdmin />} />
               <Route path="/notas-fiscais" element={<NotasFiscais />} />
+              <Route path="/gestao-clinicas" element={<GestaoClinicas />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

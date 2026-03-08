@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { useClinic } from "@/hooks/useClinic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,6 +37,7 @@ const defaultForm = {
 
 export const PlanoFormDialog = ({ open, onOpenChange, editPlano, pacientes, modalidades, userId }: PlanoFormDialogProps) => {
   const queryClient = useQueryClient();
+  const { activeClinicId } = useClinic();
   const isEdit = !!editPlano;
 
   const [formData, setFormData] = useState(defaultForm);
@@ -96,6 +98,7 @@ export const PlanoFormDialog = ({ open, onOpenChange, editPlano, pacientes, moda
           status: "pendente",
           descricao: `Plano ${formData.tipo_atendimento} - ${formData.total_sessoes} sessões`,
           created_by: userId,
+          clinic_id: activeClinicId,
         });
         if (pgtoError) throw pgtoError;
       }

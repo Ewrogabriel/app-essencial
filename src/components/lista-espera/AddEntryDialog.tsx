@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useModalidades } from "@/hooks/useModalidades";
+import { useClinic } from "@/hooks/useClinic";
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -20,6 +21,7 @@ interface AddEntryDialogProps {
 
 const AddEntryDialog = ({ open, onOpenChange, tipo }: AddEntryDialogProps) => {
   const queryClient = useQueryClient();
+  const { activeClinicId } = useClinic();
   const [form, setForm] = useState({
     paciente_id: "",
     profissional_id: "",
@@ -83,6 +85,7 @@ const AddEntryDialog = ({ open, onOpenChange, tipo }: AddEntryDialogProps) => {
         hora_preferida_inicio: form.hora_preferida_inicio || null,
         hora_preferida_fim: form.hora_preferida_fim || null,
         observacoes: form.observacoes || null,
+        clinic_id: activeClinicId,
       });
       if (error) throw error;
     },

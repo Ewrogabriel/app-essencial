@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useClinic } from "@/hooks/useClinic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +102,7 @@ function getDatesForWeekday(startDateStr: string, endDateStr: string, weekday: n
 
 const Matriculas = () => {
   const { user, isAdmin } = useAuth();
+  const { activeClinicId } = useClinic();
   const navigate = (path: string) => window.location.href = path;
   const queryClient = useQueryClient();
 
@@ -133,13 +135,14 @@ const Matriculas = () => {
 
   // --------------- Queries ---------------
   const { data: matriculas = [], isLoading } = useQuery({
-    queryKey: ["matriculas", filterPaciente, filterStatus],
+    queryKey: ["matriculas", filterPaciente, filterStatus, activeClinicId],
     queryFn: async () => {
       let query = supabase
         .from("matriculas")
         .select("*, pacientes(nome)")
         .order("created_at", { ascending: false });
 
+      if (activeClinicId) query = query.eq("clinic_id", activeClinicId);
       if (filterStatus) query = query.eq("status", filterStatus);
 
       const { data, error } = await query;
@@ -248,6 +251,7 @@ const Matriculas = () => {
               ? parseFloat((finalValue / Math.round(editData.weekly_schedules.length * 4.33)).toFixed(2))
               : 0,
             created_by: user.id,
+            clinic_id: activeClinicId,
           });
         }
       }
@@ -296,6 +300,7 @@ const Matriculas = () => {
           desconto: descValue,
           criada_por: user.id,
           status: "ativa",
+          clinic_id: activeClinicId,
         })
         .select()
         .single();
@@ -337,6 +342,7 @@ const Matriculas = () => {
                 ? parseFloat((finalValue / Math.round(formData.weekly_schedules.length * 4.33)).toFixed(2))
                 : 0,
               created_by: user.id,
+              clinic_id: activeClinicId,
             });
           }
         }
@@ -358,6 +364,7 @@ const Matriculas = () => {
           status: "pendente",
           descricao: `Matrícula Mensal - ${formData.tipo_atendimento}`,
           created_by: user.id,
+          clinic_id: activeClinicId,
         });
       }
 

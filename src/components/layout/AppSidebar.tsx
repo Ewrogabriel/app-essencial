@@ -3,6 +3,7 @@ import {
   LogOut, Activity, Layers, UserCog, Receipt, Brain, Send, Megaphone,
   Clock, FileText, Tag, CreditCard, User, Calculator, MessageSquare,
   Cake, Lightbulb, FileCheck, Wallet, ListChecks, Handshake, CalendarCheck,
+  Building2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -88,6 +89,7 @@ const menuConfig = [
   { title: "Contratos", url: "/contratos", icon: FileText },
   { title: "Automações", url: "/automacoes", icon: Send },
   { title: "Clínica & Pagamento", url: "/clinica", icon: Activity },
+  { title: "Unidades", url: "/gestao-clinicas", icon: Building2 },
 ];
 
 /* ── Patient menu ── */

@@ -10,6 +10,7 @@ import { checkAvailability, getMonthlyAvailability, type AvailabilityCheckResult
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useClinic } from "@/hooks/useClinic";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -102,6 +103,7 @@ interface AgendamentoFormProps {
 
 export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: AgendamentoFormProps) {
   const { user, clinicId } = useAuth();
+  const { activeClinicId } = useClinic();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [modalidades, setModalidades] = useState<Modalidade[]>([]);
@@ -324,6 +326,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
           dias_semana: values.dias_semana,
           frequencia_semanal: values.frequencia_semanal,
           valor_mensal: values.valor_mensal || null,
+          clinic_id: activeClinicId,
         }));
 
         const { error } = await (supabase.from("agendamentos") as any).insert(records);
@@ -359,6 +362,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
               recorrente: true,
               recorrencia_grupo_id: grupoId,
               valor_sessao: values.valor_sessao || null,
+              clinic_id: activeClinicId,
             });
           }
           const { error } = await (supabase.from("agendamentos") as any).insert(records);
@@ -378,6 +382,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
             observacoes: values.observacoes || null,
             created_by: user.id,
             valor_sessao: values.valor_sessao || null,
+            clinic_id: activeClinicId,
           });
           if (error) throw error;
           toast({ title: "Agendamento criado com sucesso!" });

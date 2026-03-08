@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarPlus, Check, Clock, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useClinic } from "@/hooks/useClinic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,6 +48,7 @@ const statusBadge: Record<string, { label: string; variant: "default" | "seconda
 
 export const PlanoSessoesDialog = ({ open, onOpenChange, plano, userId }: PlanoSessoesDialogProps) => {
   const queryClient = useQueryClient();
+  const { activeClinicId } = useClinic();
   const restante = plano.total_sessoes - plano.sessoes_utilizadas;
   const pct = plano.total_sessoes > 0 ? Math.round((plano.sessoes_utilizadas / plano.total_sessoes) * 100) : 0;
 
@@ -94,6 +96,7 @@ export const PlanoSessoesDialog = ({ open, onOpenChange, plano, userId }: PlanoS
         status: "agendado",
         observacoes: `plano:${plano.id}`,
         created_by: userId,
+        clinic_id: activeClinicId,
       });
       if (error) throw error;
     },

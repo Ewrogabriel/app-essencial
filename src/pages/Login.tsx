@@ -51,7 +51,8 @@ const Login = () => {
         variant: "destructive",
       });
     } else {
-      navigate("/dashboard");
+      // Navigate to clinic selector (it auto-redirects to dashboard if only 1 clinic)
+      navigate("/selecionar-clinica");
     }
 
     setLoading(false);
