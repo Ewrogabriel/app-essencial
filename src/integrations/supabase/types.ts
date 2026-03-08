@@ -629,11 +629,13 @@ export type Database = {
           hora_preferida_fim: string | null
           hora_preferida_inicio: string | null
           id: string
+          matricula_id: string | null
           notificado_em: string | null
           observacoes: string | null
           paciente_id: string
           profissional_id: string | null
           status: string
+          tipo: string
           tipo_atendimento: string
           updated_at: string
         }
@@ -643,11 +645,13 @@ export type Database = {
           hora_preferida_fim?: string | null
           hora_preferida_inicio?: string | null
           id?: string
+          matricula_id?: string | null
           notificado_em?: string | null
           observacoes?: string | null
           paciente_id: string
           profissional_id?: string | null
           status?: string
+          tipo?: string
           tipo_atendimento?: string
           updated_at?: string
         }
@@ -657,15 +661,24 @@ export type Database = {
           hora_preferida_fim?: string | null
           hora_preferida_inicio?: string | null
           id?: string
+          matricula_id?: string | null
           notificado_em?: string | null
           observacoes?: string | null
           paciente_id?: string
           profissional_id?: string | null
           status?: string
+          tipo?: string
           tipo_atendimento?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lista_espera_matricula_id_fkey"
+            columns: ["matricula_id"]
+            isOneToOne: false
+            referencedRelation: "matriculas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lista_espera_paciente_id_fkey"
             columns: ["paciente_id"]
@@ -1641,6 +1654,76 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "solicitacoes_alteracao_dados_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solicitacoes_mudanca_horario: {
+        Row: {
+          aprovador_id: string | null
+          created_at: string
+          dia_semana_atual: number[] | null
+          dia_semana_novo: number[]
+          horario_atual: string | null
+          horario_novo: string
+          id: string
+          lista_espera_id: string
+          matricula_id: string
+          motivo_rejeicao: string | null
+          paciente_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          aprovador_id?: string | null
+          created_at?: string
+          dia_semana_atual?: number[] | null
+          dia_semana_novo: number[]
+          horario_atual?: string | null
+          horario_novo: string
+          id?: string
+          lista_espera_id: string
+          matricula_id: string
+          motivo_rejeicao?: string | null
+          paciente_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          aprovador_id?: string | null
+          created_at?: string
+          dia_semana_atual?: number[] | null
+          dia_semana_novo?: number[]
+          horario_atual?: string | null
+          horario_novo?: string
+          id?: string
+          lista_espera_id?: string
+          matricula_id?: string
+          motivo_rejeicao?: string | null
+          paciente_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_mudanca_horario_lista_espera_id_fkey"
+            columns: ["lista_espera_id"]
+            isOneToOne: false
+            referencedRelation: "lista_espera"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_mudanca_horario_matricula_id_fkey"
+            columns: ["matricula_id"]
+            isOneToOne: false
+            referencedRelation: "matriculas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_mudanca_horario_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
