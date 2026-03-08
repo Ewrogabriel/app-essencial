@@ -154,8 +154,8 @@ const ImportacaoMassa = () => {
         }
       }
     } else if (activeTab === "pagamentos") {
-      const { data: pacientes } = await (supabase.from("pacientes").select("id, nome") as any);
-      const pacMap = Object.fromEntries((pacientes || []).map((p: any) => [p.nome.toLowerCase(), p.id]));
+      const { data: pacientes } = await supabase.from("pacientes").select("id, nome");
+      const pacMap = Object.fromEntries((pacientes || []).map((p) => [p.nome.toLowerCase(), p.id]));
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
