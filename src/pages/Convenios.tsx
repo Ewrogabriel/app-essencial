@@ -59,6 +59,7 @@ const initialForm = {
 
 const Convenios = () => {
   const { user, isAdmin, isPatient } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
