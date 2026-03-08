@@ -495,7 +495,11 @@ const PacienteForm = () => {
                 {fotoUrl ? (
                   <img src={fotoUrl} alt="Foto do paciente" className="w-full h-full object-cover" />
                 ) : (
-                  <img src={defaultAvatarImg} alt="Avatar padrão" className="w-full h-full object-cover opacity-60" />
+                  <img 
+                    src={sexo === "masculino" ? defaultAvatarMale : sexo === "feminino" ? defaultAvatarFemale : defaultAvatarImg} 
+                    alt="Avatar padrão" 
+                    className="w-full h-full object-cover opacity-60" 
+                  />
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera className="h-5 w-5 text-white" />
