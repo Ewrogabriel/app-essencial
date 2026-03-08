@@ -63,6 +63,7 @@ const menuAtendimento = [
 const menuEquipeFinanceiro = [
   { title: "Equipe", url: "/profissionais", icon: UserCog },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
+  { title: "Comissões", url: "/comissoes", icon: Calculator },
   { title: "Solicitações", url: "/solicitacoes-alteracao", icon: FileCheck },
 ];
 
