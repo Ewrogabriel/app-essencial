@@ -394,6 +394,8 @@ const Dashboard = () => {
       {/* Dicas do Dia - AI powered */}
       <DailyTipsCard tipo={tipRole} />
 
+      <ConvenioCard />
+
       {/* Birthdays - compact in the top row if present */}
       {birthdays.length > 0 && (
         <Card className="border-pink-200 bg-pink-50/50">

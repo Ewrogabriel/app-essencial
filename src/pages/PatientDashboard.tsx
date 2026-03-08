@@ -498,6 +498,8 @@ const PatientDashboard = () => {
       {/* Dicas do Dia */}
       <DailyTipsCard tipo="paciente" />
 
+      <ConvenioCard />
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
