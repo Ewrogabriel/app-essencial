@@ -341,6 +341,7 @@ const Matriculas = () => {
                 ? parseFloat((finalValue / Math.round(formData.weekly_schedules.length * 4.33)).toFixed(2))
                 : 0,
               created_by: user.id,
+              clinic_id: activeClinicId,
             });
           }
         }
