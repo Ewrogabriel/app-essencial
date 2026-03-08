@@ -298,7 +298,7 @@ const GestaoClinicas = () => {
             <div className="flex gap-2">
               <Select value={addUserId} onValueChange={setAddUserId}>
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Selecionar profissional..." />
+                  <SelectValue placeholder="Selecionar usuário..." />
                 </SelectTrigger>
                 <SelectContent>
                   {availableProfiles.map((p: any) => (
@@ -308,10 +308,22 @@ const GestaoClinicas = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={addUserRole} onValueChange={setAddUserRole}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Papel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="gestor">Gestor</SelectItem>
+                  <SelectItem value="profissional">Profissional</SelectItem>
+                  <SelectItem value="secretario">Secretário</SelectItem>
+                  <SelectItem value="member">Membro</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 size="sm"
                 disabled={!addUserId || !selectedClinicId || addUserMutation.isPending}
-                onClick={() => addUserMutation.mutate({ clinicId: selectedClinicId!, userId: addUserId })}
+                onClick={() => addUserMutation.mutate({ clinicId: selectedClinicId!, userId: addUserId, role: addUserRole })}
               >
                 <Plus className="h-4 w-4" />
               </Button>
