@@ -1593,6 +1593,8 @@ export type Database = {
           estado: string | null
           foto_url: string | null
           id: string
+          lgpd_consentimento: boolean | null
+          lgpd_consentimento_data: string | null
           nf_cnpj_cpf: string | null
           nf_email: string | null
           nf_endereco: string | null
@@ -1641,6 +1643,8 @@ export type Database = {
           estado?: string | null
           foto_url?: string | null
           id?: string
+          lgpd_consentimento?: boolean | null
+          lgpd_consentimento_data?: string | null
           nf_cnpj_cpf?: string | null
           nf_email?: string | null
           nf_endereco?: string | null
@@ -1689,6 +1693,8 @@ export type Database = {
           estado?: string | null
           foto_url?: string | null
           id?: string
+          lgpd_consentimento?: boolean | null
+          lgpd_consentimento_data?: string | null
           nf_cnpj_cpf?: string | null
           nf_email?: string | null
           nf_endereco?: string | null
@@ -1972,6 +1978,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "patient_attachments_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pesquisa_satisfacao: {
+        Row: {
+          clinic_id: string | null
+          comentario: string | null
+          created_at: string
+          id: string
+          nota: number
+          paciente_id: string
+        }
+        Insert: {
+          clinic_id?: string | null
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          nota: number
+          paciente_id: string
+        }
+        Update: {
+          clinic_id?: string | null
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          nota?: number
+          paciente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pesquisa_satisfacao_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pesquisa_satisfacao_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
