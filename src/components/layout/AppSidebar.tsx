@@ -3,7 +3,7 @@ import {
   LogOut, Activity, Layers, UserCog, Receipt, Brain, Send, Megaphone,
   Clock, FileText, Tag, CreditCard, User, Calculator, MessageSquare,
   Cake, Lightbulb, FileCheck, Wallet, ListChecks, Handshake, CalendarCheck,
-  Building2,
+  Building2, Crown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -92,6 +92,12 @@ const menuConfig = [
   { title: "Unidades", url: "/gestao-clinicas", icon: Building2 },
 ];
 
+/* ── Master menu ── */
+const menuMaster = [
+  { title: "Painel Master", url: "/master", icon: Crown },
+  { title: "Início", url: "/dashboard", icon: LayoutDashboard },
+];
+
 /* ── Patient menu ── */
 const menuPatient = [
   { title: "Início", url: "/dashboard", icon: LayoutDashboard },
@@ -110,8 +116,8 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut, isAdmin, isGestor, isPatient, isProfissional, isSecretario, hasPermission } = useAuth();
-  const isStaff = isAdmin || isGestor || isProfissional || isSecretario;
+  const { profile, signOut, isAdmin, isGestor, isPatient, isProfissional, isSecretario, isMaster, hasPermission } = useAuth();
+  const isStaff = isAdmin || isGestor || isProfissional || isSecretario || isMaster;
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -172,6 +178,7 @@ export function AppSidebar() {
       <ClinicSwitcher collapsed={collapsed} />
 
       <SidebarContent>
+        {isMaster && renderGroup("Master", menuMaster)}
         {(isAdmin || isGestor) ? (
           <>
             {renderGroup("Atendimento", menuAtendimento)}
@@ -190,9 +197,9 @@ export function AppSidebar() {
               { title: "Meu Perfil", url: "/perfil-profissional", icon: User },
             ])}
           </>
-        ) : (
+        ) : isPatient ? (
           renderGroup("Meu Portal", menuPatient)
-        )}
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter>

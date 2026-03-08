@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
-type AppRole = "admin" | "profissional" | "paciente" | "gestor" | "secretario";
+type AppRole = "admin" | "profissional" | "paciente" | "gestor" | "secretario" | "master";
 
 interface PermissionEntry {
   resource: string;
@@ -18,6 +18,7 @@ interface AuthContextType {
   roles: AppRole[];
   permissions: PermissionEntry[];
   loading: boolean;
+  isMaster: boolean;
   isAdmin: boolean;
   isGestor: boolean;
   isPatient: boolean;
@@ -149,7 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const isAdmin = roles.includes("admin");
+  const isMaster = roles.includes("master");
+  const isAdmin = roles.includes("admin") || isMaster;
   const isGestor = roles.includes("gestor");
   const isPatient = roles.includes("paciente");
   const isProfissional = roles.includes("profissional");
@@ -171,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user, session, profile, roles, permissions, loading,
-        isAdmin, isGestor, isPatient, isProfissional, isSecretario,
+        isMaster, isAdmin, isGestor, isPatient, isProfissional, isSecretario,
         clinicId, patientId,
         hasPermission, canEdit,
         signIn, signUp, resetPassword, signOut

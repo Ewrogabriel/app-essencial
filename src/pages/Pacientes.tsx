@@ -29,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
+import { PlanLimitBanner, usePlanLimitCheck } from "@/components/plan/PlanLimitBanner";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -47,6 +48,7 @@ const Pacientes = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { activeClinicId } = useClinic();
+  const { isAtLimit: pacienteLimitReached } = usePlanLimitCheck("pacientes");
   const [busca, setBusca] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroStatus, setFiltroStatus] = useState("todos");
@@ -153,6 +155,7 @@ const Pacientes = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <PlanLimitBanner resource="pacientes" label="Pacientes" />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">
@@ -162,7 +165,7 @@ const Pacientes = () => {
             Gerencie os pacientes da clínica
           </p>
         </div>
-        <Button onClick={() => navigate("/pacientes/novo")}>
+        <Button onClick={() => navigate("/pacientes/novo")} disabled={pacienteLimitReached}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Paciente
         </Button>

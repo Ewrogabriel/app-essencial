@@ -55,12 +55,14 @@ import PreCadastrosAdmin from "./pages/PreCadastrosAdmin";
 import NotasFiscais from "./pages/NotasFiscais";
 import GestaoClinicas from "./pages/GestaoClinicas";
 import SelecionarClinica from "./pages/SelecionarClinica";
+import MasterPanel from "./pages/MasterPanel";
 // Despesas is now a tab inside Financeiro
 
 const queryClient = new QueryClient();
 
 const DashboardToggle = () => {
-  const { isPatient, isAdmin, isGestor, isProfissional, isSecretario } = useAuth();
+  const { isPatient, isAdmin, isGestor, isProfissional, isSecretario, isMaster } = useAuth();
+  if (isMaster && !isAdmin) return <MasterPanel />;
   if (isAdmin || isGestor || isSecretario) return <Dashboard />;
   if (isProfissional) return <ProfessionalDashboard />;
   return <PatientDashboard />;
@@ -131,6 +133,7 @@ const App = () => (
               <Route path="/pre-cadastros" element={<PreCadastrosAdmin />} />
               <Route path="/notas-fiscais" element={<NotasFiscais />} />
               <Route path="/gestao-clinicas" element={<GestaoClinicas />} />
+              <Route path="/master" element={<MasterPanel />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
