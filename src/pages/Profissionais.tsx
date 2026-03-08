@@ -778,6 +778,12 @@ const Profissionais = () => {
           </div>
         </DialogContent>
       </Dialog>
+        </TabsContent>
+
+        <TabsContent value="disponibilidade">
+          <DisponibilidadeProfissional />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
