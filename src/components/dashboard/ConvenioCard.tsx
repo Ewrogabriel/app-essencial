@@ -26,6 +26,7 @@ interface Convenio {
 export function ConvenioCard() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [detailOpen, setDetailOpen] = useState(false);
+  const navigate = useNavigate();
 
   const { data: convenios = [] } = useQuery<Convenio[]>({
     queryKey: ["convenios-ativos"],
