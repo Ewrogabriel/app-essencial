@@ -488,78 +488,68 @@ const MeusPlanos = () => {
                 <p><strong>Créditos restantes:</strong> {selectedPlano.total_sessoes - selectedPlano.sessoes_utilizadas}</p>
               </div>
 
-              {/* Calendar with availability */}
+              {/* Step 1: Select time */}
               <div>
-                <Label className="mb-2 block">Selecione a data</Label>
-                <Calendar
-                  mode="single"
-                  locale={ptBR}
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  onMonthChange={setCurrentMonth}
-                  disabled={(date) =>
-                    date < new Date(new Date().setHours(0, 0, 0, 0))
-                  }
-                  className={cn("rounded-md border shadow-sm pointer-events-auto")}
-                  components={{
-                    DayContent: ({ date: dayDate }) => {
-                      const vacancies = monthlyAvail[dayDate.getDate()];
-                      const isPast = dayDate < new Date(new Date().setHours(0, 0, 0, 0));
-                      const isCurrentMonth = dayDate.getMonth() === currentMonth.getMonth();
-
-                      return (
-                        <div className="relative w-full h-full flex flex-col items-center justify-center">
-                          <span>{dayDate.getDate()}</span>
-                          {isCurrentMonth && !isPast && selectedPlano?.profissional_id && (
-                            <span className={cn(
-                              "text-[9px] mt-0.5 px-1 rounded-full",
-                              vacancies > 0
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold"
-                                : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                            )}>
-                              {vacancies ?? 0}v
-                            </span>
-                          )}
-                        </div>
-                      );
-                    }
-                  }}
-                />
+                <Label className="mb-2 block">1. Selecione o horário</Label>
+                <div className="flex flex-wrap gap-2">
+                  {hourlyOptions.map((time) => (
+                    <Button
+                      key={time}
+                      type="button"
+                      size="sm"
+                      variant={selectedTime === time ? "default" : "outline"}
+                      onClick={() => {
+                        setSelectedTime(time);
+                        setSelectedDate(undefined);
+                        setAvailabilityResult(null);
+                      }}
+                      className="text-xs"
+                    >
+                      <Clock className="h-3 w-3 mr-1" />
+                      {time}
+                    </Button>
+                  ))}
+                </div>
               </div>
 
-              {/* Time slots for selected date */}
-              {selectedDate && (
+              {/* Step 2: Calendar with availability (only after time selected) */}
+              {selectedTime && (
                 <div>
-                  <Label className="mb-2 block">Horários disponíveis em {format(selectedDate, "dd/MM/yyyy")}</Label>
-                  {availableSlots.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nenhum horário disponível nesta data.</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {availableSlots.map((s: any) => {
-                        const timeLabel = s.slot.hora_inicio.slice(0, 5);
-                        const isFull = s.available <= 0;
-                        const isSelected = selectedTime === timeLabel;
+                  <Label className="mb-2 block">2. Selecione a data (vagas para {selectedTime})</Label>
+                  <Calendar
+                    mode="single"
+                    locale={ptBR}
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    onMonthChange={setCurrentMonth}
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0))
+                    }
+                    className={cn("rounded-md border shadow-sm pointer-events-auto")}
+                    components={{
+                      DayContent: ({ date: dayDate }) => {
+                        const vacancies = monthlyAvail[dayDate.getDate()];
+                        const isPast = dayDate < new Date(new Date().setHours(0, 0, 0, 0));
+                        const isCurrentMonth = dayDate.getMonth() === currentMonth.getMonth();
+
                         return (
-                          <Button
-                            key={s.slot.id}
-                            type="button"
-                            size="sm"
-                            variant={isSelected ? "default" : "outline"}
-                            disabled={isFull}
-                            onClick={() => setSelectedTime(timeLabel)}
-                            className={cn(
-                              "text-xs",
-                              isFull && "opacity-50 line-through"
+                          <div className="relative w-full h-full flex flex-col items-center justify-center">
+                            <span>{dayDate.getDate()}</span>
+                            {isCurrentMonth && !isPast && selectedPlano?.profissional_id && (
+                              <span className={cn(
+                                "text-[9px] mt-0.5 px-1 rounded-full",
+                                vacancies && vacancies > 0
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold"
+                                  : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                              )}>
+                                {vacancies ?? 0}v
+                              </span>
                             )}
-                          >
-                            <Clock className="h-3 w-3 mr-1" />
-                            {timeLabel}
-                            <span className="ml-1 text-[10px]">({s.available}v)</span>
-                          </Button>
+                          </div>
                         );
-                      })}
-                    </div>
-                  )}
+                      }
+                    }}
+                  />
                 </div>
               )}
 
