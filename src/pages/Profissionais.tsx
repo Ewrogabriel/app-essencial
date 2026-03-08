@@ -322,6 +322,7 @@ const Profissionais = () => {
 
   const handleSave = async () => {
     if (!editingId || !nome.trim()) return;
+    if (!(await validateCpf(editingId))) return;
     setLoading(true);
     try {
       const editedUser = users.find(u => u.id === editingId);
