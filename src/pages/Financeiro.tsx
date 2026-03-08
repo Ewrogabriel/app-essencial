@@ -245,7 +245,7 @@ const Financeiro = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(pagamentos as any[]).map((pagamento) => (
+                    {pagamentos.map((pagamento) => (
                       <TableRow key={pagamento.id}>
                         {!isPatient && <TableCell className="font-medium">{pagamento.pacientes?.nome ?? "—"}</TableCell>}
                         <TableCell>{pagamento.descricao || "—"}</TableCell>
