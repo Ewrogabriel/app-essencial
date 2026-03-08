@@ -116,7 +116,7 @@ const Automacoes = () => {
   const { data: patients = [] } = useQuery({
     queryKey: ["automation-patients"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("pacientes") as any)
+      const { data, error } = await supabase.from("pacientes")
         .select("id, nome, telefone, status")
         .eq("status", "ativo")
         .order("nome");
