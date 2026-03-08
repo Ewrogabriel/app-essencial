@@ -340,6 +340,12 @@ const PacienteForm = () => {
         responsavel_bairro: temResponsavel ? respBairro || null : null,
         responsavel_cidade: temResponsavel ? respCidade || null : null,
         responsavel_estado: temResponsavel ? respEstado || null : null,
+        solicita_nf: solicitaNf,
+        nf_razao_social: solicitaNf ? nfRazaoSocial || null : null,
+        nf_cnpj_cpf: solicitaNf ? nfCnpjCpf || null : null,
+        nf_endereco: solicitaNf ? nfEndereco || null : null,
+        nf_inscricao_estadual: solicitaNf ? nfInscricaoEstadual || null : null,
+        nf_email: solicitaNf ? nfEmail || null : null,
       };
 
       let savedPatientId = id;
