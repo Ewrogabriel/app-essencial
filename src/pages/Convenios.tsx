@@ -112,7 +112,7 @@ const Convenios = () => {
       queryClient.invalidateQueries({ queryKey: ["convenios"] });
       setFormOpen(false);
       resetForm();
-      toast({ title: editId ? "Convênio atualizado!" : "Convênio cadastrado!" });
+      toast({ title: editId ? "Parceiro atualizado!" : "Parceiro cadastrado!" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
