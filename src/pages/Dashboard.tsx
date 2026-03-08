@@ -169,7 +169,7 @@ const Dashboard = () => {
 
   // Monthly sessions chart data (last 6 months)
   const { data: monthlyChart = [] } = useQuery({
-    queryKey: ["dashboard-monthly-chart"],
+    queryKey: ["dashboard-monthly-chart", activeClinicId],
     queryFn: async () => {
       const months: { label: string; start: string; end: string }[] = [];
       for (let i = 5; i >= 0; i--) {
@@ -183,10 +183,12 @@ const Dashboard = () => {
       }
       const results = [];
       for (const m of months) {
-        const { data } = await (supabase.from("agendamentos") as any)
+        let q = (supabase.from("agendamentos") as any)
           .select("status")
           .gte("data_horario", `${m.start}T00:00:00`)
           .lte("data_horario", `${m.end}T23:59:59`);
+        if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
+        const { data } = await q;
         const all = data || [];
         results.push({
           mes: m.label,
