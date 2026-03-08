@@ -56,6 +56,7 @@ const menuAtendimento = [
   { title: "Pacientes", url: "/pacientes", icon: Users },
   { title: "Prontuários", url: "/prontuarios", icon: ClipboardList },
   { title: "Matrículas", url: "/matriculas", icon: Receipt },
+  { title: "Lista de Espera", url: "/lista-espera", icon: ListChecks },
 ];
 
 const menuEquipeFinanceiro = [
