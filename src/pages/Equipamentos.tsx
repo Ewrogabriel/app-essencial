@@ -49,7 +49,7 @@ const emptyForm = {
 export default function Equipamentos() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { activeClinic } = useClinic();
+  const { activeClinicId } = useClinic();
   const [items, setItems] = useState<Equipamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
