@@ -122,10 +122,10 @@ const ImportacaoMassa = () => {
       }
     } else if (activeTab === "agendamentos") {
       // Fetch pacientes and profissionais maps
-      const { data: pacientes } = await (supabase.from("pacientes").select("id, nome") as any);
+      const { data: pacientes } = await supabase.from("pacientes").select("id, nome");
       const { data: profs } = await supabase.from("profiles").select("user_id, nome");
-      const pacMap = Object.fromEntries((pacientes || []).map((p: any) => [p.nome.toLowerCase(), p.id]));
-      const profMap = Object.fromEntries((profs || []).map((p: any) => [p.nome.toLowerCase(), p.user_id]));
+      const pacMap = Object.fromEntries((pacientes || []).map((p) => [p.nome.toLowerCase(), p.id]));
+      const profMap = Object.fromEntries((profs || []).map((p) => [p.nome.toLowerCase(), p.user_id]));
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
