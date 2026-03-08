@@ -474,6 +474,7 @@ export type Database = {
           created_at: string
           data_inicio: string
           data_vencimento: string | null
+          desconto_percentual: number | null
           id: string
           observacoes: string | null
           plan_id: string
@@ -488,6 +489,7 @@ export type Database = {
           created_at?: string
           data_inicio?: string
           data_vencimento?: string | null
+          desconto_percentual?: number | null
           id?: string
           observacoes?: string | null
           plan_id: string
@@ -502,6 +504,7 @@ export type Database = {
           created_at?: string
           data_inicio?: string
           data_vencimento?: string | null
+          desconto_percentual?: number | null
           id?: string
           observacoes?: string | null
           plan_id?: string

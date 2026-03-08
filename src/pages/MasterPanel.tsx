@@ -26,6 +26,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { maskPhone, maskCNPJ, maskCEP } from "@/lib/masks";
+import { ClinicDetailDialog } from "@/components/master/ClinicDetailDialog";
 
 const STATUS_COLORS: Record<string, string> = {
   ativa: "default",
@@ -42,6 +43,7 @@ function ClinicsTab() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedClinic, setSelectedClinic] = useState<any>(null);
   const [form, setForm] = useState({
     nome: "", cnpj: "", endereco: "", numero: "", bairro: "", cidade: "", estado: "", cep: "",
     telefone: "", whatsapp: "", email: "", instagram: "",
@@ -122,7 +124,7 @@ function ClinicsTab() {
         {clinics.map((c: any) => {
           const sub = subscriptions.find((s: any) => s.clinic_id === c.id);
           return (
-            <Card key={c.id}>
+            <Card key={c.id} className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => setSelectedClinic(c)}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -215,6 +217,12 @@ function ClinicsTab() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ClinicDetailDialog
+        open={!!selectedClinic}
+        onOpenChange={(open) => { if (!open) setSelectedClinic(null); }}
+        clinic={selectedClinic}
+      />
     </div>
   );
 }

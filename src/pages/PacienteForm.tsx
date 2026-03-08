@@ -20,6 +20,7 @@ import { maskCPF, maskPhone, maskCEP, maskRG, isValidCPF, unmask } from "@/lib/m
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import defaultAvatarImg from "@/assets/default-avatar.png";
 
 const PacienteForm = () => {
   const navigate = useNavigate();
@@ -483,7 +484,7 @@ const PacienteForm = () => {
                 {fotoUrl ? (
                   <img src={fotoUrl} alt="Foto do paciente" className="w-full h-full object-cover" />
                 ) : (
-                  <User className="h-8 w-8 text-muted-foreground/50" />
+                  <img src={defaultAvatarImg} alt="Avatar padrão" className="w-full h-full object-cover opacity-60" />
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera className="h-5 w-5 text-white" />
