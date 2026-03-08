@@ -217,6 +217,12 @@ function ClinicsTab() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ClinicDetailDialog
+        open={!!selectedClinic}
+        onOpenChange={(open) => { if (!open) setSelectedClinic(null); }}
+        clinic={selectedClinic}
+      />
     </div>
   );
 }
