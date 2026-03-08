@@ -663,9 +663,9 @@ const Matriculas = () => {
           <Planos />
         </TabsContent>
 
-        {/* REPORTS TAB */}
-        <TabsContent value="relatorios" className="mt-4">
-          <CommissionReport />
+        {/* CANCELLATION POLICIES TAB */}
+        <TabsContent value="cancelamento" className="mt-4">
+          <CancellationPolicies />
         </TabsContent>
 
         {/* ADMIN TAB */}
