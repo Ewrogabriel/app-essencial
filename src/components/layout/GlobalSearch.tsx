@@ -64,7 +64,7 @@ export function GlobalSearch() {
       });
 
       // Search appointments
-      const { data: agendamentos } = await (supabase.from("agendamentos") as any)
+      const { data: agendamentos } = await supabase.from("agendamentos")
         .select("id, data_horario, tipo_atendimento, pacientes(nome)")
         .or(`tipo_atendimento.ilike.%${q}%`)
         .limit(5);
