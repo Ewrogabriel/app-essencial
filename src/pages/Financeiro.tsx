@@ -292,6 +292,7 @@ const Financeiro = () => {
                   );
                 }
                 return (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
