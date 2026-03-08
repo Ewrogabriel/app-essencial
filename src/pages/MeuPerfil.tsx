@@ -56,8 +56,8 @@ const MeuPerfil = () => {
       if (!patientId || !editData) throw new Error("Dados inválidos");
 
       // Create change request for admin approval
-      const { error } = await supabase
-        .from("solicitacoes_alteracao_dados")
+      const { error } = await (supabase
+        .from("solicitacoes_alteracao_dados" as any) as any)
         .insert([{
           paciente_id: patientId,
           dados_atuais: paciente,
