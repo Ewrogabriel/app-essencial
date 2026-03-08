@@ -365,6 +365,13 @@ const PacienteDetalhes = () => {
                 onOpenChange={setEvaluationOpen}
                 pacienteId={id!}
             />
+            <DigitalContractDialog
+                open={contractOpen}
+                onOpenChange={setContractOpen}
+                pacienteId={id!}
+                pacienteNome={paciente?.nome || ""}
+                pacienteCpf={paciente?.cpf}
+            />
         </div>
     );
 };
