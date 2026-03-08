@@ -166,6 +166,71 @@ Seja formal, objetivo e profissional. Responda em português brasileiro. Use mar
         if (!userContent.trim()) userContent = "Sem dados clínicos registrados. Gere um modelo de relatório em branco.";
         break;
 
+      case "suggest_evolution":
+        systemPrompt = `Você é um profissional de saúde especialista em ${modalidade || "fisioterapia/pilates"}. Com base no histórico completo do paciente (avaliação, evoluções anteriores e documentos), gere uma SUGESTÃO DE EVOLUÇÃO para a sessão de hoje.
+
+Retorne EXATAMENTE no formato JSON abaixo (sem markdown, sem blocos de código):
+{
+  "descricao": "Texto completo da descrição do atendimento de hoje, incluindo o que foi realizado, exercícios, observações do paciente, resposta ao tratamento, sinais vitais se relevante. Mínimo 3 parágrafos.",
+  "conduta": "Conduta e plano para a próxima sessão, incluindo exercícios a progredir, cuidados, orientações domiciliares."
+}
+
+Baseie-se nas evoluções anteriores para dar continuidade ao tratamento. Se houve conduta planejada na última sessão, siga essa linha. Seja específico para a modalidade ${modalidade || "do paciente"}.`;
+        userContent = "";
+        if (evaluation_text) userContent += `Avaliação clínica:\n${evaluation_text}\n\n`;
+        if (evolutions_text) userContent += `Evoluções anteriores (mais recente primeiro):\n${evolutions_text}\n\n`;
+        userContent += modalidadeCtx + attachmentsCtx;
+        if (!userContent.trim()) userContent = "Sem dados anteriores. Sugira uma evolução genérica de primeira sessão para a modalidade.";
+        break;
+
+      case "analyze_all":
+        systemPrompt = `Você é um profissional de saúde especialista em ${modalidade || "fisioterapia/pilates"}. Faça uma ANÁLISE COMPLETA E ABRANGENTE de todo o prontuário do paciente, incluindo avaliação, todas as evoluções e documentos anexados.
+
+Estruture assim:
+
+# 📋 ANÁLISE COMPLETA DO PRONTUÁRIO
+
+## 1. Resumo Executivo
+Síntese em 3-5 linhas do caso clínico completo.
+
+## 2. Análise da Avaliação Inicial
+Pontos-chave da avaliação, diagnóstico funcional inferido.
+
+## 3. Análise Cronológica das Evoluções
+Analise CADA evolução registrada, identificando:
+- Progressos e ganhos
+- Pontos de estagnação ou piora
+- Adesão do paciente
+- Efetividade das condutas aplicadas
+
+## 4. Análise de Documentos
+Considerações sobre exames, laudos ou documentos anexados.
+
+## 5. Indicadores de Evolução
+- Taxa de melhora estimada (%)
+- Áreas com maior ganho
+- Áreas que precisam mais atenção
+- Número de sessões realizadas vs. esperadas
+
+## 6. Sugestão de Evolução para Próxima Sessão
+Texto pronto para usar como evolução, baseado na continuidade do tratamento.
+
+## 7. Plano de Ação Recomendado
+- Próximos passos imediatos
+- Ajustes de protocolo sugeridos
+- Previsão de alta ou reavaliação
+
+## 8. Alertas Clínicos
+⚠️ Pontos de atenção, riscos identificados ou bandeiras vermelhas.
+
+Seja extremamente detalhado e analítico. Responda em português brasileiro. Use markdown com emojis para facilitar a leitura.`;
+        userContent = "";
+        if (evaluation_text) userContent += `Avaliação clínica:\n${evaluation_text}\n\n`;
+        if (evolutions_text) userContent += `Todas as evoluções (mais recente primeiro):\n${evolutions_text}\n\n`;
+        userContent += modalidadeCtx + attachmentsCtx;
+        if (!userContent.trim()) userContent = "Prontuário vazio. Informe que não há dados suficientes para análise.";
+        break;
+
       default:
         return new Response(JSON.stringify({ error: "Invalid action" }), {
           status: 400,
