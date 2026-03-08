@@ -81,6 +81,11 @@ function AppointmentCard({
     <div
       className="rounded-md bg-card p-2 text-xs shadow-sm relative group cursor-pointer hover:shadow-md transition-all border-l-4 overflow-hidden"
       style={{ borderLeftColor: color }}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("agendamento-id", ag.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
       onClick={(e) => {
         e.stopPropagation();
         onAppointmentClick?.(ag);
