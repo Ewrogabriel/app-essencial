@@ -122,7 +122,7 @@ function ClinicsTab() {
         {clinics.map((c: any) => {
           const sub = subscriptions.find((s: any) => s.clinic_id === c.id);
           return (
-            <Card key={c.id}>
+            <Card key={c.id} className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => setSelectedClinic(c)}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
