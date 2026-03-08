@@ -85,10 +85,10 @@ const App = () => (
         <I18nProvider>
         <AuthProvider>
           <ClinicProvider>
-          <ErrorBoundary>
           <Toaster />
           <Sonner />
           <BrowserRouter>
+          <ErrorBoundary>
           <Suspense fallback={<LazyLoadFallback />}>
           <Routes>
             <Route path="/login" element={<Login />} />
