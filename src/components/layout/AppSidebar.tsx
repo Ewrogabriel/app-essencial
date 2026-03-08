@@ -156,6 +156,8 @@ const menuComunicacao = [
   { title: "Mural de Avisos", url: "/avisos", icon: Megaphone },
   { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
   { title: "Aniversariantes", url: "/aniversariantes", icon: Cake },
+  { title: "Solicitações", url: "/solicitacoes-alteracao", icon: FileCheck },
+  { title: "Formas de Pagamento", url: "/formas-pagamento", icon: Wallet },
   { title: "Dados da Clínica", url: "/clinica", icon: Activity },
 ];
 
