@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Calculator, Lock, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Download, Calculator, Lock, CheckCircle2, AlertTriangle, Gift } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import { getClinicSettings, addLogoToPDF, formatClinicAddress } from "@/lib/pdfLogo";
@@ -42,6 +42,8 @@ export function CommissionExtract() {
   const [closingNotes, setClosingNotes] = useState("");
   const [compensacaoValor, setCompensacaoValor] = useState("");
   const [compensacaoDesc, setCompensacaoDesc] = useState("");
+  const [bonusValor, setBonusValor] = useState("");
+  const [bonusDesc, setBonusDesc] = useState("");
 
   const { data: modalidades = [] } = useQuery({
     queryKey: ["modalidades-comissoes"],
@@ -110,7 +112,7 @@ export function CommissionExtract() {
     enabled: canManage,
   });
 
-  // Check previous month for compensation
+  // Previous month fechamentos for auto-compensation
   const prevMonth = (() => {
     const [y, m] = mesRef.split("-").map(Number);
     const d = new Date(y, m - 2, 1);
@@ -129,6 +131,23 @@ export function CommissionExtract() {
     enabled: canManage,
   });
 
+  // Previous month agendamentos to calculate auto-compensation
+  const { data: agendamentosPrev = [] } = useQuery({
+    queryKey: ["agendamentos-comissoes-prev", prevMonth],
+    queryFn: async () => {
+      const startDate = `${prevMonth}-01T00:00:00`;
+      const endMonth = new Date(parseInt(prevMonth.split("-")[0]), parseInt(prevMonth.split("-")[1]), 0);
+      const endDate = `${prevMonth}-${endMonth.getDate()}T23:59:59`;
+      const { data } = await (supabase.from("agendamentos") as any)
+        .select("*, pacientes(nome)")
+        .in("status", ["agendado", "confirmado", "pendente", "realizado", "cancelado", "falta"])
+        .gte("data_horario", startDate)
+        .lte("data_horario", endDate);
+      return data ?? [];
+    },
+    enabled: canManage,
+  });
+
   const { data: minhasComissoes = [] } = useQuery({
     queryKey: ["my-fechamentos", user?.id],
     queryFn: async () => {
@@ -142,9 +161,67 @@ export function CommissionExtract() {
 
   const isClosed = (profId: string) => fechamentos.some((f: any) => f.profissional_id === profId);
 
+  // Calculate commission for a set of appointments for a professional
+  const calcCommissionForAppointments = (profId: string, atendimentos: any[]) => {
+    const prof = profissionais.find((p: any) => p.user_id === profId);
+    if (!prof) return 0;
+    const profRegras = regrasComissao.filter((r: any) => r.profissional_id === profId && r.ativo);
+    let comissaoTotal = 0;
+    let totalValor = 0;
+
+    for (const a of atendimentos) {
+      let valorSessao = Number(a.valor_sessao || 0);
+      if (valorSessao === 0 && a.observacoes?.startsWith("plano:")) {
+        const planoId = a.observacoes.replace("plano:", "").trim();
+        const plano = planosData.find((pl: any) => pl.id === planoId);
+        if (plano && plano.total_sessoes > 0) {
+          valorSessao = Number(plano.valor) / plano.total_sessoes;
+        }
+      }
+      totalValor += valorSessao;
+
+      if (profRegras.length > 0) {
+        const tipoRegra = profRegras.find((r: any) => r.tipo_atendimento === a.tipo_atendimento)
+          || profRegras.find((r: any) => r.tipo_atendimento === "geral");
+        if (tipoRegra) {
+          comissaoTotal += (valorSessao * Number(tipoRegra.percentual || 0) / 100) + Number(tipoRegra.valor_fixo || 0);
+        }
+      }
+    }
+
+    if (profRegras.length === 0 && prof) {
+      const rate = Number(prof.commission_rate || 0);
+      const fixed = Number(prof.commission_fixed || 0);
+      comissaoTotal = (totalValor * rate / 100) + (fixed * atendimentos.length);
+    }
+
+    return comissaoTotal;
+  };
+
+  // Auto-calculate compensation: difference between what was closed and current state of prev month
+  const calcAutoCompensation = (profId: string): { valor: number; descricao: string } => {
+    const prevFechamento = fechamentosPrev.find((f: any) => f.profissional_id === profId);
+    if (!prevFechamento) return { valor: 0, descricao: "" };
+
+    // Recalculate prev month commission with current agenda state (cancellations/changes after closing)
+    const prevAtendimentos = agendamentosPrev.filter((a: any) =>
+      a.profissional_id === profId && ["agendado", "confirmado", "pendente", "realizado"].includes(a.status)
+    );
+    const currentComissao = calcCommissionForAppointments(profId, prevAtendimentos);
+    const closedComissao = Number(prevFechamento.total_comissao);
+    const diff = currentComissao - closedComissao;
+
+    if (Math.abs(diff) < 0.01) return { valor: 0, descricao: "" };
+
+    return {
+      valor: diff,
+      descricao: `Compensação automática: alterações na agenda de ${format(new Date(`${prevMonth}-01`), "MMMM/yyyy", { locale: ptBR })} após fechamento`,
+    };
+  };
+
   // Calculate summary
   const calcSummary = (): ProfSummary[] => {
-    const summary: Record<string, ProfSummary> = {};
+    const summaryMap: Record<string, ProfSummary> = {};
     const profsToCalc = filterProf === "todos" ? profissionais : profissionais.filter((p: any) => p.user_id === filterProf);
 
     profsToCalc.forEach((p: any) => {
@@ -189,7 +266,7 @@ export function CommissionExtract() {
       }
 
       if (atendimentos.length > 0) {
-        summary[p.user_id] = {
+        summaryMap[p.user_id] = {
           nome: p.nome,
           userId: p.user_id,
           totalAtendimentos: atendimentos.length,
@@ -202,7 +279,7 @@ export function CommissionExtract() {
         };
       }
     });
-    return Object.values(summary);
+    return Object.values(summaryMap);
   };
 
   const summary = calcSummary();
@@ -214,9 +291,9 @@ export function CommissionExtract() {
       if (!user) throw new Error("Não autenticado");
       const mesDate = `${mesRef}-01`;
       const comp = parseFloat(compensacaoValor) || 0;
-      const valorFinal = prof.comissao + comp;
+      const bonus = parseFloat(bonusValor) || 0;
+      const valorFinal = prof.comissao + comp + bonus;
 
-      // Insert fechamento
       const { error } = await (supabase.from("fechamentos_comissao" as any) as any).insert({
         profissional_id: prof.userId,
         mes_referencia: mesDate,
@@ -225,47 +302,52 @@ export function CommissionExtract() {
         total_comissao: prof.comissao,
         compensacao_anterior: comp,
         descricao_compensacao: compensacaoDesc || null,
+        bonus_valor: bonus,
+        bonus_descricao: bonusDesc || null,
         valor_final: valorFinal,
         status: "fechado",
         fechado_por: user.id,
       });
       if (error) throw error;
 
-      // Send notification to professional
+      // Send notification
       const mesLabel = format(new Date(`${mesRef}-01`), "MMMM 'de' yyyy", { locale: ptBR });
       const titulo = `Comissão Fechada — ${mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1)}`;
       let resumo = `Sua comissão de ${mesLabel} foi fechada. Valor: R$ ${valorFinal.toFixed(2)}.`;
-      if (comp !== 0) {
-        resumo += ` Inclui compensação de R$ ${comp.toFixed(2)} referente ao mês anterior.`;
-      }
+      if (comp !== 0) resumo += ` Compensação: R$ ${comp.toFixed(2)}.`;
+      if (bonus !== 0) resumo += ` Bônus: R$ ${bonus.toFixed(2)} (${bonusDesc || "bônus"}).`;
+
+      let conteudo = `Atendimentos: ${prof.totalAtendimentos}\nValor Total: R$ ${prof.totalValor.toFixed(2)}\nComissão Base: R$ ${prof.comissao.toFixed(2)}`;
+      if (comp !== 0) conteudo += `\nCompensação: R$ ${comp.toFixed(2)} (${compensacaoDesc || "ajuste agenda"})`;
+      if (bonus !== 0) conteudo += `\nBônus: R$ ${bonus.toFixed(2)} (${bonusDesc || "bônus"})`;
+      conteudo += `\nValor Final: R$ ${valorFinal.toFixed(2)}`;
 
       await supabase.from("notificacoes").insert({
         user_id: prof.userId,
         titulo,
         resumo,
-        conteudo: `Atendimentos: ${prof.totalAtendimentos}\nValor Total: R$ ${prof.totalValor.toFixed(2)}\nComissão Base: R$ ${prof.comissao.toFixed(2)}${comp !== 0 ? `\nCompensação: R$ ${comp.toFixed(2)} (${compensacaoDesc || "ajuste"})` : ""}\nValor Final: R$ ${valorFinal.toFixed(2)}`,
+        conteudo,
         tipo: "comissao",
         link: "/comissoes",
       });
 
-      return { prof, valorFinal, comp };
+      return { prof, valorFinal, comp, bonus };
     },
-    onSuccess: async ({ prof, valorFinal, comp }) => {
+    onSuccess: async ({ prof, valorFinal, comp, bonus }) => {
       queryClient.invalidateQueries({ queryKey: ["fechamentos-comissao"] });
       toast({ title: "Comissão fechada!", description: `${prof.nome} — R$ ${valorFinal.toFixed(2)}` });
-
-      // Auto-generate and download PDF
-      await generateClosingReceipt(prof, valorFinal, comp);
-
+      await generateClosingReceipt(prof, valorFinal, comp, bonus);
       setClosingProf(null);
       setClosingNotes("");
       setCompensacaoValor("");
       setCompensacaoDesc("");
+      setBonusValor("");
+      setBonusDesc("");
     },
     onError: (e: any) => toast({ title: "Erro ao fechar comissão", description: e.message, variant: "destructive" }),
   });
 
-  const generateClosingReceipt = async (prof: ProfSummary, valorFinal: number, comp: number) => {
+  const generateClosingReceipt = async (prof: ProfSummary, valorFinal: number, comp: number, bonus: number) => {
     const doc = new jsPDF();
     const settings = await getClinicSettings();
     const mesLabel = format(new Date(`${mesRef}-01`), "MMMM 'de' yyyy", { locale: ptBR });
@@ -303,13 +385,30 @@ export function CommissionExtract() {
     if (comp !== 0) {
       doc.setFont("helvetica", "bold");
       doc.setTextColor(comp > 0 ? 0 : 200, comp > 0 ? 100 : 0, 0);
-      doc.text(`Compensação mês anterior: R$ ${comp.toFixed(2)}`, 20, y);
+      doc.text(`Compensação: R$ ${comp.toFixed(2)}`, 20, y);
       y += 5;
       doc.setFont("helvetica", "normal");
       doc.setTextColor(100);
       if (compensacaoDesc) {
         doc.setFontSize(9);
         doc.text(`Motivo: ${compensacaoDesc}`, 20, y);
+        y += 5;
+      }
+      doc.setTextColor(0);
+      doc.setFontSize(11);
+      y += 3;
+    }
+
+    if (bonus !== 0) {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 100, 0);
+      doc.text(`Bônus: R$ ${bonus.toFixed(2)}`, 20, y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100);
+      if (bonusDesc) {
+        doc.setFontSize(9);
+        doc.text(`Descrição: ${bonusDesc}`, 20, y);
         y += 5;
       }
       doc.setTextColor(0);
@@ -426,13 +525,14 @@ export function CommissionExtract() {
   };
 
   const openClosing = (prof: ProfSummary) => {
-    // Check if there's a compensation from previous month adjustments
-    const prevFechamento = fechamentosPrev.find((f: any) => f.profissional_id === prof.userId);
-    // No automatic compensation for now — user sets manually
+    // Auto-calculate compensation from agenda changes after previous closing
+    const autoComp = calcAutoCompensation(prof.userId);
     setClosingProf(prof);
     setClosingNotes("");
-    setCompensacaoValor("");
-    setCompensacaoDesc("");
+    setCompensacaoValor(autoComp.valor !== 0 ? autoComp.valor.toFixed(2) : "");
+    setCompensacaoDesc(autoComp.descricao);
+    setBonusValor("");
+    setBonusDesc("");
   };
 
   // Professional-only view
@@ -457,6 +557,7 @@ export function CommissionExtract() {
                     <TableHead>Atendimentos</TableHead>
                     <TableHead>Comissão Base</TableHead>
                     <TableHead>Compensação</TableHead>
+                    <TableHead>Bônus</TableHead>
                     <TableHead>Valor Final</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -475,6 +576,16 @@ export function CommissionExtract() {
                             R$ {Number(c.compensacao_anterior).toFixed(2)}
                             {c.descricao_compensacao && (
                               <span className="text-xs text-muted-foreground ml-1">({c.descricao_compensacao})</span>
+                            )}
+                          </span>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {Number(c.bonus_valor) !== 0 ? (
+                          <span className="text-green-600">
+                            R$ {Number(c.bonus_valor).toFixed(2)}
+                            {c.bonus_descricao && (
+                              <span className="text-xs text-muted-foreground ml-1">({c.bonus_descricao})</span>
                             )}
                           </span>
                         ) : "—"}
@@ -589,7 +700,12 @@ export function CommissionExtract() {
                           R$ {closed ? Number(fechamento?.valor_final || s.comissao).toFixed(2) : s.comissao.toFixed(2)}
                           {closed && Number(fechamento?.compensacao_anterior) !== 0 && (
                             <span className="text-xs text-muted-foreground block">
-                              (inclui comp. R$ {Number(fechamento.compensacao_anterior).toFixed(2)})
+                              (comp. R$ {Number(fechamento.compensacao_anterior).toFixed(2)})
+                            </span>
+                          )}
+                          {closed && Number(fechamento?.bonus_valor) !== 0 && (
+                            <span className="text-xs text-green-600 block">
+                              (bônus R$ {Number(fechamento.bonus_valor).toFixed(2)})
                             </span>
                           )}
                         </TableCell>
@@ -616,7 +732,7 @@ export function CommissionExtract() {
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Fechar
                               </Button>
                             )}
-                            <Button size="sm" variant="outline" onClick={() => generateClosingReceipt(s, closed ? Number(fechamento?.valor_final || s.comissao) : s.comissao, closed ? Number(fechamento?.compensacao_anterior || 0) : 0)} className="gap-1">
+                            <Button size="sm" variant="outline" onClick={() => generateClosingReceipt(s, closed ? Number(fechamento?.valor_final || s.comissao) : s.comissao, closed ? Number(fechamento?.compensacao_anterior || 0) : 0, closed ? Number(fechamento?.bonus_valor || 0) : 0)} className="gap-1">
                               <Download className="h-3.5 w-3.5" /> PDF
                             </Button>
                           </div>
@@ -637,7 +753,7 @@ export function CommissionExtract() {
 
       {/* Closing Dialog */}
       <Dialog open={!!closingProf} onOpenChange={(o) => !o && setClosingProf(null)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="h-5 w-5" />
@@ -668,13 +784,14 @@ export function CommissionExtract() {
                 </div>
               </div>
 
+              {/* Auto-compensation */}
               <div className="space-y-3 border rounded-lg p-3">
                 <p className="text-sm font-medium flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  Compensação (mês anterior)
+                  Compensação (automática)
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Se houve alteração na comissão do mês anterior, informe o valor para compensar neste fechamento.
+                  Calculada automaticamente com base em alterações na agenda do mês anterior após o fechamento. Pode ser ajustada manualmente.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -698,16 +815,51 @@ export function CommissionExtract() {
                 </div>
               </div>
 
+              {/* Bonus */}
+              <div className="space-y-3 border rounded-lg p-3 border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-green-600" />
+                  Bônus
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Valor adicional como bonificação para o profissional.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Valor (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={bonusValor}
+                      onChange={(e) => setBonusValor(e.target.value)}
+                      placeholder="Ex: 100.00"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Descrição</Label>
+                    <Input
+                      value={bonusDesc}
+                      onChange={(e) => setBonusDesc(e.target.value)}
+                      placeholder="Ex: Meta atingida"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
                 <p className="text-xs text-muted-foreground">Valor Final</p>
                 <p className="text-2xl font-bold text-primary">
-                  R$ {(closingProf.comissao + (parseFloat(compensacaoValor) || 0)).toFixed(2)}
+                  R$ {(closingProf.comissao + (parseFloat(compensacaoValor) || 0) + (parseFloat(bonusValor) || 0)).toFixed(2)}
                 </p>
-                {(parseFloat(compensacaoValor) || 0) !== 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Comissão base R$ {closingProf.comissao.toFixed(2)} + Compensação R$ {(parseFloat(compensacaoValor) || 0).toFixed(2)}
-                  </p>
-                )}
+                <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                  <p>Comissão base: R$ {closingProf.comissao.toFixed(2)}</p>
+                  {(parseFloat(compensacaoValor) || 0) !== 0 && (
+                    <p>Compensação: R$ {(parseFloat(compensacaoValor) || 0).toFixed(2)}</p>
+                  )}
+                  {(parseFloat(bonusValor) || 0) !== 0 && (
+                    <p>Bônus: R$ {(parseFloat(bonusValor) || 0).toFixed(2)}</p>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-2 pt-2">
