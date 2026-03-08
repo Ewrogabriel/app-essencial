@@ -48,6 +48,7 @@ import FormasPagamento from "./pages/FormasPagamento";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
 import ListaEspera from "./pages/ListaEspera";
 import Convenios from "./pages/Convenios";
+import VacancyCalendar from "./pages/VacancyCalendar";
 // Despesas is now a tab inside Financeiro
 
 const queryClient = new QueryClient();
