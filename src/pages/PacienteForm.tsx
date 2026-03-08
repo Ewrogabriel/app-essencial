@@ -42,6 +42,9 @@ const PacienteForm = () => {
   const [dataNascimento, setDataNascimento] = useState("");
   const [fotoUrl, setFotoUrl] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [sexo, setSexo] = useState("");
+  const [identidadeGenero, setIdentidadeGenero] = useState("");
+  const [nomeSocial, setNomeSocial] = useState("");
 
   // Address
   const [cep, setCep] = useState("");
