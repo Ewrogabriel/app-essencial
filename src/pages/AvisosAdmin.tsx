@@ -119,6 +119,10 @@ const AvisosAdmin = () => {
                   onChange={(e) => setMensagem(e.target.value)} 
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Imagem (opcional)</Label>
+                <ImageUpload value={imageUrl} onChange={setImageUrl} folder="avisos" />
+              </div>
               <Button type="submit" disabled={isSubmitting} className="w-full">
                 <Plus className="h-4 w-4 mr-2" /> 
                 {isSubmitting ? "Publicando..." : "Publicar Aviso"}
