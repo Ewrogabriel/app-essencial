@@ -76,8 +76,6 @@ const menuInteligencia = [
 const menuComunicacao = [
   { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
   { title: "Mural de Avisos", url: "/avisos", icon: Megaphone },
-  { title: "Aniversariantes", url: "/aniversariantes", icon: Cake },
-  { title: "Dicas Diárias", url: "/dicas-diarias", icon: Lightbulb },
 ];
 
 const menuConfig = [
