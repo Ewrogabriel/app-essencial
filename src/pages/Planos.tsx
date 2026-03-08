@@ -164,7 +164,7 @@ const Planos = () => {
       queryClient.invalidateQueries({ queryKey: ["pagamentos"] });
       toast({ title: "Pagamento confirmado!" });
     },
-    onError: (e: any) => toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Erro ao confirmar", description: e.message, variant: "destructive" }),
   });
 
   const planosAtivos = (planos as any[]).filter((p) => p.status === "ativo");
