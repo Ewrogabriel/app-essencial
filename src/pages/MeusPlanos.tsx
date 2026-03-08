@@ -481,7 +481,7 @@ const MeusPlanos = () => {
 
       {/* Agendar Dialog */}
       <Dialog open={agendarOpen} onOpenChange={setAgendarOpen}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarPlus className="h-5 w-5 text-primary" />
@@ -496,27 +496,95 @@ const MeusPlanos = () => {
                 <p><strong>Créditos restantes:</strong> {selectedPlano.total_sessoes - selectedPlano.sessoes_utilizadas}</p>
               </div>
 
-              {disponibilidade.length > 0 && (
-                <div className="text-sm">
-                  <p className="font-medium mb-1">Horários disponíveis do profissional:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {disponibilidade.map((d: any) => (
-                      <Badge key={d.id} variant="outline" className="text-xs">
-                        {diasSemana[d.dia_semana]} {d.hora_inicio}–{d.hora_fim}
-                      </Badge>
-                    ))}
-                  </div>
+              {/* Calendar with availability */}
+              <div>
+                <Label className="mb-2 block">Selecione a data</Label>
+                <Calendar
+                  mode="single"
+                  locale={ptBR}
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  onMonthChange={setCurrentMonth}
+                  disabled={(date) =>
+                    date < new Date(new Date().setHours(0, 0, 0, 0))
+                  }
+                  className={cn("rounded-md border shadow-sm pointer-events-auto")}
+                  components={{
+                    DayContent: ({ date: dayDate }) => {
+                      const vacancies = monthlyAvail[dayDate.getDate()];
+                      const isPast = dayDate < new Date(new Date().setHours(0, 0, 0, 0));
+                      const isCurrentMonth = dayDate.getMonth() === currentMonth.getMonth();
+
+                      return (
+                        <div className="relative w-full h-full flex flex-col items-center justify-center">
+                          <span>{dayDate.getDate()}</span>
+                          {isCurrentMonth && !isPast && selectedPlano?.profissional_id && (
+                            <span className={cn(
+                              "text-[9px] mt-0.5 px-1 rounded-full",
+                              vacancies > 0
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold"
+                                : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                            )}>
+                              {vacancies ?? 0}v
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Time slots for selected date */}
+              {selectedDate && (
+                <div>
+                  <Label className="mb-2 block">Horários disponíveis em {format(selectedDate, "dd/MM/yyyy")}</Label>
+                  {availableSlots.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum horário disponível nesta data.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {availableSlots.map((s: any) => {
+                        const timeLabel = s.slot.hora_inicio.slice(0, 5);
+                        const isFull = s.available <= 0;
+                        const isSelected = selectedTime === timeLabel;
+                        return (
+                          <Button
+                            key={s.slot.id}
+                            type="button"
+                            size="sm"
+                            variant={isSelected ? "default" : "outline"}
+                            disabled={isFull}
+                            onClick={() => setSelectedTime(timeLabel)}
+                            className={cn(
+                              "text-xs",
+                              isFull && "opacity-50 line-through"
+                            )}
+                          >
+                            <Clock className="h-3 w-3 mr-1" />
+                            {timeLabel}
+                            <span className="ml-1 text-[10px]">({s.available}v)</span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div>
-                <Label>Data e horário</Label>
-                <Input
-                  type="datetime-local"
-                  value={dataHorario}
-                  onChange={(e) => setDataHorario(e.target.value)}
-                />
-              </div>
+              {/* Availability check result */}
+              {availabilityResult && (
+                <Alert variant={availabilityResult.isOverCapacity ? "destructive" : "default"}>
+                  <div className="flex items-center gap-2">
+                    {availabilityResult.isOverCapacity ? (
+                      <AlertTriangle className="h-4 w-4" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    )}
+                    <AlertDescription>{availabilityResult.message}</AlertDescription>
+                  </div>
+                </Alert>
+              )}
+
               <div>
                 <Label>Duração</Label>
                 <Select value={duracao} onValueChange={setDuracao}>
@@ -535,7 +603,7 @@ const MeusPlanos = () => {
                 <Button
                   className="flex-1"
                   onClick={() => solicitarAgendamento.mutate()}
-                  disabled={!dataHorario || solicitarAgendamento.isPending}
+                  disabled={!selectedDate || !selectedTime || solicitarAgendamento.isPending}
                 >
                   {solicitarAgendamento.isPending ? "Agendando..." : "Confirmar"}
                 </Button>
