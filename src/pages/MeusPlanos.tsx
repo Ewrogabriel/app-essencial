@@ -276,9 +276,12 @@ const MeusPlanos = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-4xl font-bold text-primary">
-                    {planoAtivo.total_sessoes - planoAtivo.sessoes_utilizadas}
+                    {Math.max(0, creditosReais)}
                   </p>
                   <p className="text-sm text-muted-foreground">Sessões disponíveis</p>
+                  {sessoesAtivas.length > 0 && (
+                    <p className="text-xs text-muted-foreground">{sessoesAtivas.length} agendadas</p>
+                  )}
                 </div>
               </div>
               <Progress
