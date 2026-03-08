@@ -215,6 +215,7 @@ const DisponibilidadeProfissional = () => {
     const { error } = await (supabase.from("disponibilidade_profissional") as any).insert({
       profissional_id: profId, dia_semana: newSlot.dia_semana,
       hora_inicio: newSlot.hora_inicio, hora_fim: newSlot.hora_fim, max_pacientes: newSlot.max_pacientes,
+      clinic_id: activeClinicId,
     });
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else { toast({ title: "Horário adicionado! ✅" }); refetch(); }
