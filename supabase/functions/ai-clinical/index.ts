@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { paciente_id, evolutions_text, evaluation_text, action } = await req.json();
+    const { paciente_id, evolutions_text, evaluation_text, action, modalidade, attachments_info } = await req.json();
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
@@ -44,42 +44,133 @@ Deno.serve(async (req) => {
       });
     }
 
+    const modalidadeCtx = modalidade ? `\n\n**Modalidade de atendimento:** ${modalidade}` : "";
+    const attachmentsCtx = attachments_info ? `\n\n**Documentos anexados ao prontuário:**\n${attachments_info}` : "";
+
     let systemPrompt = "";
     let userContent = "";
 
-    if (action === "summarize") {
-      systemPrompt = `Você é um fisioterapeuta especialista. Analise o histórico de evoluções clínicas do paciente e gere:
+    switch (action) {
+      case "summarize":
+        systemPrompt = `Você é um profissional de saúde especialista em ${modalidade || "fisioterapia/pilates"}. Analise o histórico de evoluções clínicas do paciente e gere:
 1. **Resumo Clínico**: Síntese objetiva do quadro e progresso do paciente
 2. **Principais Achados**: Pontos mais relevantes observados ao longo do tratamento
 3. **Tendência**: Se o paciente está melhorando, estagnado ou piorando
 4. **Atenção**: Pontos que merecem atenção especial
 
 Responda em português brasileiro, de forma objetiva e profissional. Use markdown.`;
+        userContent = `Histórico de evoluções do paciente:\n\n${evolutions_text}`;
+        if (evaluation_text) userContent += `\n\nAvaliação inicial:\n${evaluation_text}`;
+        userContent += modalidadeCtx + attachmentsCtx;
+        break;
 
-      userContent = `Histórico de evoluções do paciente:\n\n${evolutions_text}`;
-
-      if (evaluation_text) {
-        userContent += `\n\nAvaliação inicial:\n${evaluation_text}`;
-      }
-    } else if (action === "suggest_conduct") {
-      systemPrompt = `Você é um fisioterapeuta especialista. Com base no histórico clínico fornecido, sugira:
+      case "suggest_conduct":
+        systemPrompt = `Você é um profissional de saúde especialista em ${modalidade || "fisioterapia/pilates"}. Com base no histórico clínico fornecido, sugira:
 1. **Conduta Recomendada**: O que fazer na próxima sessão
-2. **Exercícios Sugeridos**: Protocolos e exercícios indicados
+2. **Exercícios Sugeridos**: Protocolos e exercícios indicados para a modalidade ${modalidade || "do paciente"}
 3. **Objetivos de Curto Prazo**: Metas para as próximas 2-4 sessões
 4. **Orientações ao Paciente**: O que orientar para domicílio
 
 Seja específico e baseado em evidências. Responda em português brasileiro. Use markdown.`;
+        userContent = `Histórico de evoluções:\n\n${evolutions_text}`;
+        if (evaluation_text) userContent += `\n\nAvaliação inicial:\n${evaluation_text}`;
+        userContent += modalidadeCtx + attachmentsCtx;
+        break;
 
-      userContent = `Histórico de evoluções:\n\n${evolutions_text}`;
+      case "lesson_plan":
+        systemPrompt = `Você é um profissional de saúde e instrutor especialista em ${modalidade || "pilates/fisioterapia"}. Crie um plano de aula detalhado e personalizado considerando o quadro clínico do paciente.
 
-      if (evaluation_text) {
-        userContent += `\n\nAvaliação inicial:\n${evaluation_text}`;
-      }
-    } else {
-      return new Response(JSON.stringify({ error: "Invalid action" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+Estruture o plano assim:
+1. **Objetivo da Aula**: O que será trabalhado e por quê
+2. **Aquecimento** (5-10 min): Exercícios preparatórios
+3. **Parte Principal** (30-40 min): Sequência de exercícios com:
+   - Nome do exercício
+   - Séries x Repetições
+   - Equipamento/aparelho necessário
+   - Observações de execução e cuidados
+4. **Volta à Calma** (5-10 min): Alongamentos e relaxamento
+5. **Progressão**: Como evoluir nas próximas sessões
+6. **Contraindicações/Cuidados**: Movimentos a evitar com base no quadro
+
+Seja muito específico para a modalidade **${modalidade || "pilates"}**. Use nomes reais de exercícios. Responda em português brasileiro. Use markdown.`;
+        userContent = `Quadro clínico do paciente:\n\n`;
+        if (evaluation_text) userContent += `Avaliação:\n${evaluation_text}\n\n`;
+        if (evolutions_text) userContent += `Últimas evoluções:\n${evolutions_text}\n\n`;
+        userContent += modalidadeCtx + attachmentsCtx;
+        break;
+
+      case "treatment_plan":
+        systemPrompt = `Você é um profissional de saúde especialista em ${modalidade || "fisioterapia/pilates"}. Analise TODOS os dados disponíveis do paciente (avaliação, evoluções, documentos anexados) e elabore um plano de tratamento completo:
+
+1. **Diagnóstico Funcional**: Síntese do quadro atual baseada em todos os dados
+2. **Objetivos de Tratamento**:
+   - Curto prazo (1-4 semanas)
+   - Médio prazo (1-3 meses)
+   - Longo prazo (3-6 meses)
+3. **Plano Terapêutico**:
+   - Frequência recomendada de sessões
+   - Protocolos e técnicas indicadas
+   - Exercícios-chave para cada fase
+4. **Critérios de Progressão**: Quando avançar de fase
+5. **Critérios de Alta**: Indicadores para encerramento
+6. **Orientações Domiciliares**: Programa de exercícios para casa
+7. **Prognóstico**: Expectativa de evolução
+
+Baseie-se em evidências científicas. Se documentos foram anexados (exames, laudos), considere-os na análise. Responda em português brasileiro. Use markdown.`;
+        userContent = "";
+        if (evaluation_text) userContent += `Avaliação clínica:\n${evaluation_text}\n\n`;
+        if (evolutions_text) userContent += `Histórico de evoluções:\n${evolutions_text}\n\n`;
+        userContent += modalidadeCtx + attachmentsCtx;
+        if (!userContent.trim()) userContent = "Sem dados clínicos registrados ainda. Sugira um plano genérico para a modalidade.";
+        break;
+
+      case "generate_report":
+        systemPrompt = `Você é um profissional de saúde especialista em ${modalidade || "fisioterapia/pilates"}. Gere um relatório clínico formal e completo para o paciente, adequado para envio a convênios, médicos ou uso institucional.
+
+Estruture o relatório assim:
+
+# RELATÓRIO CLÍNICO
+
+**Data:** [data atual]
+**Modalidade:** ${modalidade || "Não especificada"}
+
+## 1. IDENTIFICAÇÃO E ENCAMINHAMENTO
+Breve contexto do paciente e motivo do atendimento.
+
+## 2. AVALIAÇÃO INICIAL
+Resumo dos achados da avaliação.
+
+## 3. DIAGNÓSTICO FUNCIONAL
+Quadro funcional identificado.
+
+## 4. PLANO DE TRATAMENTO EXECUTADO
+Descrição do que foi realizado ao longo das sessões.
+
+## 5. EVOLUÇÃO CLÍNICA
+Análise da progressão do paciente sessão a sessão.
+
+## 6. RESULTADOS OBTIDOS
+Ganhos mensuráveis e qualitativos.
+
+## 7. ESTADO ATUAL
+Condição atual do paciente.
+
+## 8. CONDUTA E RECOMENDAÇÕES
+Próximos passos recomendados.
+
+Seja formal, objetivo e profissional. Responda em português brasileiro. Use markdown.`;
+        userContent = "";
+        if (evaluation_text) userContent += `Avaliação clínica:\n${evaluation_text}\n\n`;
+        if (evolutions_text) userContent += `Histórico de evoluções:\n${evolutions_text}\n\n`;
+        userContent += modalidadeCtx + attachmentsCtx;
+        if (!userContent.trim()) userContent = "Sem dados clínicos registrados. Gere um modelo de relatório em branco.";
+        break;
+
+      default:
+        return new Response(JSON.stringify({ error: "Invalid action" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
     }
 
     const response = await fetch(
@@ -97,10 +188,31 @@ Seja específico e baseado em evidências. Responda em português brasileiro. Us
             { role: "user", content: userContent },
           ],
           temperature: 0.5,
-          max_tokens: 2000,
+          max_tokens: 4000,
         }),
       }
     );
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("AI gateway error:", response.status, errText);
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em instantes." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const result = await response.json();
     const content = result.choices?.[0]?.message?.content || "Não foi possível gerar análise.";
@@ -109,6 +221,7 @@ Seja específico e baseado em evidências. Responda em português brasileiro. Us
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("ai-clinical error:", error);
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
       {

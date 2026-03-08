@@ -213,7 +213,7 @@ const PacienteDetalhes = () => {
                     <PatientAttachments pacienteId={id!} />
 
                     {/* AI Clinical Assistant */}
-                    <AIClinicalAssistant pacienteId={id!} />
+                    <AIClinicalAssistant pacienteId={id!} modalidade={paciente?.tipo_atendimento} />
 
                     {/* Digital Contract */}
                     <Card>
