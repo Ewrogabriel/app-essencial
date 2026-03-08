@@ -36,6 +36,7 @@ import {
 import { EnrollmentDetails } from "@/components/enrollments/EnrollmentDetails";
 import { CommissionReport } from "@/components/reports/CommissionReport";
 import { EnrollmentAdminPanel } from "@/components/enrollments/EnrollmentAdminPanel";
+import Planos from "./Planos";
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   ativa: { label: "Ativa", variant: "default" },
