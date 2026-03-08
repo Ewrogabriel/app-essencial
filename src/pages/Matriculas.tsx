@@ -34,8 +34,8 @@ import {
   EnrollmentForm, EnrollmentFormData, WeeklyScheduleEntry
 } from "@/components/enrollments/EnrollmentForm";
 import { EnrollmentDetails } from "@/components/enrollments/EnrollmentDetails";
-import { CommissionReport } from "@/components/reports/CommissionReport";
 import { EnrollmentAdminPanel } from "@/components/enrollments/EnrollmentAdminPanel";
+import { CancellationPolicies } from "@/components/enrollments/CancellationPolicies";
 import Planos from "./Planos";
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
