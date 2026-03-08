@@ -52,6 +52,14 @@ const PacienteForm = () => {
   const [status, setStatus] = useState<"ativo" | "inativo">("ativo");
   const [observacoes, setObservacoes] = useState("");
 
+  // Nota Fiscal
+  const [solicitaNf, setSolicitaNf] = useState(false);
+  const [nfRazaoSocial, setNfRazaoSocial] = useState("");
+  const [nfCnpjCpf, setNfCnpjCpf] = useState("");
+  const [nfEndereco, setNfEndereco] = useState("");
+  const [nfInscricaoEstadual, setNfInscricaoEstadual] = useState("");
+  const [nfEmail, setNfEmail] = useState("");
+
   // Legal guardian
   const [temResponsavel, setTemResponsavel] = useState(false);
   const [respNome, setRespNome] = useState("");
