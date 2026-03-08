@@ -20,7 +20,7 @@ export function OccupancyReport() {
     queryKey: ["occ-profs"],
     queryFn: async () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id").in("role", ["profissional", "admin"]);
-      const ids = (roles || []).map((r: any) => r.user_id);
+      const ids = (roles || []).map((r) => r.user_id);
       if (!ids.length) return [];
       const { data } = await supabase.from("profiles").select("user_id, nome").in("user_id", ids).order("nome");
       return data || [];
@@ -42,7 +42,7 @@ export function OccupancyReport() {
     queryFn: async () => {
       const start = startOfWeek(new Date(), { weekStartsOn: 1 });
       const end = addDays(start, 6);
-      let query = (supabase.from("agendamentos") as any)
+      let query = supabase.from("agendamentos")
         .select("data_horario, profissional_id, status")
         .gte("data_horario", start.toISOString())
         .lte("data_horario", end.toISOString())

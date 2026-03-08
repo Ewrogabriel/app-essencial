@@ -44,7 +44,7 @@ export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssist
   const { data: evolutions = [] } = useQuery({
     queryKey: ["evolucoes-ai", pacienteId],
     queryFn: async () => {
-      const { data } = await (supabase.from("evolutions") as any)
+      const { data } = await supabase.from("evolutions")
         .select("descricao, conduta, data_evolucao")
         .eq("paciente_id", pacienteId)
         .order("data_evolucao", { ascending: false })
@@ -57,7 +57,7 @@ export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssist
   const { data: evaluation } = useQuery({
     queryKey: ["avaliacao-ai", pacienteId],
     queryFn: async () => {
-      const { data } = await (supabase.from("evaluations") as any)
+      const { data } = await supabase.from("evaluations")
         .select("queixa_principal, historico_doenca, antecedentes_pessoais, objetivos_tratamento, conduta_inicial")
         .eq("paciente_id", pacienteId)
         .order("data_avaliacao", { ascending: false })
@@ -71,7 +71,7 @@ export function AIClinicalAssistant({ pacienteId, modalidade }: AIClinicalAssist
   const { data: attachments = [] } = useQuery({
     queryKey: ["attachments-ai", pacienteId],
     queryFn: async () => {
-      const { data } = await (supabase.from("patient_attachments") as any)
+      const { data } = await supabase.from("patient_attachments")
         .select("file_name, file_type, descricao, created_at")
         .eq("paciente_id", pacienteId)
         .order("created_at", { ascending: false })

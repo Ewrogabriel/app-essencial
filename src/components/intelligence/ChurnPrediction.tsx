@@ -29,29 +29,29 @@ export function ChurnPrediction() {
       const threeMonthsAgo = subMonths(new Date(), 3).toISOString();
 
       // Fetch patients
-      const { data: pacientes } = await (supabase.from("pacientes") as any)
+      const { data: pacientes } = await supabase.from("pacientes")
         .select("id, nome, telefone, status")
         .eq("status", "ativo");
 
       if (!pacientes?.length) return [];
 
-      const pacienteIds = pacientes.map((p: any) => p.id);
+      const pacienteIds = pacientes.map((p) => p.id);
 
       // Fetch recent appointments
-      const { data: agendamentos } = await (supabase.from("agendamentos") as any)
+      const { data: agendamentos } = await supabase.from("agendamentos")
         .select("paciente_id, data_horario, status")
         .in("paciente_id", pacienteIds)
         .gte("data_horario", threeMonthsAgo)
         .order("data_horario", { ascending: false });
 
       // Fetch overdue payments
-      const { data: pagamentos } = await (supabase.from("pagamentos") as any)
+      const { data: pagamentos } = await supabase.from("pagamentos")
         .select("paciente_id, status, data_vencimento")
         .in("paciente_id", pacienteIds)
         .eq("status", "pendente");
 
       // Calculate risk per patient
-      const risks: ChurnRisk[] = pacientes.map((p: any) => {
+      const risks: ChurnRisk[] = pacientes.map((p) => {
         const pAgendamentos = (agendamentos || []).filter((a: any) => a.paciente_id === p.id);
         const pPagamentos = (pagamentos || []).filter((pg: any) => pg.paciente_id === p.id);
 

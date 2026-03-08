@@ -128,16 +128,15 @@ const Financeiro = () => {
   const createPagamento = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from("pagamentos") as any).insert({
+      const { error } = await supabase.from("pagamentos").insert({
         paciente_id: formData.paciente_id,
         profissional_id: user.id,
         plano_id: formData.plano_id || null,
         valor: parseFloat(formData.valor) || 0,
         data_pagamento: formData.data_pagamento,
         data_vencimento: formData.data_vencimento || null,
-        forma_pagamento: formData.forma_pagamento,
-        status: formData.status,
+        forma_pagamento: formData.forma_pagamento as any,
+        status: formData.status as any,
         descricao: formData.descricao || null,
         observacoes: formData.observacoes || null,
         created_by: user.id,

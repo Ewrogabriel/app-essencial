@@ -104,11 +104,11 @@ const PacienteForm = () => {
   useEffect(() => {
     if (id) {
       setLoadingData(true);
-      (supabase.from("pacientes") as any)
+      supabase.from("pacientes")
         .select("*")
         .eq("id", id)
         .single()
-        .then(({ data, error }: any) => {
+        .then(({ data, error }) => {
           if (error || !data) {
             toast({ title: "Paciente não encontrado", variant: "destructive" });
             navigate("/pacientes");
@@ -250,7 +250,7 @@ const PacienteForm = () => {
     
     if (!accessCode) {
       // Fetch from database if not in state
-      const { data } = await (supabase.from("pacientes") as any)
+      const { data } = await supabase.from("pacientes")
         .select("codigo_acesso")
         .eq("id", id)
         .single();
@@ -320,7 +320,7 @@ const PacienteForm = () => {
     setLoading(true);
 
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         nome,
         cpf: cpf || null,
         rg: rg || null,
@@ -371,7 +371,7 @@ const PacienteForm = () => {
 
       if (isEditing) {
         // Update existing patient
-        const { error } = await (supabase.from("pacientes") as any)
+        const { error } = await supabase.from("pacientes")
           .update(payload)
           .eq("id", id);
         
@@ -387,10 +387,10 @@ const PacienteForm = () => {
           created_by: user.id,
           profissional_id: user.id,
           codigo_acesso: accessCode,
-        } as any;
+        };
 
-        const { data, error } = await (supabase.from("pacientes") as any)
-          .insert([insertData])
+        const { data, error } = await supabase.from("pacientes")
+          .insert([insertData as any])
           .select("id")
           .single();
         
@@ -421,7 +421,7 @@ const PacienteForm = () => {
 
         // Link patient to active clinic
         if (activeClinicId && savedPatientId) {
-          await (supabase.from("clinic_pacientes") as any).insert({
+          await supabase.from("clinic_pacientes").insert({
             clinic_id: activeClinicId,
             paciente_id: savedPatientId,
           });

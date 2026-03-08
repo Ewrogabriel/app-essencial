@@ -89,7 +89,7 @@ const ImportacaoMassa = () => {
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         try {
-          const { error } = await (supabase.from("pacientes") as any).insert({
+          const { error } = await supabase.from("pacientes").insert({
             nome: String(row.nome).trim(),
             telefone: String(row.telefone).trim(),
             email: row.email ? String(row.email).trim() : null,
@@ -104,11 +104,11 @@ const ImportacaoMassa = () => {
 
           // Link to clinic
           if (activeClinicId) {
-            const { data: inserted } = await (supabase.from("pacientes") as any)
+            const { data: inserted } = await supabase.from("pacientes")
               .select("id").eq("nome", String(row.nome).trim()).eq("telefone", String(row.telefone).trim())
               .order("created_at", { ascending: false }).limit(1).single();
             if (inserted) {
-              await (supabase.from("clinic_pacientes") as any).insert({
+              await supabase.from("clinic_pacientes").insert({
                 clinic_id: activeClinicId,
                 paciente_id: inserted.id,
               });
@@ -122,10 +122,10 @@ const ImportacaoMassa = () => {
       }
     } else if (activeTab === "agendamentos") {
       // Fetch pacientes and profissionais maps
-      const { data: pacientes } = await (supabase.from("pacientes").select("id, nome") as any);
+      const { data: pacientes } = await supabase.from("pacientes").select("id, nome");
       const { data: profs } = await supabase.from("profiles").select("user_id, nome");
-      const pacMap = Object.fromEntries((pacientes || []).map((p: any) => [p.nome.toLowerCase(), p.id]));
-      const profMap = Object.fromEntries((profs || []).map((p: any) => [p.nome.toLowerCase(), p.user_id]));
+      const pacMap = Object.fromEntries((pacientes || []).map((p) => [p.nome.toLowerCase(), p.id]));
+      const profMap = Object.fromEntries((profs || []).map((p) => [p.nome.toLowerCase(), p.user_id]));
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -135,7 +135,7 @@ const ImportacaoMassa = () => {
           if (!pacId) throw new Error(`Paciente "${row.paciente_nome}" não encontrado`);
           if (!profId) throw new Error(`Profissional "${row.profissional_nome}" não encontrado`);
 
-          const { error } = await (supabase.from("agendamentos") as any).insert({
+          const { error } = await supabase.from("agendamentos").insert({
             paciente_id: pacId,
             profissional_id: profId,
             data_horario: new Date(row.data_horario).toISOString(),
@@ -154,8 +154,8 @@ const ImportacaoMassa = () => {
         }
       }
     } else if (activeTab === "pagamentos") {
-      const { data: pacientes } = await (supabase.from("pacientes").select("id, nome") as any);
-      const pacMap = Object.fromEntries((pacientes || []).map((p: any) => [p.nome.toLowerCase(), p.id]));
+      const { data: pacientes } = await supabase.from("pacientes").select("id, nome");
+      const pacMap = Object.fromEntries((pacientes || []).map((p) => [p.nome.toLowerCase(), p.id]));
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -163,7 +163,7 @@ const ImportacaoMassa = () => {
           const pacId = pacMap[String(row.paciente_nome).toLowerCase().trim()];
           if (!pacId) throw new Error(`Paciente "${row.paciente_nome}" não encontrado`);
 
-          const { error } = await (supabase.from("pagamentos") as any).insert({
+          const { error } = await supabase.from("pagamentos").insert({
             paciente_id: pacId,
             profissional_id: user.id,
             valor: Number(row.valor),

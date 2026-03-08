@@ -139,10 +139,10 @@ const Profissionais = () => {
 
       // Filter by active clinic
       if (activeClinicId) {
-        const { data: clinicUsers } = await (supabase.from("clinic_users") as any)
+        const { data: clinicUsers } = await supabase.from("clinic_users")
           .select("user_id")
           .eq("clinic_id", activeClinicId);
-        const clinicUserIds = new Set(clinicUsers?.map((cu: any) => cu.user_id) ?? []);
+        const clinicUserIds = new Set(clinicUsers?.map((cu) => cu.user_id) ?? []);
         userIds = userIds.filter(id => clinicUserIds.has(id));
         if (userIds.length === 0) return [];
       }

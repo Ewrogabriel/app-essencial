@@ -43,7 +43,7 @@ const Produtos = () => {
   const { data: pacientes = [] } = useQuery({
     queryKey: ["pacientes-select"],
     queryFn: async () => {
-      const { data } = await (supabase.from("pacientes") as any).select("id, nome").eq("status", "ativo").order("nome");
+      const { data } = await supabase.from("pacientes").select("id, nome").eq("status", "ativo").order("nome");
       return data || [];
     },
   });
@@ -56,7 +56,7 @@ const Produtos = () => {
       endDate.setMonth(endDate.getMonth() + 1);
       endDate.setDate(0);
       const end = format(endDate, "yyyy-MM-dd");
-      const { data, error } = await (supabase.from("vendas_produtos") as any)
+      const { data, error } = await supabase.from("vendas_produtos")
         .select("*, produtos(nome), pacientes(nome)")
         .gte("data_venda", start)
         .lte("data_venda", end)
@@ -69,7 +69,7 @@ const Produtos = () => {
   const { data: entradas = [] } = useQuery({
     queryKey: ["entradas-estoque"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("entradas_estoque") as any)
+      const { data, error } = await supabase.from("entradas_estoque")
         .select("*, produtos(nome)")
         .order("data_entrada", { ascending: false })
         .limit(50);
@@ -123,7 +123,7 @@ const Produtos = () => {
       if (!produto) throw new Error("Produto não encontrado");
       const qty = parseInt(saleData.quantidade) || 1;
       const valorUnit = Number(produto.preco);
-      const { error } = await (supabase.from("vendas_produtos") as any).insert({
+      const { error } = await supabase.from("vendas_produtos").insert({
         produto_id: saleData.produto_id,
         paciente_id: saleData.paciente_id || null,
         quantidade: qty,
@@ -153,7 +153,7 @@ const Produtos = () => {
       const produto = produtos.find((p: any) => p.id === stockData.produto_id);
       if (!produto) throw new Error("Produto não encontrado");
       const qty = parseInt(stockData.quantidade) || 0;
-      const { error } = await (supabase.from("entradas_estoque") as any).insert({
+      const { error } = await supabase.from("entradas_estoque").insert({
         produto_id: stockData.produto_id,
         quantidade: qty,
         data_entrada: stockData.data_entrada,

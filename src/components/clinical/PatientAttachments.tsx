@@ -55,11 +55,11 @@ export const PatientAttachments = ({ pacienteId }: PatientAttachmentsProps) => {
   const { data: attachments = [], isLoading } = useQuery({
     queryKey: ["patient-attachments", pacienteId],
     queryFn: async () => {
-      const { data, error } = await (supabase
+      const { data, error } = await supabase
         .from("patient_attachments")
         .select("*")
         .eq("paciente_id", pacienteId)
-        .order("created_at", { ascending: false }) as any);
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -75,10 +75,10 @@ export const PatientAttachments = ({ pacienteId }: PatientAttachmentsProps) => {
       if (storageError) console.warn("Storage delete error:", storageError);
 
       // Delete from DB
-      const { error } = await (supabase
+      const { error } = await supabase
         .from("patient_attachments")
         .delete()
-        .eq("id", attachment.id) as any);
+        .eq("id", attachment.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -104,7 +104,7 @@ export const PatientAttachments = ({ pacienteId }: PatientAttachmentsProps) => {
           .upload(filePath, file);
         if (uploadError) throw uploadError;
 
-        const { error: dbError } = await (supabase
+        const { error: dbError } = await supabase
           .from("patient_attachments")
           .insert({
             paciente_id: pacienteId,
@@ -114,7 +114,7 @@ export const PatientAttachments = ({ pacienteId }: PatientAttachmentsProps) => {
             file_type: file.type,
             file_size: file.size,
             descricao: descricao.trim() || null,
-          }) as any);
+          });
         if (dbError) throw dbError;
       }
 

@@ -116,7 +116,7 @@ const Automacoes = () => {
   const { data: patients = [] } = useQuery({
     queryKey: ["automation-patients"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("pacientes") as any)
+      const { data, error } = await supabase.from("pacientes")
         .select("id, nome, telefone, status")
         .eq("status", "ativo")
         .order("nome");
@@ -130,8 +130,8 @@ const Automacoes = () => {
     queryKey: ["automation-upcoming-appointments"],
     queryFn: async () => {
       const now = new Date().toISOString();
-      const { data, error } = await (supabase.from("agendamentos") as any)
-        .select("id, paciente_id, data_horario, profissional_id, profiles:profissional_id(nome)")
+      const { data, error } = await supabase.from("agendamentos")
+        .select("id, paciente_id, data_horario, profissional_id")
         .gte("data_horario", now)
         .in("status", ["agendado", "confirmado"])
         .order("data_horario", { ascending: true });
@@ -146,7 +146,7 @@ const Automacoes = () => {
     if (!nextAppointmentMap[ag.paciente_id]) {
       nextAppointmentMap[ag.paciente_id] = {
         data_horario: ag.data_horario,
-        profissional_nome: ag.profiles?.nome || "Profissional",
+        profissional_nome: "Profissional",
         id: ag.id,
       };
     }

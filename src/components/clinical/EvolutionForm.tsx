@@ -60,7 +60,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
     const { data: paciente } = useQuery({
         queryKey: ["paciente-evol", pacienteId],
         queryFn: async () => {
-            const { data } = await (supabase.from("pacientes").select("tipo_atendimento").eq("id", pacienteId).single() as any);
+            const { data } = await supabase.from("pacientes").select("tipo_atendimento").eq("id", pacienteId).single();
             return data;
         },
         enabled: !!pacienteId && open,
@@ -69,7 +69,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
     const { data: prevEvolutions = [] } = useQuery({
         queryKey: ["evolucoes-prev", pacienteId],
         queryFn: async () => {
-            const { data } = await (supabase.from("evolutions") as any)
+            const { data } = await supabase.from("evolutions")
                 .select("descricao, conduta, data_evolucao")
                 .eq("paciente_id", pacienteId)
                 .order("data_evolucao", { ascending: false })
@@ -82,7 +82,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
     const { data: evaluation } = useQuery({
         queryKey: ["avaliacao-evol", pacienteId],
         queryFn: async () => {
-            const { data } = await (supabase.from("evaluations") as any)
+            const { data } = await supabase.from("evaluations")
                 .select("queixa_principal, historico_doenca, antecedentes_pessoais, objetivos_tratamento, conduta_inicial")
                 .eq("paciente_id", pacienteId)
                 .order("data_avaliacao", { ascending: false })
@@ -96,7 +96,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
     const { data: attachments = [] } = useQuery({
         queryKey: ["attachments-evol", pacienteId],
         queryFn: async () => {
-            const { data } = await (supabase.from("patient_attachments") as any)
+            const { data } = await supabase.from("patient_attachments")
                 .select("file_name, file_type, descricao")
                 .eq("paciente_id", pacienteId)
                 .limit(20);
@@ -158,7 +158,7 @@ export const EvolutionForm = ({ open, onOpenChange, pacienteId }: EvolutionFormP
         mutationFn: async () => {
             if (!user) throw new Error("Usuário não autenticado");
 
-            const { error } = await (supabase.from("evolutions") as any).insert({
+            const { error } = await supabase.from("evolutions").insert({
                 clinic_id: activeClinicId,
                 paciente_id: pacienteId,
                 profissional_id: user.id,
