@@ -147,6 +147,7 @@ const PacienteForm = () => {
           setNfEndereco(data.nf_endereco || "");
           setNfInscricaoEstadual(data.nf_inscricao_estadual || "");
           setNfEmail(data.nf_email || "");
+          setLgpdConsentimento(data.lgpd_consentimento || false);
           setLoadingData(false);
         });
     }
