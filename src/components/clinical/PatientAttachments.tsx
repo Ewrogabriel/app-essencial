@@ -75,10 +75,10 @@ export const PatientAttachments = ({ pacienteId }: PatientAttachmentsProps) => {
       if (storageError) console.warn("Storage delete error:", storageError);
 
       // Delete from DB
-      const { error } = await (supabase
+      const { error } = await supabase
         .from("patient_attachments")
         .delete()
-        .eq("id", attachment.id) as any);
+        .eq("id", attachment.id);
       if (error) throw error;
     },
     onSuccess: () => {
