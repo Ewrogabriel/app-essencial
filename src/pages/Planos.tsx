@@ -79,6 +79,28 @@ const Planos = () => {
     },
   });
 
+  // Fetch scheduled (non-completed) sessions count per plano
+  const { data: agendadasMap = {} } = useQuery<Record<string, number>>({
+    queryKey: ["planos-agendadas", planos.map(p => p.id).join(",")],
+    queryFn: async () => {
+      if (planos.length === 0) return {};
+      const { data } = await supabase
+        .from("agendamentos")
+        .select("observacoes, status")
+        .in("status", ["agendado", "confirmado", "pendente"] as any[])
+        .ilike("observacoes", "plano:%");
+      const map: Record<string, number> = {};
+      (data || []).forEach((a: any) => {
+        const match = a.observacoes?.match(/plano:([0-9a-f-]+)/);
+        if (match) {
+          map[match[1]] = (map[match[1]] || 0) + 1;
+        }
+      });
+      return map;
+    },
+    enabled: planos.length > 0,
+  });
+
   const { data: pacientes = [] } = useQuery({
     queryKey: ["pacientes-ativos"],
     queryFn: async () => {
