@@ -691,6 +691,43 @@ const PacienteForm = () => {
           </CardContent>
         </Card>
 
+        {/* Nota Fiscal */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">Nota Fiscal</CardTitle>
+                <CardDescription>Dados para emissão de nota fiscal quando solicitada pelo paciente</CardDescription>
+              </div>
+              <Switch checked={solicitaNf} onCheckedChange={setSolicitaNf} />
+            </div>
+          </CardHeader>
+          {solicitaNf && (
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2 space-y-2">
+                <Label>Razão Social / Nome</Label>
+                <Input value={nfRazaoSocial} onChange={(e) => setNfRazaoSocial(e.target.value)} placeholder="Nome ou Razão Social para NF" />
+              </div>
+              <div className="space-y-2">
+                <Label>CPF/CNPJ para NF</Label>
+                <Input value={nfCnpjCpf} onChange={(e) => setNfCnpjCpf(e.target.value)} placeholder="CPF ou CNPJ" />
+              </div>
+              <div className="space-y-2">
+                <Label>Inscrição Estadual</Label>
+                <Input value={nfInscricaoEstadual} onChange={(e) => setNfInscricaoEstadual(e.target.value)} placeholder="Inscrição estadual (se houver)" />
+              </div>
+              <div className="sm:col-span-2 space-y-2">
+                <Label>Endereço para NF</Label>
+                <Input value={nfEndereco} onChange={(e) => setNfEndereco(e.target.value)} placeholder="Endereço completo para a nota fiscal" />
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail para envio da NF</Label>
+                <Input type="email" value={nfEmail} onChange={(e) => setNfEmail(e.target.value)} placeholder="email@exemplo.com" />
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
         {/* Clinical */}
         <Card>
           <CardHeader>
