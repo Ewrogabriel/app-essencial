@@ -26,6 +26,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { maskPhone, maskCNPJ, maskCEP } from "@/lib/masks";
+import { ClinicDetailDialog } from "@/components/master/ClinicDetailDialog";
 
 const STATUS_COLORS: Record<string, string> = {
   ativa: "default",
