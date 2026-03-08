@@ -503,7 +503,7 @@ const SolicitacoesAlteracao = () => {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Solicitações</h1>
         <p className="text-muted-foreground">
-          Gerencie solicitações de alteração de dados, reagendamentos, remarcações e reservas.
+          Gerencie solicitações de agendamento, alteração de dados, reagendamentos, remarcações e reservas.
           {totalPendentes > 0 && (
             <Badge variant="destructive" className="ml-2">{totalPendentes} pendente(s)</Badge>
           )}
@@ -511,9 +511,12 @@ const SolicitacoesAlteracao = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="todas" className="gap-1 text-xs">
             Todas {totalPendentes > 0 && <Badge variant="secondary" className="ml-1 scale-75">{totalPendentes}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="agendamentos" className="gap-1 text-xs">
+            <Clock className="h-3.5 w-3.5" /> Agend. {pendentesAgendamentos.length > 0 && <Badge variant="secondary" className="ml-1 scale-75">{pendentesAgendamentos.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="dados" className="gap-1 text-xs">
             <FileEdit className="h-3.5 w-3.5" /> Dados {pendentesDados.length > 0 && <Badge variant="secondary" className="ml-1 scale-75">{pendentesDados.length}</Badge>}
