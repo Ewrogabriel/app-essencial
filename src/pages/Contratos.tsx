@@ -94,9 +94,9 @@ const Contratos = () => {
 
   const valorFinal = plano ? plano.valor * (1 - (desconto?.percentual_desconto || 0) / 100) : 0;
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!paciente) { toast({ title: "Selecione um paciente", variant: "destructive" }); return; }
-    const pdf = generateContractPDF(getContractData());
+    const pdf = await generateContractPDF(getContractData());
     pdf.save(`Contrato_${paciente.nome.replace(/\s/g, "_")}.pdf`);
     toast({ title: "Contrato gerado com sucesso!" });
   };
