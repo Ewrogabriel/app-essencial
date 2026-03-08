@@ -4,9 +4,13 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   MessageSquare, Ban, RotateCcw, CheckCircle2, Send, Calendar, Clock,
-  User, Activity, FileText, Phone, ClipboardList, Stethoscope, StickyNote,
+  User, Activity, FileText, Phone, ClipboardList, Stethoscope, StickyNote, Video,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { TeleconsultaButton } from "./TeleconsultaButton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
