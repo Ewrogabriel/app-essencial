@@ -107,7 +107,7 @@ const App = () => (
               <Route path="/clinica" element={<ClinicSettings />} />
               <Route path="/mensagens" element={<MensagensInternas />} />
               <Route path="/solicitacoes-alteracao" element={<SolicitacoesAlteracao />} />
-              <Route path="/formas-pagamento" element={<FormasPagamento />} />
+              <Route path="/formas-pagamento" element={<ClinicSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
