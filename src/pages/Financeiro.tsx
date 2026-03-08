@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { generateReceiptPDF, getReceiptNumber } from "@/lib/generateReceiptPDF";
 import Despesas from "./Despesas";
-import Comissoes from "./Comissoes";
+import { CommissionExtract } from "@/components/profissionais/CommissionExtract";
 
 const statusBadge: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pago: { label: "Pago", variant: "default" },
