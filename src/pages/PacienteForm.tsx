@@ -552,6 +552,35 @@ const PacienteForm = () => {
                 <Label htmlFor="email">E-mail</Label>
                 <Input id="email" type="email" placeholder="email@exemplo.com" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="nome_social">Nome Social</Label>
+                <Input id="nome_social" placeholder="Nome social (opcional)" value={nomeSocial} onChange={(e) => setNomeSocial(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sexo">Sexo</Label>
+                <Select value={sexo} onValueChange={setSexo}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="masculino">Masculino</SelectItem>
+                    <SelectItem value="feminino">Feminino</SelectItem>
+                    <SelectItem value="intersexo">Intersexo</SelectItem>
+                    <SelectItem value="prefiro_nao_informar">Prefiro não informar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="identidade_genero">Identidade de Gênero</Label>
+                <Select value={identidadeGenero} onValueChange={setIdentidadeGenero}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cisgênero">Cisgênero</SelectItem>
+                    <SelectItem value="transgênero">Transgênero</SelectItem>
+                    <SelectItem value="não-binário">Não-binário</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                    <SelectItem value="prefiro_nao_informar">Prefiro não informar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
