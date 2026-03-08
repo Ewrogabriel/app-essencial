@@ -426,14 +426,17 @@ const Profissionais = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">Gestão de Equipe</h1>
-        <p className="text-muted-foreground">Cadastre, configure acessos e disponibilidade dos profissionais</p>
+        <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">Equipe</h1>
+        <p className="text-muted-foreground">Cadastre, configure acessos, disponibilidade e comissões dos profissionais</p>
       </div>
 
       <Tabs defaultValue="equipe" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-          <TabsTrigger value="equipe">Equipe</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 lg:w-[500px]">
+          <TabsTrigger value="equipe">Membros</TabsTrigger>
           <TabsTrigger value="disponibilidade">Disponibilidade</TabsTrigger>
+          <TabsTrigger value="comissoes" className="gap-2">
+            <Calculator className="h-4 w-4" /> Regras de Comissão
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="equipe" className="space-y-4">
