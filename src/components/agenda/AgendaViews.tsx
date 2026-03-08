@@ -222,6 +222,9 @@ export function DailyView({
                 d.setHours(hour, 0, 0, 0);
                 onSlotClick?.(d);
               }}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+              onDragLeave={(e) => { e.currentTarget.classList.remove("bg-primary/10"); }}
+              onDrop={(e) => { e.currentTarget.classList.remove("bg-primary/10"); handleDrop(e, hour); }}
             >
               <div className="w-14 shrink-0 text-xs text-muted-foreground py-2 text-right pr-2 border-r">
                 {String(hour).padStart(2, "0")}:00
