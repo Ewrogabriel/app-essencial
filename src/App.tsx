@@ -99,7 +99,7 @@ const App = () => (
               <Route path="/avisos" element={<AvisosAdmin />} />
               <Route path="/disponibilidade" element={<Profissionais />} />
               <Route path="/contratos" element={<Contratos />} />
-              <Route path="/precos-planos" element={<PrecosPlanos />} />
+              
               <Route path="/comissoes" element={<Financeiro />} />
               <Route path="/perfil-profissional" element={<PerfilProfissional />} />
               <Route path="/profissional/:userId" element={<PerfilProfissionalPublico />} />
