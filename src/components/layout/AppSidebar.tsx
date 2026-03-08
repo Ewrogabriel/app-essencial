@@ -41,7 +41,90 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
-/* ── Admin / Gestor menus ── */
+/* Resource key → route mapping */
+const RESOURCE_ROUTES: Record<string, string> = {
+  agenda: "/agenda",
+  pacientes: "/pacientes",
+  prontuarios: "/prontuarios",
+  modalidades: "/modalidades",
+  profissionais: "/profissionais",
+  disponibilidade: "/disponibilidade",
+  financeiro: "/financeiro",
+  matriculas: "/matriculas",
+  planos: "/planos",
+  produtos: "/produtos",
+  comissoes: "/comissoes",
+  precos_planos: "/precos-planos",
+  despesas: "/despesas",
+  contratos: "/contratos",
+  relatorios: "/relatorios",
+  avisos: "/avisos",
+  mensagens: "/mensagens",
+  aniversariantes: "/aniversariantes",
+  clinica: "/clinica",
+  dicas_diarias: "/dicas-diarias",
+  inteligencia: "/inteligencia",
+  automacoes: "/automacoes",
+  indicadores: "/indicadores",
+  check_in: "/check-in",
+};
+
+/* Icon mapping */
+const RESOURCE_ICONS: Record<string, any> = {
+  agenda: Calendar,
+  pacientes: Users,
+  prontuarios: ClipboardList,
+  modalidades: Layers,
+  profissionais: UserCog,
+  disponibilidade: Clock,
+  financeiro: DollarSign,
+  matriculas: Receipt,
+  planos: ClipboardList,
+  produtos: Tag,
+  comissoes: Calculator,
+  precos_planos: Tag,
+  despesas: Receipt,
+  contratos: FileText,
+  relatorios: BarChart3,
+  avisos: Megaphone,
+  mensagens: MessageSquare,
+  aniversariantes: Cake,
+  clinica: Activity,
+  dicas_diarias: Lightbulb,
+  inteligencia: Brain,
+  automacoes: Send,
+  indicadores: TrendingUp,
+  check_in: Users,
+};
+
+const RESOURCE_LABELS: Record<string, string> = {
+  agenda: "Agenda",
+  pacientes: "Pacientes",
+  prontuarios: "Prontuários",
+  modalidades: "Modalidades",
+  profissionais: "Profissionais",
+  disponibilidade: "Disponibilidade",
+  financeiro: "Financeiro",
+  matriculas: "Matrículas",
+  planos: "Planos",
+  produtos: "Produtos",
+  comissoes: "Comissões",
+  precos_planos: "Preços & Descontos",
+  despesas: "Despesas",
+  contratos: "Contratos",
+  relatorios: "Relatórios",
+  avisos: "Mural de Avisos",
+  mensagens: "Mensagens",
+  aniversariantes: "Aniversariantes",
+  clinica: "Dados da Clínica",
+  dicas_diarias: "Dicas Diárias",
+  inteligencia: "Inteligência",
+  automacoes: "Automações",
+  indicadores: "Indicadores",
+  check_in: "Check-in",
+};
+
+/* ── Admin full menus ── */
 const menuPrincipal = [
   { title: "Início", url: "/dashboard", icon: LayoutDashboard },
   { title: "Agenda", url: "/agenda", icon: Calendar },
@@ -81,28 +164,6 @@ const menuIA = [
   { title: "Indicadores", url: "/indicadores", icon: TrendingUp },
 ];
 
-/* ── Professional menu ── */
-const menuProfissional = [
-  { title: "Início", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Minha Agenda", url: "/minha-agenda", icon: Calendar },
-  { title: "Check-in", url: "/check-in", icon: Users },
-  { title: "Pacientes", url: "/pacientes", icon: Users },
-  { title: "Prontuários", url: "/prontuarios", icon: ClipboardList },
-  { title: "Disponibilidade", url: "/disponibilidade", icon: Clock },
-];
-
-const menuProfFinanceiro = [
-  { title: "Minhas Comissões", url: "/comissoes", icon: Calculator },
-];
-
-const menuProfComunicacao = [
-  { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
-];
-
-const menuProfPerfil = [
-  { title: "Meu Perfil", url: "/perfil-profissional", icon: User },
-];
-
 /* ── Patient menu ── */
 const menuPatient = [
   { title: "Início", url: "/dashboard", icon: LayoutDashboard },
@@ -119,8 +180,8 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut, isAdmin, isGestor, isPatient, isProfissional } = useAuth();
-  const isStaff = isAdmin || isGestor || isProfissional;
+  const { profile, signOut, isAdmin, isGestor, isPatient, isProfissional, isSecretario, hasPermission } = useAuth();
+  const isStaff = isAdmin || isGestor || isProfissional || isSecretario;
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -129,7 +190,7 @@ export function AppSidebar() {
     navigate("/login");
   };
 
-  const renderGroup = (label: string, items: typeof menuPrincipal) => (
+  const renderGroup = (label: string, items: { title: string; url: string; icon: any }[]) => (
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
@@ -157,6 +218,31 @@ export function AppSidebar() {
     </SidebarGroup>
   );
 
+  // Build permission-based menu for non-admin staff
+  const buildPermissionMenu = () => {
+    const items: { title: string; url: string; icon: any }[] = [
+      { title: "Início", url: "/dashboard", icon: LayoutDashboard },
+    ];
+
+    // Add items based on permissions
+    Object.entries(RESOURCE_ROUTES).forEach(([resource, route]) => {
+      if (hasPermission(resource)) {
+        // Use "Minha Agenda" for professionals
+        const label = resource === "agenda" && isProfissional
+          ? "Minha Agenda"
+          : RESOURCE_LABELS[resource] || resource;
+        const url = resource === "agenda" && isProfissional ? "/minha-agenda" : route;
+        items.push({
+          title: label,
+          url,
+          icon: RESOURCE_ICONS[resource] || Activity,
+        });
+      }
+    });
+
+    return items;
+  };
+
   return (
     <Sidebar collapsible="icon">
       <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
@@ -183,19 +269,20 @@ export function AppSidebar() {
             {renderGroup("Financeiro & Gestão", menuFinanceiro)}
             {renderGroup("Comunicação", menuComunicacao)}
             {renderGroup("IA & Automação", menuIA)}
-            {/* If admin is also a professional, show their profile/commission links */}
             {isProfissional && (
-              <>
-                {renderGroup("Meu Perfil Profissional", menuProfPerfil)}
-              </>
+              renderGroup("Meu Perfil Profissional", [
+                { title: "Meu Perfil", url: "/perfil-profissional", icon: User },
+              ])
             )}
           </>
-        ) : isProfissional ? (
+        ) : (isProfissional || isSecretario) ? (
           <>
-            {renderGroup("Principal", menuProfissional)}
-            {renderGroup("Financeiro", menuProfFinanceiro)}
-            {renderGroup("Comunicação", menuProfComunicacao)}
-            {renderGroup("Perfil", menuProfPerfil)}
+            {renderGroup("Menu", buildPermissionMenu())}
+            {isProfissional && (
+              renderGroup("Perfil", [
+                { title: "Meu Perfil", url: "/perfil-profissional", icon: User },
+              ])
+            )}
           </>
         ) : (
           renderGroup("Meu Portal", menuPatient)
