@@ -12,7 +12,7 @@ export function useCrossBookingClinics(clinicId: string | null) {
       if (!clinicId) return [clinicId].filter(Boolean) as string[];
 
       // Find all groups this clinic belongs to
-      const { data: myGroups } = await (supabase.from("clinic_group_members") as any)
+      const { data: myGroups } = await supabase.from("clinic_group_members")
         .select("group_id")
         .eq("clinic_id", clinicId)
         .eq("cross_booking_enabled", true);
