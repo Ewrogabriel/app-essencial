@@ -68,6 +68,7 @@ export async function generateAvailabilityPDF(slots: AvailabilitySlot[], profess
       }
     },
   });
-
+  await addWatermarkToAllPages(doc);
+  
   doc.save(`grade-semanal-${professionalName.replace(/\s+/g, "_").toLowerCase()}.pdf`);
 }

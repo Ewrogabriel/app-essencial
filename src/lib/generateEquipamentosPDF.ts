@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { addWatermarkToAllPages } from "./pdfLogo";
 
 export const downloadEquipamentosPDF = (items: any[]) => {
   const doc = new jsPDF("landscape");
