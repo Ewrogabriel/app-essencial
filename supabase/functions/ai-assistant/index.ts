@@ -307,8 +307,16 @@ Melhore o texto acima mantendo o sentido original, enriquecendo com dados clíni
       });
     }
 
-    // For chatbot (no tools), return the message content
+    // For chatbot/document_suggest (no tools), return the message content
     const content = data.choices?.[0]?.message?.content || "";
+    
+    // For document_suggest, return as "suggestion" key
+    if (action === "document_suggest") {
+      return new Response(JSON.stringify({ suggestion: content }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     return new Response(JSON.stringify({ response: content }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
