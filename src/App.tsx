@@ -72,6 +72,8 @@ const DashboardToggle = () => {
   return <PatientDashboard />;
 };
 
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
