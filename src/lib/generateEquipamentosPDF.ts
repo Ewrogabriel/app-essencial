@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { addWatermarkToAllPages } from "./pdfLogo";
 
-export const downloadEquipamentosPDF = (items: any[]) => {
+export const downloadEquipamentosPDF = async (items: any[]) => {
   const doc = new jsPDF("landscape");
 
   doc.setFontSize(16);
