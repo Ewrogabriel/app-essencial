@@ -148,7 +148,7 @@ const PerfilProfissional = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">Meu Perfil Profissional</h1>
+      <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">{t("profile.title")}</h1>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Avatar + basic info */}
