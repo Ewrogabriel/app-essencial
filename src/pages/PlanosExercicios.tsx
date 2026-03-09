@@ -51,10 +51,25 @@ interface Plan {
 }
 
 export default function PlanosExercicios() {
-  const { user, profile, activeClinicId: clinicFromAuth } = useAuth() as any;
+  const { user, profile, isPatient, isProfissional, isAdmin, isGestor } = useAuth() as any;
   const { activeClinicId } = useClinic();
   const qc = useQueryClient();
   const { data: pacientesData = [] } = usePacientes();
+  const isStaff = isProfissional || isAdmin || isGestor;
+
+  // Get paciente record for patient users
+  const { data: patientRecord } = useQuery({
+    queryKey: ["my-patient-record", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pacientes")
+        .select("id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id && isPatient,
+  });
 
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,18 +96,27 @@ export default function PlanosExercicios() {
     semanas: 4,
     observacoes: "",
     paciente_id: "",
+    tipo_plano: "fisioterapia",
   });
 
   const { data: plans = [], isLoading } = useQuery({
-    queryKey: ["planos-exercicios", activeClinicId],
+    queryKey: ["planos-exercicios", activeClinicId, patientRecord?.id, isPatient],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("planos_exercicios")
         .select("*, pacientes(nome), exercicios_plano(*)")
         .order("created_at", { ascending: false });
+
+      // Patients only see their own plans
+      if (isPatient && patientRecord?.id) {
+        query = query.eq("paciente_id", patientRecord.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
+    enabled: isPatient ? !!patientRecord?.id : true,
   });
 
   const savePlan = useMutation({
