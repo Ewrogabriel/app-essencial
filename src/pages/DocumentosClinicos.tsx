@@ -353,7 +353,7 @@ const DocumentosClinicos = () => {
 
             {tipo !== "outros" && (
               <div>
-                <Label>Título (opcional)</Label>
+                <Label>{t("docs.title_optional")}</Label>
                 <Input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder={tipoLabels[tipo]} />
               </div>
             )}
