@@ -201,6 +201,9 @@ export function ChurnPrediction() {
                       Última sessão: {format(new Date(r.lastSession), "dd/MM/yyyy", { locale: ptBR })}
                     </span>
                   )}
+                  
+                  {/* AI Suggestions */}
+                  <AIChurnSuggestions patient={r} />
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600"
