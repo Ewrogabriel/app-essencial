@@ -291,7 +291,7 @@ const PerfilProfissional = () => {
 
       <div className="flex justify-end">
         <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} size="lg">
-          {saveMutation.isPending ? "Salvando..." : "Salvar Perfil"}
+          {saveMutation.isPending ? t("common.saving") : t("profile.save")}
         </Button>
       </div>
 
