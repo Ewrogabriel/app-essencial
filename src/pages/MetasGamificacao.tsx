@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -16,9 +16,11 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
+import { MetasClinicaForm } from "@/components/metas/MetasClinicaForm";
 
 const MetasGamificacao = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isGestor } = useAuth();
+  const [mesSelecionado, setMesSelecionado] = useState(format(new Date(), "yyyy-MM"));
   const [mesSelecionado, setMesSelecionado] = useState(format(new Date(), "yyyy-MM"));
 
   const mesDate = new Date(mesSelecionado + "-01");
