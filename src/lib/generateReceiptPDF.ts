@@ -140,6 +140,7 @@ export async function generateReceiptPDF(data: ReceiptData) {
     doc.text(`CNPJ: ${settings.cnpj}`, margin, y);
   }
 
+  await addWatermarkToAllPages(doc);
   return doc;
 }
 

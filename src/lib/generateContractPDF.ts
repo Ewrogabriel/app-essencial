@@ -157,5 +157,6 @@ export async function generateContractPDF(data: ContractData) {
   addText("CONTRATANTE", 9);
   addText(data.pacienteNome, 9);
 
+  await addWatermarkToAllPages(doc);
   return doc;
 }
