@@ -249,7 +249,7 @@ const PerfilProfissional = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Link da sala (opcional)</Label>
+                <Label>{t("profile.room_link")}</Label>
                 <Input value={teleconsultaLink} onChange={(e) => setTeleconsultaLink(e.target.value)} placeholder="https://meet.google.com/..." />
               </div>
             </div>
