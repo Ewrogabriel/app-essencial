@@ -44,7 +44,7 @@ const emptyForm = {
   nome: "", marca: "", modelo: "", cor: "", quantidade: 1, descricao: "",
   tipo: "equipamento", e_consumo: false, estoque_atual: 0, estoque_minimo: 0,
   data_aquisicao: "", data_ultima_revisao: "", data_proxima_revisao: "",
-  observacoes_manutencao: "", status: "ativo",
+  observacoes_manutencao: "", status: "ativo", valor: 0,
 };
 
 export default function Equipamentos() {
