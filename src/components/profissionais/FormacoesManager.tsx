@@ -47,12 +47,12 @@ export const FormacoesManager = ({ profissionalId, readOnly = false }: Props) =>
     queryKey: ["profissional-formacoes", profissionalId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profissional_formacoes" as any)
+        .from("profissional_formacoes")
         .select("*")
         .eq("profissional_id", profissionalId)
         .order("data_conclusao", { ascending: false });
       if (error) throw error;
-      return (data || []) as Formacao[];
+      return (data || []) as unknown as Formacao[];
     },
     enabled: !!profissionalId,
   });
