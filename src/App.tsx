@@ -61,6 +61,7 @@ const MetasGamificacao = lazy(() => import("./pages/MetasGamificacao"));
 const GamificationAdminPanel = lazy(() => import("./pages/GamificationAdminPanel"));
 const DocumentosClinicos = lazy(() => import("./pages/DocumentosClinicos"));
 const Marketing = lazy(() => import("./pages/Marketing"));
+const Teleconsulta = lazy(() => import("./pages/Teleconsulta"));
 
 const queryClient = new QueryClient();
 
