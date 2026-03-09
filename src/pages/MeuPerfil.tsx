@@ -1,15 +1,16 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Phone, Mail, MapPin, FileText, Edit2, Save, X, AlertCircle, CheckCircle2, Camera, Upload } from "lucide-react";
+import { User, Phone, Mail, MapPin, FileText, Edit2, Save, X, AlertCircle, CheckCircle2, Camera, Upload, FileDown, Clock } from "lucide-react";
 import { PatientAttachments } from "@/components/clinical/PatientAttachments";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 const MeuPerfil = () => {
   const { patientId, profile, loading: authLoading } = useAuth();
