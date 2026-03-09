@@ -3,7 +3,7 @@ import {
   LogOut, Activity, Layers, UserCog, Receipt, Send, Megaphone,
   FileText, Tag, CreditCard, User, Calculator, MessageSquare,
   FileCheck, Handshake,
-  Building2, Crown, Upload, Trophy, Stethoscope,
+  Building2, Crown, Upload, Trophy, Stethoscope, Target,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -95,6 +95,7 @@ export function AppSidebar() {
   const menuComunicacao = [
     { title: t("nav.messages"), url: "/mensagens", icon: MessageSquare },
     { title: t("nav.notices"), url: "/avisos", icon: Megaphone },
+    { title: "Marketing", url: "/marketing", icon: Target },
   ];
 
   const menuConfig = [
@@ -169,7 +170,7 @@ export function AppSidebar() {
         {!collapsed && (
           <div className="flex flex-col">
             <span className="text-sm font-bold text-sidebar-foreground font-[Plus_Jakarta_Sans]">Essencial</span>
-            <span className="text-[11px] text-sidebar-foreground/60">FisioPilates</span>
+            <span className="text-[11px] text-sidebar-foreground/60">Clínicas</span>
           </div>
         )}
       </div>
