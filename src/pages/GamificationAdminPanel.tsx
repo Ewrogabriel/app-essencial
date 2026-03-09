@@ -47,12 +47,13 @@ const emptyGoal: Goal = {
   titulo: "",
   descricao: "",
   tipo: "individual",
-  categoria: "atendimentos",
+  meta_tipo: "atendimentos",
   meta_valor: 0,
   pontos_recompensa: 0,
   data_inicio: "",
   data_fim: "",
   ativo: true,
+  created_by: "",
   target_user_id: null,
 };
 
