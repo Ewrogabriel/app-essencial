@@ -282,9 +282,12 @@ const PatientDashboard = () => {
             {format(hoje, "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={openWhatsAppClinic} className="gap-2">
-          <MessageCircle className="h-4 w-4" /> Suporte
-        </Button>
+        <div className="flex gap-2">
+          {patientId && <ExportPatientPDFButton pacienteId={patientId} label="Minha Ficha" />}
+          <Button variant="outline" size="sm" onClick={openWhatsAppClinic} className="gap-2">
+            <MessageCircle className="h-4 w-4" /> Suporte
+          </Button>
+        </div>
       </div>
 
       {/* Plan warnings - compact */}
