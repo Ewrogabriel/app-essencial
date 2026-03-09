@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { addLogoToPDF, getClinicSettings, formatClinicAddress } from "./pdfLogo";
+import { addLogoToPDF, getClinicSettings, formatClinicAddress, addWatermarkToAllPages } from "./pdfLogo";
 
 interface ReportData {
   resumoExecutivo: string;
