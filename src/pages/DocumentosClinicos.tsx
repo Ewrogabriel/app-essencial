@@ -332,9 +332,9 @@ const DocumentosClinicos = () => {
                 </Select>
               </div>
               <div>
-                <Label>Paciente</Label>
+                <Label>{t("common.patient")}</Label>
                 <Select value={pacienteId} onValueChange={setPacienteId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o paciente" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("docs.select_patient")} /></SelectTrigger>
                   <SelectContent>
                     {pacientes.map((p: any) => (
                       <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
