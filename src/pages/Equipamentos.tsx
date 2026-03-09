@@ -345,6 +345,10 @@ export default function Equipamentos() {
               <Textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} rows={2} />
             </div>
             <div className="space-y-2 col-span-full">
+              <Label>{t("equip.value")}</Label>
+              <Input type="number" min={0} step="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-2 col-span-full">
               <Label>{t("equip.maintenance_notes")}</Label>
               <Textarea value={form.observacoes_manutencao} onChange={(e) => setForm({ ...form, observacoes_manutencao: e.target.value })} rows={2} />
             </div>

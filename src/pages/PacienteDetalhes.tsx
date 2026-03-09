@@ -133,6 +133,10 @@ const PacienteDetalhes = () => {
                         {paciente.tipo_atendimento.charAt(0).toUpperCase() + paciente.tipo_atendimento.slice(1)} • {paciente.telefone}
                     </p>
                 </div>
+                <div className="flex gap-2 ml-auto">
+                    <ExportPatientPDFButton pacienteId={id!} />
+                    <AIPatientAnalysisButton pacienteId={id!} pacienteNome={paciente.nome} />
+                </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
