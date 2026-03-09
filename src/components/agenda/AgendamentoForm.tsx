@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, addWeeks, setHours as setH, setMinutes as setM, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Repeat, DollarSign, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CalendarIcon, Repeat, DollarSign, AlertTriangle, CheckCircle2, Video, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { checkAvailability, getMonthlyAvailability, type AvailabilityCheckResult } from "@/lib/availabilityCheck";
 import { Alert, AlertDescription } from "@/components/ui/alert";
