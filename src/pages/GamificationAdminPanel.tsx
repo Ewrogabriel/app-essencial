@@ -70,7 +70,7 @@ const emptyChallenge: Challenge = {
 };
 
 export default function GamificationAdminPanel() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("goals");
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
