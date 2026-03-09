@@ -17,6 +17,7 @@ import {
   Save, History, Trash2, ExternalLink, Rocket, TrendingUp,
   Mail, MessageSquare
 } from "lucide-react";
+import { MarketingImageGenerator } from "@/components/marketing/MarketingImageGenerator";
 
 interface Ad {
   titulo: string;
