@@ -171,6 +171,7 @@ const PacienteForm = () => {
           setNfInscricaoEstadual(data.nf_inscricao_estadual || "");
           setNfEmail(data.nf_email || "");
           setLgpdConsentimento(data.lgpd_consentimento || false);
+          setConvenioId((data as any).convenio_id || null);
           setLoadingData(false);
         });
     }
