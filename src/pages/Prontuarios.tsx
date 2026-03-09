@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Stethoscope, User, ChevronRight } from "lucide-react";
+import { Search, Stethoscope, User, ChevronRight, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClinic } from "@/hooks/useClinic";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     Table,
     TableBody,
@@ -20,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 const Prontuarios = () => {
     const navigate = useNavigate();
     const { activeClinicId } = useClinic();
+    const { isAdmin, isProfissional } = useAuth();
     const [busca, setBusca] = useState("");
 
     const { data: pacientes = [], isLoading } = useQuery({
@@ -43,7 +45,19 @@ const Prontuarios = () => {
             if (error) throw error;
             return data;
         },
+        enabled: isAdmin || isProfissional,
     });
+
+    // Only admin and professionals can access this page
+    if (!isAdmin && !isProfissional) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
+                <ShieldAlert className="h-12 w-12 opacity-30" />
+                <p className="text-lg font-medium">Acesso restrito</p>
+                <p className="text-sm">Apenas profissionais e administradores podem acessar prontuários.</p>
+            </div>
+        );
+    }
 
     const filtrados = pacientes.filter((p: any) =>
         p.nome.toLowerCase().includes(busca.toLowerCase())
