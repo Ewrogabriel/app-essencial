@@ -236,7 +236,7 @@ Contexto:
         break;
 
       case "document_suggest":
-        systemPrompt = `Você é um fisioterapeuta experiente que auxilia na redação de documentos clínicos.
+        systemPrompt = `Você é um profissional de saúde experiente que auxilia na redação de documentos clínicos.
 Sua tarefa é melhorar o texto do documento mantendo a essência do que o profissional escreveu.
 Use linguagem técnica apropriada, seja claro e objetivo.
 Considere o histórico clínico do paciente (evoluções e avaliações) para enriquecer o documento.
