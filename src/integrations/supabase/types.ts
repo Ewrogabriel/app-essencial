@@ -3051,6 +3051,48 @@ export type Database = {
         }
         Relationships: []
       }
+      profissional_formacoes: {
+        Row: {
+          carga_horaria: number | null
+          certificado_url: string | null
+          created_at: string
+          data_conclusao: string | null
+          id: string
+          instituicao: string | null
+          nome: string
+          observacoes: string | null
+          profissional_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          carga_horaria?: number | null
+          certificado_url?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          id?: string
+          instituicao?: string | null
+          nome: string
+          observacoes?: string | null
+          profissional_id: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          carga_horaria?: number | null
+          certificado_url?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          id?: string
+          instituicao?: string | null
+          nome?: string
+          observacoes?: string | null
+          profissional_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       regras_comissao: {
         Row: {
           ativo: boolean
