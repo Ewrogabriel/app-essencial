@@ -61,6 +61,7 @@ const MetasGamificacao = lazy(() => import("./pages/MetasGamificacao"));
 const GamificationAdminPanel = lazy(() => import("./pages/GamificationAdminPanel"));
 const DocumentosClinicos = lazy(() => import("./pages/DocumentosClinicos"));
 const Marketing = lazy(() => import("./pages/Marketing"));
+const Teleconsulta = lazy(() => import("./pages/Teleconsulta"));
 
 const queryClient = new QueryClient();
 
@@ -150,6 +151,7 @@ const App = () => (
               <Route path="/gamificacao-admin" element={<GamificationAdminPanel />} />
               <Route path="/documentos-clinicos" element={<DocumentosClinicos />} />
               <Route path="/marketing" element={<Marketing />} />
+              <Route path="/teleconsulta" element={<Teleconsulta />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
