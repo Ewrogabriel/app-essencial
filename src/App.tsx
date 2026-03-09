@@ -72,6 +72,8 @@ const DashboardToggle = () => {
   return <PatientDashboard />;
 };
 
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <QueryClientProvider client={queryClient}>
@@ -90,6 +92,7 @@ const App = () => (
             <Route path="/onboarding/:id" element={<PatientOnboarding />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/pre-cadastro" element={<PreCadastro />} />
+            <Route path="/site" element={<LandingPage />} />
             <Route path="/" element={<Index />} />
             <Route path="/selecionar-clinica" element={
               <ProtectedRoute><SelecionarClinica /></ProtectedRoute>
