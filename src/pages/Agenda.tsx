@@ -142,20 +142,23 @@ const Agenda = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-3xl font-bold font-[Plus_Jakarta_Sans]">{isPatient ? "Minha Agenda" : "Agenda"}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold font-[Plus_Jakarta_Sans]">{isPatient ? "Minha Agenda" : "Agenda"}</h1>
         {(!isPatient || isGestor || isAdmin) && (
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={handleExportPDF}>
-              <FileDown className="h-4 w-4 mr-2" />
-              Exportar PDF
+            <Button variant="outline" size="sm" onClick={handleExportPDF}>
+              <FileDown className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Exportar PDF</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
-            <Button variant="outline" onClick={() => navigate("/matriculas?nova=1")}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Nova Matrícula
+            <Button variant="outline" size="sm" onClick={() => navigate("/matriculas?nova=1")}>
+              <UserPlus className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Nova Matrícula</span>
+              <span className="sm:hidden">Matrícula</span>
             </Button>
-            <Button onClick={handleNewAgendamento}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Agendamento
+            <Button size="sm" onClick={handleNewAgendamento}>
+              <Plus className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Novo Agendamento</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           </div>
         )}
