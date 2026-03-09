@@ -52,6 +52,7 @@ const PatientDashboard = () => {
   const [observacao, setObservacao] = useState("");
   const [isReservaDialogOpen, setIsReservaDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("agenda");
+  const { visibleCards, cards, reorderCards, toggleCard, resetToDefault } = useDashboardLayout("patient", PATIENT_DEFAULT_CARDS);
 
   // ── Core Queries (always loaded for KPI cards) ──
   const { data: paciente } = useQuery({
