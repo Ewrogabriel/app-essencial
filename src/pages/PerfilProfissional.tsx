@@ -184,7 +184,7 @@ const PerfilProfissional = () => {
 
         {/* Profile form */}
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle>Informações Pessoais</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t("profile.personal_info")}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
