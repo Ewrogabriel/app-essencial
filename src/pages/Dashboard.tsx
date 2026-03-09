@@ -11,6 +11,8 @@ import {
 import { DailyTipsCard } from "@/components/dashboard/DailyTipsCard";
 import { RequestsCard } from "@/components/dashboard/RequestsCard";
 import { ConvenioCard } from "@/components/dashboard/ConvenioCard";
+import { DashboardCustomizer } from "@/components/dashboard/DashboardCustomizer";
+import { useDashboardLayout, DashboardCard } from "@/hooks/useDashboardLayout";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +41,19 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { ClinicReportButton } from "@/components/reports/ClinicReportButton";
 import { AIKpiInsights } from "@/components/reports/AIKpiInsights";
+
+const ADMIN_DEFAULT_CARDS: DashboardCard[] = [
+  { id: "tips", label: "Dicas do Dia", visible: true },
+  { id: "convenios", label: "Convênios & Parceiros", visible: true },
+  { id: "birthdays", label: "Aniversariantes", visible: true },
+  { id: "stats", label: "Indicadores (KPIs)", visible: true },
+  { id: "chart", label: "Gráfico Mensal", visible: true },
+  { id: "ai-insights", label: "Insights IA", visible: true },
+  { id: "requests", label: "Solicitações", visible: true },
+  { id: "today-agenda", label: "Agenda de Hoje", visible: true },
+  { id: "past-agenda", label: "Sessões Anteriores", visible: true },
+  { id: "recent-patients", label: "Pacientes Recentes", visible: true },
+];
 
 const tipoLabels: Record<string, string> = {
   fisioterapia: "Fisioterapia",
