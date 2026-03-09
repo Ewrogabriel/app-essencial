@@ -54,7 +54,7 @@ export default function PlanosExercicios() {
   const { user, profile, activeClinicId: clinicFromAuth } = useAuth() as any;
   const { activeClinicId } = useClinic();
   const qc = useQueryClient();
-  const { pacientes } = usePacientes();
+  const { data: pacientesData = [] } = usePacientes();
 
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
