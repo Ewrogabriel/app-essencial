@@ -379,6 +379,7 @@ const PacienteForm = () => {
         nf_email: solicitaNf ? nfEmail || null : null,
         lgpd_consentimento: lgpdConsentimento,
         lgpd_consentimento_data: lgpdConsentimento ? new Date().toISOString() : null,
+        convenio_id: convenioId || null,
       };
 
       let savedPatientId = id;
