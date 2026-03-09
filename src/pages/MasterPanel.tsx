@@ -373,9 +373,12 @@ function PlansTab() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo Plano</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Novo Plano</DialogTitle>
+            <DialogDescription>Configure os recursos e limites do plano</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
             <div><Label>Nome *</Label><Input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder="Ex: Profissional" /></div>
             <div><Label>Descrição</Label><Textarea value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} /></div>
             <div><Label>Valor mensal (R$) *</Label><Input type="number" value={form.valor_mensal} onChange={e => setForm(f => ({ ...f, valor_mensal: e.target.value }))} /></div>
@@ -385,6 +388,36 @@ function PlansTab() {
               <div><Label>Máx. Unidades</Label><Input type="number" value={form.max_clinicas} onChange={e => setForm(f => ({ ...f, max_clinicas: e.target.value }))} /></div>
             </div>
             <div><Label>Cor</Label><Input type="color" value={form.cor} onChange={e => setForm(f => ({ ...f, cor: e.target.value }))} className="h-10 w-20" /></div>
+            
+            <hr />
+            <div>
+              <Label className="text-base font-semibold">Recursos Disponíveis no Plano</Label>
+              <p className="text-xs text-muted-foreground mb-3">Selecione os recursos que estarão disponíveis neste plano. Deixe em branco para liberar todos.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto border rounded-lg p-3">
+                {ALL_RESOURCES.map((recurso) => (
+                  <div key={recurso.key} className="flex items-start space-x-2">
+                    <Checkbox
+                      id={`recurso-${recurso.key}`}
+                      checked={form.recursos_selecionados.includes(recurso.key)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setForm(f => ({ ...f, recursos_selecionados: [...f.recursos_selecionados, recurso.key] }));
+                        } else {
+                          setForm(f => ({ ...f, recursos_selecionados: f.recursos_selecionados.filter(k => k !== recurso.key) }));
+                        }
+                      }}
+                    />
+                    <div className="grid gap-1 leading-none">
+                      <label htmlFor={`recurso-${recurso.key}`} className="text-sm font-medium cursor-pointer">
+                        {recurso.label}
+                      </label>
+                      <p className="text-xs text-muted-foreground">{recurso.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
             <Button onClick={handleSave}>Criar Plano</Button>
           </div>
         </DialogContent>
