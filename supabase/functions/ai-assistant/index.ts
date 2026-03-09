@@ -222,7 +222,7 @@ Sugira os 3 melhores horários para este paciente.`;
         break;
 
       case "patient_chatbot":
-        systemPrompt = `Você é um assistente virtual da clínica de fisioterapia e pilates.
+        systemPrompt = `Você é um assistente virtual de uma clínica de saúde multiespecialidade.
 Ajude pacientes com dúvidas sobre agendamentos, pagamentos, horários e serviços.
 Seja cordial, prestativo e objetivo. Use linguagem simples e amigável.
 IMPORTANTE: Você NÃO pode marcar ou cancelar consultas - apenas informar e orientar.
