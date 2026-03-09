@@ -140,11 +140,43 @@ export const FichaRequestButton = ({ pacienteId }: Props) => {
   }
 
   if (request.status === "aprovado") {
+    const hasDownload = !!request.pdf_url;
+    const isExpired = request.pdf_available_until && new Date(request.pdf_available_until) < new Date();
+
     return (
-      <Badge variant="outline" className="gap-1.5 py-1 px-3 border-primary text-primary">
-        <CheckCircle className="h-3 w-3" />
-        Ficha aprovada — entre em contato para receber o PDF
-      </Badge>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Badge variant="outline" className="gap-1.5 py-1 px-3 border-primary text-primary">
+          <CheckCircle className="h-3 w-3" />
+          Ficha aprovada
+        </Badge>
+        {hasDownload && !isExpired ? (
+          <Button
+            variant="default"
+            size="sm"
+            className="gap-2"
+            onClick={() => window.open(request.pdf_url, "_blank")}
+          >
+            <FileDown className="h-4 w-4" /> Baixar Prontuário
+          </Button>
+        ) : hasDownload && isExpired ? (
+          <Badge variant="secondary" className="gap-1 text-xs">
+            <Clock className="h-3 w-3" /> Link expirado
+          </Badge>
+        ) : (
+          <Badge variant="secondary" className="gap-1 text-xs">
+            <Clock className="h-3 w-3" /> PDF em preparação
+          </Badge>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => createRequest.mutate()}
+          disabled={createRequest.isPending}
+          className="text-xs text-muted-foreground h-7"
+        >
+          Nova solicitação
+        </Button>
+      </div>
     );
   }
 
