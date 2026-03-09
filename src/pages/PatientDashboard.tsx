@@ -102,6 +102,23 @@ const PatientDashboard = () => {
     enabled: !!patientId,
   });
 
+  const { data: myExercisePlans = [] } = useQuery({
+    queryKey: ["my-exercise-plans", patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+      const { data, error } = await supabase
+        .from("planos_exercicios")
+        .select("*, exercicios_plano(*)")
+        .eq("paciente_id", patientId)
+        .eq("status", "ativo")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!patientId,
+  });
+
   const { data: frequencyStats } = useQuery({
     queryKey: ["patient-frequency", patientId],
     queryFn: async () => {
