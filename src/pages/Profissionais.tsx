@@ -1,6 +1,7 @@
 import { useState } from "react";
 import DisponibilidadeProfissional from "./DisponibilidadeProfissional";
 import { CommissionRules } from "@/components/profissionais/CommissionRules";
+import { FormacoesManager } from "@/components/profissionais/FormacoesManager";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,7 +20,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Pencil, Plus, Shield, UserCheck, Search, KeyRound, Eye, PenLine, Calculator } from "lucide-react";
+import { Pencil, Plus, Shield, UserCheck, Search, KeyRound, Eye, PenLine, Calculator, GraduationCap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -596,10 +597,13 @@ const Profissionais = () => {
           </DialogHeader>
           <ScrollArea className="max-h-[70vh] pr-4">
             <Tabs defaultValue="dados" className="w-full">
-              <TabsList className={`grid w-full mb-4 ${isCreating ? 'grid-cols-4' : 'grid-cols-3'}`}>
+              <TabsList className={`grid w-full mb-4 ${isCreating ? 'grid-cols-5' : 'grid-cols-4'}`}>
                 <TabsTrigger value="dados">Dados</TabsTrigger>
                 <TabsTrigger value="endereco">Endereço</TabsTrigger>
                 <TabsTrigger value="profissional">Profissional</TabsTrigger>
+                <TabsTrigger value="formacoes" className="gap-1">
+                  <GraduationCap className="h-3 w-3" /> Formações
+                </TabsTrigger>
                 {isCreating && <TabsTrigger value="acesso">Acesso</TabsTrigger>}
               </TabsList>
 
@@ -755,6 +759,19 @@ const Profissionais = () => {
                     <span className="text-sm text-muted-foreground">{corAgenda}</span>
                   </div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="formacoes" className="space-y-4">
+                {editingId ? (
+                  <FormacoesManager 
+                    profissionalId={users.find(u => u.id === editingId)?.user_id || ""} 
+                  />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p>Salve o cadastro primeiro para adicionar formações</p>
+                  </div>
+                )}
               </TabsContent>
 
               {isCreating && (
