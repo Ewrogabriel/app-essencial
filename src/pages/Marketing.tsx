@@ -410,9 +410,14 @@ const Marketing = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Anúncios Gerados</h3>
-                <Button variant="outline" size="sm" onClick={generateClinicAds} disabled={loading} className="gap-1">
-                  <RefreshCw className="h-3 w-3" /> Regenerar
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => saveCampaign("clinic_ads", { ads: clinicAds })} disabled={savingCampaign} className="gap-1">
+                    <Save className="h-3 w-3" /> Salvar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={generateClinicAds} disabled={loading} className="gap-1">
+                    <RefreshCw className="h-3 w-3" /> Regenerar
+                  </Button>
+                </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {clinicAds.map((ad, i) => renderAdCard(ad, i))}
