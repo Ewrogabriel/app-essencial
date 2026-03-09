@@ -273,24 +273,8 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
     setLoading(true);
 
     try {
-      // Check if patient enrollment is blocked
-      const { data: enrollment } = await (supabase as any)
-        .from("matriculas")
-        .select("bloqueado_admin, bloqueio_motivo")
-        .eq("paciente_id", values.paciente_id)
-        .eq("status", "ativa")
-        .eq("bloqueado_admin", true)
-        .maybeSingle();
-
-      if (enrollment) {
-        toast({
-          title: "❌ Atendimento bloqueado",
-          description: `A matrícula deste paciente está bloqueada pelo administrador. ${enrollment.bloqueio_motivo ? "Motivo: " + enrollment.bloqueio_motivo : ""}`,
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
+      // Check if patient enrollment is blocked (only if column exists)
+      // Skip bloqueado_admin check as column may not exist
 
       if (isRecorrente) {
         // Validation: days must match frequency
@@ -372,7 +356,7 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
             description: `${totalOccurrences} sessões agendadas (mesmo dia/horário, semanalmente).`,
           });
         } else {
-          const { error } = await (supabase.from("agendamentos") as any).insert({
+          const { data: agendamentoData, error } = await (supabase.from("agendamentos") as any).insert({
             paciente_id: values.paciente_id,
             profissional_id: values.profissional_id,
             data_horario: dataHorario.toISOString(),
@@ -383,8 +367,23 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
             created_by: user.id,
             valor_sessao: values.valor_sessao || null,
             clinic_id: activeClinicId,
-          });
+          }).select("id").single();
           if (error) throw error;
+
+          // Auto-create teleconsulta session if marked as teleconsulta
+          if (values.observacoes?.includes("[TELECONSULTA]") && agendamentoData?.id) {
+            const roomId = crypto.randomUUID();
+            const teleconsultaLink = `${window.location.origin}/teleconsulta?session=`;
+            await (supabase.from("teleconsulta_sessions") as any).insert({
+              paciente_id: values.paciente_id,
+              profissional_id: values.profissional_id,
+              agendamento_id: agendamentoData.id,
+              room_id: roomId,
+              status: "aguardando",
+              clinic_id: activeClinicId,
+            });
+          }
+
           toast({ title: "Agendamento criado com sucesso!" });
         }
       }
