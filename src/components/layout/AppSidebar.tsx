@@ -3,7 +3,7 @@ import {
   LogOut, Activity, Layers, UserCog, Receipt, Send, Megaphone,
   FileText, Tag, CreditCard, User, Calculator, MessageSquare,
   FileCheck, Handshake,
-  Building2, Crown, Upload, Trophy, Stethoscope,
+  Building2, Crown, Upload, Trophy, Stethoscope, Target,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
