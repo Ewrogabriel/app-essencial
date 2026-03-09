@@ -1427,6 +1427,65 @@ export type Database = {
           },
         ]
       }
+      exercicios_plano: {
+        Row: {
+          carga: string | null
+          created_at: string
+          descricao: string | null
+          frequencia: string | null
+          id: string
+          imagem_url: string | null
+          nome: string
+          observacoes: string | null
+          ordem: number | null
+          plano_id: string
+          repeticoes: string | null
+          series: number | null
+          tempo_execucao: string | null
+          video_url: string | null
+        }
+        Insert: {
+          carga?: string | null
+          created_at?: string
+          descricao?: string | null
+          frequencia?: string | null
+          id?: string
+          imagem_url?: string | null
+          nome: string
+          observacoes?: string | null
+          ordem?: number | null
+          plano_id: string
+          repeticoes?: string | null
+          series?: number | null
+          tempo_execucao?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          carga?: string | null
+          created_at?: string
+          descricao?: string | null
+          frequencia?: string | null
+          id?: string
+          imagem_url?: string | null
+          nome?: string
+          observacoes?: string | null
+          ordem?: number | null
+          plano_id?: string
+          repeticoes?: string | null
+          series?: number | null
+          tempo_execucao?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercicios_plano_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos_exercicios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           categoria: string | null
@@ -2769,6 +2828,66 @@ export type Database = {
           },
         ]
       }
+      planos_exercicios: {
+        Row: {
+          clinic_id: string | null
+          created_at: string
+          descricao: string | null
+          duracao_semanas: number | null
+          gerado_por_ia: boolean | null
+          id: string
+          objetivo: string | null
+          paciente_id: string
+          profissional_id: string
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          duracao_semanas?: number | null
+          gerado_por_ia?: boolean | null
+          id?: string
+          objetivo?: string | null
+          paciente_id: string
+          profissional_id: string
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          duracao_semanas?: number | null
+          gerado_por_ia?: boolean | null
+          id?: string
+          objetivo?: string | null
+          paciente_id?: string
+          profissional_id?: string
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planos_exercicios_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planos_exercicios_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_plans: {
         Row: {
           ativo: boolean | null
@@ -3650,7 +3769,9 @@ export type Database = {
           created_at: string
           duration_seconds: number | null
           ended_at: string | null
+          evolution_id: string | null
           id: string
+          notas_pos_consulta: string | null
           paciente_id: string
           profissional_id: string
           resumo_clinico: string | null
@@ -3669,7 +3790,9 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           ended_at?: string | null
+          evolution_id?: string | null
           id?: string
+          notas_pos_consulta?: string | null
           paciente_id: string
           profissional_id: string
           resumo_clinico?: string | null
@@ -3688,7 +3811,9 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           ended_at?: string | null
+          evolution_id?: string | null
           id?: string
+          notas_pos_consulta?: string | null
           paciente_id?: string
           profissional_id?: string
           resumo_clinico?: string | null
@@ -3713,6 +3838,13 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teleconsulta_sessions_evolution_id_fkey"
+            columns: ["evolution_id"]
+            isOneToOne: false
+            referencedRelation: "evolutions"
             referencedColumns: ["id"]
           },
           {

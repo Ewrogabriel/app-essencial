@@ -2,7 +2,7 @@ import { useState, lazy, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Activity, AlertCircle, Clock, MessageCircle, ShoppingBag, Share2 } from "lucide-react";
+import { Calendar, DollarSign, Activity, AlertCircle, Clock, MessageCircle, ShoppingBag, Share2, Dumbbell, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -98,6 +98,23 @@ const PatientDashboard = () => {
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+    enabled: !!patientId,
+  });
+
+  const { data: myExercisePlans = [] } = useQuery({
+    queryKey: ["my-exercise-plans", patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+      const { data, error } = await supabase
+        .from("planos_exercicios")
+        .select("*, exercicios_plano(*)")
+        .eq("paciente_id", patientId)
+        .eq("status", "ativo")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!patientId,
   });
@@ -423,6 +440,42 @@ const PatientDashboard = () => {
         </Card>
       )}
 
+
+      {/* Exercise Plans Widget */}
+      {myExercisePlans.length > 0 && (
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Dumbbell className="h-4 w-4 text-primary" />
+              Meus Planos de Exercícios
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {myExercisePlans.map((plan: any) => (
+              <div key={plan.id} className="border rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-sm">{plan.titulo}</p>
+                    <p className="text-xs text-muted-foreground">{plan.duracao_semanas} semanas • {plan.exercicios_plano?.length || 0} exercícios</p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">{plan.status}</Badge>
+                </div>
+                {plan.exercicios_plano?.slice(0, 3).map((ex: any, i: number) => (
+                  <div key={i} className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
+                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[10px] text-primary font-bold">{i + 1}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-foreground">{ex.nome}</span>
+                      {ex.series && <span className="ml-1">{ex.series}x{ex.repeticoes}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Dicas do Dia */}
       <DailyTipsCard tipo="paciente" />
