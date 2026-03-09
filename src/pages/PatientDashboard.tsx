@@ -2,7 +2,7 @@ import { useState, lazy, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Activity, AlertCircle, Clock, MessageCircle, ShoppingBag } from "lucide-react";
+import { Calendar, DollarSign, Activity, AlertCircle, Clock, MessageCircle, ShoppingBag, Share2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,8 @@ import { toast } from "@/hooks/use-toast";
 import { DashboardSkeleton } from "@/components/ui/skeletons";
 import { DailyTipsCard } from "@/components/dashboard/DailyTipsCard";
 import { ConvenioCard } from "@/components/dashboard/ConvenioCard";
+import { DashboardCustomizer } from "@/components/dashboard/DashboardCustomizer";
+import { useDashboardLayout, DashboardCard } from "@/hooks/useDashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RescheduleDialog } from "@/components/agenda/RescheduleDialog";
 import { NpsSurvey } from "@/components/patient/NpsSurvey";
@@ -23,6 +25,15 @@ import { usePatientProdutos } from "@/hooks/usePatientProdutos";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FichaRequestButton } from "@/components/patient/FichaRequestButton";
 import { PatientChatbot } from "@/components/patient/PatientChatbot";
+
+const PATIENT_DEFAULT_CARDS: DashboardCard[] = [
+  { id: "kpi", label: "Indicadores", visible: true },
+  { id: "products", label: "Produtos para Você", visible: true },
+  { id: "tips", label: "Dicas do Dia", visible: true },
+  { id: "convenios", label: "Convênios & Parceiros", visible: true },
+  { id: "tabs", label: "Abas (Agenda, Financeiro, etc.)", visible: true },
+  { id: "nps", label: "Avaliação de Experiência", visible: true },
+];
 
 // Lazy load tab components
 const PatientAgendaTab = lazy(() => import("@/components/patient/PatientAgendaTab").then(m => ({ default: m.PatientAgendaTab })));
@@ -41,6 +52,7 @@ const PatientDashboard = () => {
   const [observacao, setObservacao] = useState("");
   const [isReservaDialogOpen, setIsReservaDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("agenda");
+  const { visibleCards, cards, reorderCards, toggleCard, resetToDefault } = useDashboardLayout("patient", PATIENT_DEFAULT_CARDS);
 
   // ── Core Queries (always loaded for KPI cards) ──
   const { data: paciente } = useQuery({
@@ -283,8 +295,16 @@ const PatientDashboard = () => {
             {format(hoje, "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           {patientId && <FichaRequestButton pacienteId={patientId} />}
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+            const clinicName = clinicSettings?.nome || "nossa clínica";
+            const msg = `Olá! 😊 Quero indicar a ${clinicName} para você! Atendimento incrível em fisioterapia e pilates. Confira: ${window.location.origin}\n\nVocê vai adorar! 💪`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+          }}>
+            <Share2 className="h-4 w-4" /> Indicar Clínica
+          </Button>
+          <DashboardCustomizer cards={cards} onReorder={reorderCards} onToggle={toggleCard} onReset={resetToDefault} />
           <Button variant="outline" size="sm" onClick={openWhatsAppClinic} className="gap-2">
             <MessageCircle className="h-4 w-4" /> Suporte
           </Button>

@@ -11,6 +11,8 @@ import {
 import { DailyTipsCard } from "@/components/dashboard/DailyTipsCard";
 import { RequestsCard } from "@/components/dashboard/RequestsCard";
 import { ConvenioCard } from "@/components/dashboard/ConvenioCard";
+import { DashboardCustomizer } from "@/components/dashboard/DashboardCustomizer";
+import { useDashboardLayout, DashboardCard } from "@/hooks/useDashboardLayout";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +41,19 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { ClinicReportButton } from "@/components/reports/ClinicReportButton";
 import { AIKpiInsights } from "@/components/reports/AIKpiInsights";
+
+const ADMIN_DEFAULT_CARDS: DashboardCard[] = [
+  { id: "tips", label: "Dicas do Dia", visible: true },
+  { id: "convenios", label: "Convênios & Parceiros", visible: true },
+  { id: "birthdays", label: "Aniversariantes", visible: true },
+  { id: "stats", label: "Indicadores (KPIs)", visible: true },
+  { id: "chart", label: "Gráfico Mensal", visible: true },
+  { id: "ai-insights", label: "Insights IA", visible: true },
+  { id: "requests", label: "Solicitações", visible: true },
+  { id: "today-agenda", label: "Agenda de Hoje", visible: true },
+  { id: "past-agenda", label: "Sessões Anteriores", visible: true },
+  { id: "recent-patients", label: "Pacientes Recentes", visible: true },
+];
 
 const tipoLabels: Record<string, string> = {
   fisioterapia: "Fisioterapia",
@@ -412,6 +427,82 @@ const Dashboard = () => {
     return <DashboardSkeleton />;
   }
 
+  const { visibleCards, cards, reorderCards, toggleCard, resetToDefault } = useDashboardLayout("admin", ADMIN_DEFAULT_CARDS);
+
+  const isCardVisible = (id: string) => visibleCards.some(c => c.id === id);
+
+  // Build ordered sections map
+  const renderSection = (cardId: string) => {
+    switch (cardId) {
+      case "tips": return <DailyTipsCard key="tips" tipo={tipRole} />;
+      case "convenios": return <ConvenioCard key="convenios" />;
+      case "birthdays": return birthdays.length > 0 ? (
+        <Card key="birthdays" className="border-pink-200 bg-pink-50/50">
+          <CardHeader className="py-3">
+            <CardTitle className="text-md flex items-center gap-2 text-pink-700">
+              <PartyPopper className="h-5 w-5" /> Aniversariantes da Semana
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <div className="flex flex-wrap gap-2">
+              {birthdays.map((b: any) => (
+                <Badge key={b.id} variant="outline" className="bg-white border-pink-200 text-pink-700 py-1.5 px-3 gap-2 flex items-center cursor-pointer hover:bg-pink-100 transition-colors"
+                  onClick={() => sendBirthdayWishes(b.nome, b.telefone)}>
+                  <span className="font-bold">{b.nome}</span>
+                  <MessageCircle className="h-3 w-3" />
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null;
+      case "stats": return (
+        <div key="stats" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {stats.map((stat) => (
+            <Card key={stat.title} className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                <div className={`rounded-lg p-2 ${stat.color}`}><stat.icon className="h-4 w-4" /></div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+      case "chart": return monthlyChart.length > 0 ? (
+        <Card key="chart">
+          <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary" /> Sessões por Mês (Últimos 6 meses)</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={monthlyChart}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="mes" className="text-xs" /><YAxis className="text-xs" /><Tooltip />
+                <Bar dataKey="realizadas" name="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="faltas" name="Faltas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="canceladas" name="Canceladas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      ) : null;
+      case "ai-insights": return (isAdmin || isGestor) ? (
+        <AIKpiInsights key="ai-insights" kpiData={{
+          pacientesAtivos: pacientes.filter((p: any) => p.status === "ativo").length,
+          sessoesRealizadas: todayStats?.realizados || 0,
+          taxaFaltas: todayStats?.total ? Math.round((todayStats.faltas / todayStats.total) * 100) : 0,
+          faturamento: financeData?.receita || 0,
+          despesas: financeData?.custos || 0,
+          ocupacao: occupancyRate,
+        }} />
+      ) : null;
+      case "requests": return <RequestsCard key="requests" />;
+      default: return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AdminOnboardingWizard />
@@ -426,6 +517,7 @@ const Dashboard = () => {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           {(isAdmin || isGestor) && <ClinicReportButton />}
+          <DashboardCustomizer cards={cards} onReorder={reorderCards} onToggle={toggleCard} onReset={resetToDefault} />
           <span className="inline-flex items-center gap-1 text-foreground font-medium bg-muted/50 px-3 py-1.5 rounded-full text-sm">
             <Clock className="h-4 w-4 text-primary" />
             {format(currentTime, "HH:mm:ss")}
@@ -454,348 +546,115 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Dicas do Dia - AI powered */}
-      <DailyTipsCard tipo={tipRole} />
+      {/* Dynamic card rendering based on user preferences */}
+      {visibleCards.map(card => renderSection(card.id))}
 
-      <ConvenioCard />
-
-      {/* Birthdays - compact in the top row if present */}
-      {birthdays.length > 0 && (
-        <Card className="border-pink-200 bg-pink-50/50">
-          <CardHeader className="py-3">
-            <CardTitle className="text-md flex items-center gap-2 text-pink-700">
-              <PartyPopper className="h-5 w-5" />
-              Aniversariantes da Semana
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pb-3">
-            <div className="flex flex-wrap gap-2">
-              {birthdays.map((b: any) => (
-                <Badge key={b.id} variant="outline" className="bg-white border-pink-200 text-pink-700 py-1.5 px-3 gap-2 flex items-center cursor-pointer hover:bg-pink-100 transition-colors"
-                  onClick={() => sendBirthdayWishes(b.nome, b.telefone)}>
-                  <span className="font-bold">{b.nome}</span>
-                  <span className="text-[10px] opacity-70">
-                    {b.dia_aniversario === hoje.getDate() && b.mes_aniversario === (hoje.getMonth() + 1) ? "HOJE! 🎂" : `${b.dia_aniversario}/${b.mes_aniversario}`}
-                  </span>
-                  <MessageCircle className="h-3 w-3" />
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {stats.map((stat) => (
-          <Card key={stat.title} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <div className={`rounded-lg p-2 ${stat.color}`}>
-                <stat.icon className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stat.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Monthly Chart */}
-      {monthlyChart.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Sessões por Mês (Últimos 6 meses)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={monthlyChart}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="mes" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip />
-                <Bar dataKey="realizadas" name="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="faltas" name="Faltas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="canceladas" name="Canceladas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* AI KPI Insights */}
-      {(isAdmin || isGestor) && (
-        <AIKpiInsights 
-          kpiData={{
-            pacientesAtivos: pacientes.filter((p: any) => p.status === "ativo").length,
-            sessoesRealizadas: todayStats?.realizados || 0,
-            taxaFaltas: todayStats?.total ? Math.round((todayStats.faltas / todayStats.total) * 100) : 0,
-            faturamento: financeData?.receita || 0,
-            despesas: financeData?.custos || 0,
-            ocupacao: occupancyRate,
-          }}
-        />
-      )}
-
-      {/* All Requests Card */}
-      <RequestsCard />
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarCheck className="h-5 w-5 text-blue-500" />
-              Hoje na Agenda
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/agenda")}>
-              Ver completa <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {todayAgenda.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Nenhum agendamento para hoje.</p>
-            ) : (
-              <div className="space-y-4">
-                {todayAgenda.map((item: any) => (
-                  <div key={item.id} className="flex items-start justify-between p-3 rounded-lg border bg-muted/30 group">
-                    <div className="min-w-0">
-                      <p className="font-bold text-sm cursor-pointer hover:text-primary transition-colors" onClick={() => { setSelectedSession(item); setIsDetailOpen(true); }}>
-                        {format(new Date(item.data_horario), "HH:mm")} - {" "}
-                        <span>{item.pacientes?.nome}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {item.tipo_atendimento} • {item.status}
-                      </p>
-                    </div>
-                    <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      {item.status === "agendado" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          title="Confirmar Presença"
-                          className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          onClick={() => updateStatus.mutate({ id: item.id, status: "confirmado" })}
-                        >
-                          <CheckCircle2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {(item.status === "agendado" || item.status === "confirmado") && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            title="Check-in (Realizado)"
-                            className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                            onClick={() => updateStatus.mutate({ id: item.id, status: "realizado" })}
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            title="Marcar Falta"
-                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => updateStatus.mutate({ id: item.id, status: "falta" })}
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        title="Falar com Profissional"
-                        className="h-7 w-7 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                        onClick={() => {
-                          const prof = profissionais.find((p: any) => p.user_id === item.profissional_id);
-                          const cleanPhone = prof?.telefone?.replace(/\D/g, "");
-                          if (cleanPhone) {
-                            const fullPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-                            window.open(`https://wa.me/${fullPhone}`, "_blank");
-                          } else {
-                            toast({ title: "Profissional sem telefone cadastrado", variant: "destructive" });
-                          }
-                        }}
-                      >
-                        <UserCheck className="h-4 w-4" />
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        title="WhatsApp Paciente"
-                        className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                        onClick={() => {
-                          const cleanPhone = item.pacientes?.telefone?.replace(/\D/g, "");
-                          if (cleanPhone) {
-                            const fullPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-                            window.open(`https://wa.me/${fullPhone}`, "_blank");
-                          } else {
-                            toast({ title: "Paciente sem telefone cadastrado", variant: "destructive" });
-                          }
-                        }}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        title="Reagendar"
-                        className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={() => {
-                          // Ideally open ReagendamentoDialog or navigate
-                          navigate(`/pacientes/${item.paciente_id}/detalhes`);
-                        }}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        title="Cancelar Sessão"
-                        className="h-7 w-7 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                        onClick={() => updateStatus.mutate({ id: item.id, status: "cancelado" })}
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
+      {/* Today/Past agenda grid */}
+      {(isCardVisible("today-agenda") || isCardVisible("past-agenda")) && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {isCardVisible("today-agenda") && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CalendarCheck className="h-5 w-5 text-primary" /> Hoje na Agenda
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/agenda")}>Ver completa <ArrowRight className="h-3 w-3 ml-1" /></Button>
+              </CardHeader>
+              <CardContent>
+                {todayAgenda.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nenhum agendamento para hoje.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {todayAgenda.map((item: any) => (
+                      <div key={item.id} className="flex items-start justify-between p-3 rounded-lg border bg-muted/30 group">
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm cursor-pointer hover:text-primary transition-colors" onClick={() => { setSelectedSession(item); setIsDetailOpen(true); }}>
+                            {format(new Date(item.data_horario), "HH:mm")} - <span>{item.pacientes?.nome}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">{item.tipo_atendimento} • {item.status}</p>
+                        </div>
+                        <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          {item.status === "agendado" && (
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-primary" onClick={() => updateStatus.mutate({ id: item.id, status: "confirmado" })}><CheckCircle2 className="h-4 w-4" /></Button>
+                          )}
+                          {(item.status === "agendado" || item.status === "confirmado") && (
+                            <>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-600" onClick={() => updateStatus.mutate({ id: item.id, status: "realizado" })}><CheckCircle2 className="h-4 w-4" /></Button>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => updateStatus.mutate({ id: item.id, status: "falta" })}><XCircle className="h-4 w-4" /></Button>
+                            </>
+                          )}
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-600" onClick={() => {
+                            const cleanPhone = item.pacientes?.telefone?.replace(/\D/g, "");
+                            if (cleanPhone) window.open(`https://wa.me/${cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`}`, "_blank");
+                          }}><MessageCircle className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground" onClick={() => updateStatus.mutate({ id: item.id, status: "cancelado" })}><XCircle className="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Sessões Passadas */}
+                )}
+              </CardContent>
+            </Card>
+          )}
+          {isCardVisible("past-agenda") && (
+            <Card>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Clock className="h-5 w-5 text-muted-foreground" /> Sessões Anteriores (Ontem)</CardTitle></CardHeader>
+              <CardContent>
+                {pastAgenda.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nenhuma sessão registrada ontem.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {pastAgenda.map((item: any) => (
+                      <div key={item.id} className="flex items-start justify-between p-3 rounded-lg border bg-muted/10 group">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm">{format(new Date(item.data_horario), "HH:mm")} - {item.pacientes?.nome}</p>
+                          <Badge variant={item.status === "realizado" ? "default" : item.status === "falta" ? "destructive" : "outline"} className="text-[10px] h-4 px-1">{item.status}</Badge>
+                        </div>
+                        {item.status === "falta" && (
+                          <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={() => navigate(`/pacientes/${item.paciente_id}/detalhes`)}><RefreshCw className="h-3 w-3 mr-1" /> Reagendar</Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+      {isCardVisible("recent-patients") && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5 text-gray-500" />
-              Sessões Anteriores (Ontem)
-            </CardTitle>
+            <CardTitle className="text-lg">Pacientes Recentes</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/pacientes")}>Ver todos <ArrowRight className="h-3 w-3 ml-1" /></Button>
           </CardHeader>
           <CardContent>
-            {pastAgenda.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Nenhuma sessão registrada ontem.</p>
+            {recentes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                <Users className="h-10 w-10 mb-3 opacity-40" />
+                <p className="text-sm">Nenhum paciente cadastrado ainda</p>
+              </div>
             ) : (
-              <div className="space-y-4">
-                {pastAgenda.map((item: any) => (
-                  <div key={item.id} className="flex items-start justify-between p-3 rounded-lg border bg-muted/10 group">
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm cursor-pointer hover:text-primary transition-colors" onClick={() => { setSelectedSession(item); setIsDetailOpen(true); }}>
-                        {format(new Date(item.data_horario), "HH:mm")} - {" "}
-                        <span>{item.pacientes?.nome}</span>
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={
-                          item.status === "realizado" ? "default" :
-                            item.status === "falta" ? "destructive" :
-                              item.status === "cancelado" ? "outline" : "secondary"
-                        } className="text-[10px] h-4 px-1">
-                          {item.status}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground truncate">
-                          Prof: {profissionais.find((p: any) => p.user_id === item.profissional_id)?.nome || "Não definido"}
-                        </span>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {recentes.map((p: any) => (
+                  <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                        {(p.nome || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate hover:underline cursor-pointer text-primary" onClick={() => navigate(`/pacientes/${p.id}/detalhes`)}>{p.nome}</p>
+                        <p className="text-xs text-muted-foreground">{p.telefone}</p>
                       </div>
                     </div>
-                    {item.status === "falta" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-[10px] px-2 border-blue-200 text-blue-700 hover:bg-blue-50"
-                        onClick={() => navigate(`/pacientes/${item.paciente_id}/detalhes`)}
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" /> Reagendar
-                      </Button>
-                    )}
+                    <Badge variant="secondary" className="text-[10px]">{tipoLabels[p.tipo_atendimento] || p.tipo_atendimento}</Badge>
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
-
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Pacientes Recentes</CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/pacientes")}>
-            Ver todos <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {recentes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-              <Users className="h-10 w-10 mb-3 opacity-40" />
-              <p className="text-sm">Nenhum paciente cadastrado ainda</p>
-              <Button
-                variant="link"
-                size="sm"
-                className="mt-2"
-                onClick={() => navigate("/pacientes/novo")}
-              >
-                Cadastrar primeiro paciente <ArrowRight className="h-3 w-3 ml-1" />
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {recentes.map((p: any) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                      {(p.nome || "?").charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p
-                        className="text-sm font-medium truncate hover:underline cursor-pointer text-primary"
-                        onClick={() => navigate(`/pacientes/${p.id}/detalhes`)}
-                      >
-                        {p.nome}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{p.telefone}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                      onClick={() => {
-                        const cleanPhone = p.telefone?.replace(/\D/g, "");
-                        if (cleanPhone) {
-                          const fullPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-                          window.open(`https://wa.me/${fullPhone}`, "_blank");
-                        } else {
-                          toast({ title: "Paciente sem telefone cadastrado", variant: "destructive" });
-                        }
-                      }}
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {tipoLabels[p.tipo_atendimento] || p.tipo_atendimento}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      )}
       {/* Session Details Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="sm:max-w-[425px]">

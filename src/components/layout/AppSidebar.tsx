@@ -58,6 +58,7 @@ const menuAtendimento = [
   { title: "Pacientes", url: "/pacientes", icon: Users },
   { title: "Prontuários", url: "/prontuarios", icon: ClipboardList },
   { title: "Matrículas", url: "/matriculas", icon: Receipt },
+  { title: "Documentos", url: "/documentos-clinicos", icon: Stethoscope },
 ];
 
 const menuEquipeFinanceiro = [
