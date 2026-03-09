@@ -588,6 +588,11 @@ export function MasterMarketingTab() {
           )}
         </TabsContent>
 
+        {/* SITE EDITOR */}
+        <TabsContent value="site-editor" className="space-y-6">
+          <LandingSiteEditor />
+        </TabsContent>
+
         {/* HISTORY */}
         <TabsContent value="history" className="space-y-6">
           <Card>
