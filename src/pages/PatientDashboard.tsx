@@ -511,6 +511,14 @@ const PatientDashboard = () => {
         agendamento={rescheduleData}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ["patient-solicitacoes"] })}
       />
+
+      {/* AI Chatbot */}
+      <PatientChatbot
+        pacienteNome={paciente?.nome || profile?.nome || "Paciente"}
+        proximaConsulta={nextAgenda ? format(new Date(nextAgenda.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : undefined}
+        pendencias={pendenciasCount.length}
+        sessoesRestantes={sessoesRestantes}
+      />
     </div>
   );
 };
