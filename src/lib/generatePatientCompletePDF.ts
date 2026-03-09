@@ -226,8 +226,10 @@ export const generatePatientCompletePDF = async (data: PatientPDFData) => {
   return doc;
 };
 
-export const downloadPatientCompletePDF = async (data: PatientPDFData) => {
+export const downloadPatientCompletePDF = async (data: PatientPDFData): Promise<Blob> => {
   const doc = await generatePatientCompletePDF(data);
   const nome = (data.paciente.nome || "paciente").replace(/\s+/g, "_");
   doc.save(`ficha_completa_${nome}.pdf`);
+  // Return blob for upload
+  return doc.output("blob");
 };

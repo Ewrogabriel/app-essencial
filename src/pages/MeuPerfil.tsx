@@ -1,15 +1,16 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Phone, Mail, MapPin, FileText, Edit2, Save, X, AlertCircle, CheckCircle2, Camera, Upload } from "lucide-react";
+import { User, Phone, Mail, MapPin, FileText, Edit2, Save, X, AlertCircle, CheckCircle2, Camera, Upload, FileDown, Clock } from "lucide-react";
 import { PatientAttachments } from "@/components/clinical/PatientAttachments";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 const MeuPerfil = () => {
   const { patientId, profile, loading: authLoading } = useAuth();
@@ -44,6 +45,29 @@ const MeuPerfil = () => {
         .order("created_at", { ascending: false });
       if (error) {
         console.error("Error fetching pending changes:", error);
+        return [];
+      }
+      return data ?? [];
+    },
+    enabled: !!patientId,
+  });
+
+  // Fetch approved ficha requests with available PDFs
+  const { data: approvedFichas = [] } = useQuery({
+    queryKey: ["patient-approved-fichas", patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+      const now = new Date().toISOString();
+      const { data, error } = await (supabase
+        .from("ficha_requests" as any) as any)
+        .select("*")
+        .eq("paciente_id", patientId)
+        .eq("status", "aprovado")
+        .not("pdf_url", "is", null)
+        .gte("pdf_available_until", now)
+        .order("reviewed_at", { ascending: false });
+      if (error) {
+        console.error("Error fetching approved fichas:", error);
         return [];
       }
       return data ?? [];
@@ -433,6 +457,54 @@ const MeuPerfil = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Available PDF from Approved Ficha Requests */}
+      {approvedFichas.length > 0 && (
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileDown className="h-5 w-5 text-green-600" />
+              Prontuário Disponível
+            </CardTitle>
+            <CardDescription>
+              Seu prontuário foi aprovado e está disponível para download por tempo limitado.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {approvedFichas.map((ficha: any) => {
+                const expiryDate = new Date(ficha.pdf_available_until);
+                const daysRemaining = differenceInDays(expiryDate, new Date());
+                return (
+                  <div key={ficha.id} className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                    <div>
+                      <p className="font-medium text-sm">Ficha Completa do Prontuário</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="gap-1 text-xs">
+                          <Clock className="h-3 w-3" />
+                          {daysRemaining > 0 ? `${daysRemaining} dias restantes` : "Expira hoje"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Aprovado em {format(new Date(ficha.reviewed_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => window.open(ficha.pdf_url, "_blank")}
+                      className="gap-2"
+                    >
+                      <FileDown className="h-4 w-4" />
+                      Baixar PDF
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Documents */}
       <PatientAttachments pacienteId={patientId!} />

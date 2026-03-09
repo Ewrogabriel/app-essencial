@@ -101,6 +101,20 @@ const PacienteForm = () => {
     },
   });
 
+  const { data: convenios = [] } = useQuery({
+    queryKey: ["convenios-ativos"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("convenios")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      return data ?? [];
+    },
+  });
+
+  const [convenioId, setConvenioId] = useState<string | null>(null);
+
   useEffect(() => {
     if (id) {
       setLoadingData(true);
@@ -157,6 +171,7 @@ const PacienteForm = () => {
           setNfInscricaoEstadual(data.nf_inscricao_estadual || "");
           setNfEmail(data.nf_email || "");
           setLgpdConsentimento(data.lgpd_consentimento || false);
+          setConvenioId((data as any).convenio_id || null);
           setLoadingData(false);
         });
     }
@@ -364,6 +379,7 @@ const PacienteForm = () => {
         nf_email: solicitaNf ? nfEmail || null : null,
         lgpd_consentimento: lgpdConsentimento,
         lgpd_consentimento_data: lgpdConsentimento ? new Date().toISOString() : null,
+        convenio_id: convenioId || null,
       };
 
       let savedPatientId = id;
@@ -803,6 +819,20 @@ const PacienteForm = () => {
                 <SelectContent>
                   {(modalidades || []).map((mod: any) => (
                     <SelectItem key={mod.id} value={mod.nome.toLowerCase()}>{mod.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Convênio</Label>
+              <Select value={convenioId || "none"} onValueChange={(v) => setConvenioId(v === "none" ? null : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um convênio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {(convenios || []).map((conv: any) => (
+                    <SelectItem key={conv.id} value={conv.id}>{conv.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
