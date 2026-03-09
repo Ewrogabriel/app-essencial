@@ -33,7 +33,7 @@ interface SocialPost {
 }
 
 const Marketing = () => {
-  const { settings } = useClinicSettings();
+  const { data: settings } = useClinicSettings();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("clinic-ads");
 
