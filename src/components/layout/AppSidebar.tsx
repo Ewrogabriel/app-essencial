@@ -77,6 +77,7 @@ export function AppSidebar() {
     { title: t("nav.enrollments"), url: "/matriculas", icon: Receipt },
     { title: "Teleconsulta", url: "/teleconsulta-hub", icon: Video },
     { title: t("nav.documents"), url: "/documentos-clinicos", icon: Stethoscope },
+    { title: "Planos de Exercícios", url: "/planos-exercicios", icon: Dumbbell },
   ];
 
   const menuEquipeFinanceiro = [
