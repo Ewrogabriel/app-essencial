@@ -141,7 +141,7 @@ const PerfilProfissional = () => {
     await supabase.storage.from("professional-documents").remove([doc.file_path]);
     await (supabase.from("professional_documents") as any).delete().eq("id", doc.id);
     queryClient.invalidateQueries({ queryKey: ["my-professional-docs"] });
-    toast({ title: "Documento removido." });
+    toast({ title: t("profile.doc_removed") });
   };
 
   const initials = nome ? nome.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "P";
