@@ -255,6 +255,14 @@ function ClinicsTab() {
             </div>
 
             <hr />
+            <h3 className="font-semibold text-sm">Cadastrar Administrador</h3>
+            <p className="text-xs text-muted-foreground">O admin receberá as credenciais de acesso por este sistema</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label>Nome do Admin</Label><Input value={form.admin_nome} onChange={e => setForm(f => ({ ...f, admin_nome: e.target.value }))} placeholder="Nome completo" /></div>
+              <div><Label>E-mail do Admin</Label><Input type="email" value={form.admin_email} onChange={e => setForm(f => ({ ...f, admin_email: e.target.value }))} placeholder="admin@exemplo.com" /></div>
+            </div>
+
+            <hr />
             <h3 className="font-semibold text-sm">Plano</h3>
             <Select value={form.plan_id} onValueChange={v => setForm(f => ({ ...f, plan_id: v }))}>
               <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
@@ -269,7 +277,7 @@ function ClinicsTab() {
 
             <div><Label>Observações</Label><Textarea value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} /></div>
 
-            <Button onClick={handleSave}>Criar Clínica</Button>
+            <Button onClick={handleSave}>Criar Clínica e Gerar Contrato</Button>
           </div>
         </DialogContent>
       </Dialog>
