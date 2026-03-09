@@ -461,6 +461,12 @@ const PatientDashboard = () => {
           </Suspense>
         </TabsContent>
 
+        <TabsContent value="conquistas" className="mt-4">
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            {patientId && <GamificationDashboard pacienteId={patientId} />}
+          </Suspense>
+        </TabsContent>
+
         <TabsContent value="info" className="mt-4">
           <Suspense fallback={<Skeleton className="h-64 w-full" />}>
             <PatientInfoTab
