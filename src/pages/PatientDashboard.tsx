@@ -28,7 +28,7 @@ const PatientFinanceTab = lazy(() => import("@/components/patient/PatientFinance
 const PatientProdutosTab = lazy(() => import("@/components/patient/PatientProdutosTab").then(m => ({ default: m.PatientProdutosTab })));
 const PatientInfoTab = lazy(() => import("@/components/patient/PatientInfoTab").then(m => ({ default: m.PatientInfoTab })));
 const GamificationDashboard = lazy(() => import("@/components/gamification/GamificationDashboard").then(m => ({ default: m.GamificationDashboard })));
-import { ExportPatientPDFButton } from "@/components/patient/ExportPatientPDFButton";
+import { FichaRequestButton } from "@/components/patient/FichaRequestButton";
 
 const PatientDashboard = () => {
   const { profile, patientId, loading } = useAuth();
