@@ -28,6 +28,7 @@ const PatientFinanceTab = lazy(() => import("@/components/patient/PatientFinance
 const PatientProdutosTab = lazy(() => import("@/components/patient/PatientProdutosTab").then(m => ({ default: m.PatientProdutosTab })));
 const PatientInfoTab = lazy(() => import("@/components/patient/PatientInfoTab").then(m => ({ default: m.PatientInfoTab })));
 const PatientEvolutionsTab = lazy(() => import("@/components/patient/PatientEvolutionsTab").then(m => ({ default: m.PatientEvolutionsTab })));
+const GamificationDashboard = lazy(() => import("@/components/gamification/GamificationDashboard").then(m => ({ default: m.GamificationDashboard })));
 
 const PatientDashboard = () => {
   const { profile, patientId, loading } = useAuth();
@@ -408,11 +409,12 @@ const PatientDashboard = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="agenda">Agenda</TabsTrigger>
           <TabsTrigger value="prontuario">Prontuário</TabsTrigger>
           <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
+          <TabsTrigger value="conquistas">🎮</TabsTrigger>
           <TabsTrigger value="info">Info</TabsTrigger>
         </TabsList>
 
@@ -456,6 +458,12 @@ const PatientDashboard = () => {
               produtosDisponiveis={produtosHook.produtosDisponiveis}
               onReservar={(produto) => { setSelectedProduto(produto); setIsReservaDialogOpen(true); }}
             />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="conquistas" className="mt-4">
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            {patientId && <GamificationDashboard pacienteId={patientId} />}
           </Suspense>
         </TabsContent>
 
