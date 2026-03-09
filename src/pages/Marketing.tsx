@@ -236,7 +236,7 @@ const Marketing = () => {
           ))}
         </div>
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -253,6 +253,10 @@ const Marketing = () => {
           >
             <FileText className="h-3 w-3" /> Só Texto
           </Button>
+          <MarketingImageGenerator
+            prompt={ad.sugestao_imagem}
+            context={`${ad.titulo} - ${ad.texto}`}
+          />
         </div>
       </CardContent>
     </Card>
