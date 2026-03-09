@@ -402,8 +402,6 @@ const PatientDashboard = () => {
         </Card>
       )}
 
-      {/* NPS Survey */}
-      {patientId && <NpsSurvey pacienteId={patientId} />}
 
       {/* Dicas do Dia */}
       <DailyTipsCard tipo="paciente" />
@@ -475,6 +473,9 @@ const PatientDashboard = () => {
           </Suspense>
         </TabsContent>
       </Tabs>
+
+      {/* Avaliação de Experiência - NPS Survey (no final do dashboard) */}
+      {patientId && <NpsSurvey pacienteId={patientId} />}
 
       {/* Reserva Dialog */}
       {isReservaDialogOpen && selectedProduto && (
