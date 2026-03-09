@@ -71,12 +71,17 @@ const PatientDashboard = () => {
     enabled: !!patientId,
   });
 
+
   const { data: planoAtivo } = useQuery({
     queryKey: ["patient-plano", patientId],
     queryFn: async () => {
       if (!patientId) return null;
-      const { data, error } = await (supabase.from("planos").select("*")
-        .eq("paciente_id", patientId).eq("status", "ativo").maybeSingle() as any);
+      const { data, error } = await supabase
+        .from("planos")
+        .select("*")
+        .eq("paciente_id", patientId)
+        .eq("status", "ativo")
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -87,17 +92,38 @@ const PatientDashboard = () => {
     queryKey: ["patient-frequency", patientId],
     queryFn: async () => {
       if (!patientId) return null;
-      const { data, error } = await (supabase.from("agendamentos").select("status").eq("paciente_id", patientId) as any);
+      const { data, error } = await supabase.from("agendamentos").select("status").eq("paciente_id", patientId);
       if (error) throw error;
       const total = data?.length || 0;
-      const realizados = data?.filter((a: any) => a.status === "realizado").length || 0;
-      const cancelados = data?.filter((a: any) => a.status === "cancelado").length || 0;
-      const faltas = data?.filter((a: any) => a.status === "falta").length || 0;
+      const realizados = data?.filter((a) => a.status === "realizado").length || 0;
+      const cancelados = data?.filter((a) => a.status === "cancelado").length || 0;
+      const faltas = data?.filter((a) => a.status === "falta").length || 0;
       return { total, realizados, cancelados, faltas, taxa: total > 0 ? Math.round((realizados / total) * 100) : 0 };
     },
     enabled: !!patientId,
   });
 
+  const { data: pendenciasCount = [] } = useQuery({
+    queryKey: ["patient-pendencias-count", patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+      const { data, error } = await supabase
+        .from("pagamentos")
+        .select("id")
+        .eq("paciente_id", patientId)
+        .eq("status", "pendente");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!patientId,
+  });
+
+  // ── Tab-conditional data hooks ──
+  const agendaHook = usePatientAgenda(patientId, activeTab === "agenda");
+  const financeHook = usePatientFinance(patientId, activeTab === "financeiro");
+  const produtosHook = usePatientProdutos(patientId, activeTab === "produtos" || activeTab === "");
+
+  // Info tab queries (only when active)
   const { data: avisos = [] } = useQuery({
     queryKey: ["avisos-ativos"],
     queryFn: async () => {
@@ -105,6 +131,7 @@ const PatientDashboard = () => {
       if (error) throw error;
       return data;
     },
+    enabled: activeTab === "info",
   });
 
   const { data: feriados = [] } = useQuery({
@@ -112,145 +139,17 @@ const PatientDashboard = () => {
     queryFn: async () => {
       const hoje = new Date();
       const dataFutura = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
-      const { data, error } = await (supabase.from("feriados").select("*")
-        .gte("data", hoje.toISOString().split("T")[0]).lte("data", dataFutura.toISOString().split("T")[0])
-        .order("data").limit(10) as any);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  const { data: pendencias = [] } = useQuery({
-    queryKey: ["patient-pendencias", patientId],
-    queryFn: async () => {
-      if (!patientId) return [];
-      const { data, error } = await (supabase.from("pagamentos").select("*")
-        .eq("paciente_id", patientId).eq("status", "pendente").order("data_vencimento", { ascending: true }) as any);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!patientId,
-  });
-
-  const { data: solicitacoes = [] } = useQuery({
-    queryKey: ["patient-solicitacoes", patientId],
-    queryFn: async () => {
-      if (!patientId) return [];
-      const { data, error } = await supabase.from("solicitacoes_remarcacao")
-        .select("agendamento_id, status").eq("paciente_id", patientId).eq("status", "pendente");
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!patientId,
-  });
-
-  // Products - always fetch for the trending card
-  const { data: produtosDisponiveis = [] } = useQuery({
-    queryKey: ["produtos-disponiveis"],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("produtos").select("*")
-        .gt("estoque", 0).eq("ativo", true).order("nome") as any);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  // Patient's past reservations for trending
-  const { data: minhasReservas = [] } = useQuery({
-    queryKey: ["minhas-reservas", patientId],
-    queryFn: async () => {
-      if (!patientId) return [];
       const { data, error } = await supabase
-        .from("reservas_produtos")
-        .select("produto_id")
-        .eq("paciente_id", patientId);
+        .from("feriados")
+        .select("*")
+        .gte("data", hoje.toISOString().split("T")[0])
+        .lte("data", dataFutura.toISOString().split("T")[0])
+        .order("data")
+        .limit(10);
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!patientId,
-  });
-
-  const { data: formasPagamento = [] } = useQuery({
-    queryKey: ["formas-pagamento-ativas"],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("formas_pagamento" as any) as any)
-        .select("*").eq("ativo", true).order("ordem");
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: activeTab === "financeiro",
-  });
-
-  const { data: pagamentosMensalidade = [] } = useQuery({
-    queryKey: ["pagamentos-mensalidade-paciente", patientId],
-    queryFn: async () => {
-      if (!patientId) return [];
-      const { data, error } = await (supabase.from("pagamentos_mensalidade" as any) as any)
-        .select("*").eq("paciente_id", patientId).order("mes_referencia", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!patientId && activeTab === "financeiro",
-  });
-
-  const { data: pagamentosSessoes = [] } = useQuery({
-    queryKey: ["pagamentos-sessoes-paciente", patientId],
-    queryFn: async () => {
-      if (!patientId) return [];
-      const { data, error } = await (supabase.from("pagamentos_sessoes" as any) as any)
-        .select("*").eq("paciente_id", patientId).order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!patientId && activeTab === "financeiro",
-  });
-
-  const { data: configPixMap = {} } = useQuery({
-    queryKey: ["config-pix-map"],
-    queryFn: async () => {
-      const { data } = await (supabase.from("config_pix" as any) as any)
-        .select("forma_pagamento_id, chave_pix, tipo_chave, nome_beneficiario");
-      const map: any = {};
-      (data || []).forEach((p: any) => { map[p.forma_pagamento_id] = p; });
-      return map;
-    },
-    enabled: activeTab === "financeiro",
-  });
-
-  // Matrícula payments for patient
-  const { data: matriculaPayments = [] } = useQuery({
-    queryKey: ["matricula-payments-patient", patientId],
-    queryFn: async () => {
-      if (!patientId) return [];
-      const { data, error } = await (supabase.from("pagamentos_mensalidade" as any) as any)
-        .select("*").eq("paciente_id", patientId).order("mes_referencia", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!patientId && activeTab === "financeiro",
-  });
-
-  const { data: pastAgenda = [] } = useQuery({
-    queryKey: ["patient-agenda-past", patientId],
-    queryFn: async () => {
-      if (!patientId) return [];
-      const { data, error } = await (supabase.from("agendamentos").select("*")
-        .eq("paciente_id", patientId).lt("data_horario", new Date().toISOString())
-        .order("data_horario", { ascending: false }).limit(10) as any);
-      if (error) throw error;
-      const profIds = [...new Set((data || []).map((a: any) => a.profissional_id))] as string[];
-      let profMap: Record<string, { nome: string; telefone: string }> = {};
-      if (profIds.length > 0) {
-        const { data: profs } = await supabase.from("profiles").select("user_id, nome, telefone").in("user_id", profIds);
-        (profs || []).forEach((p: any) => { profMap[p.user_id] = { nome: p.nome, telefone: p.telefone }; });
-      }
-      return (data || []).map((a: any) => ({
-        ...a,
-        profiles: { nome: profMap[a.profissional_id]?.nome || "Profissional" },
-        profissional_telefone: profMap[a.profissional_id]?.telefone || ""
-      }));
-    },
-    enabled: !!patientId,
+    enabled: activeTab === "info",
   });
 
   // ── Mutations ──
