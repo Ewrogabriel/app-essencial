@@ -427,6 +427,82 @@ const Dashboard = () => {
     return <DashboardSkeleton />;
   }
 
+  const { visibleCards, cards, reorderCards, toggleCard, resetToDefault } = useDashboardLayout("admin", ADMIN_DEFAULT_CARDS);
+
+  const isCardVisible = (id: string) => visibleCards.some(c => c.id === id);
+
+  // Build ordered sections map
+  const renderSection = (cardId: string) => {
+    switch (cardId) {
+      case "tips": return <DailyTipsCard key="tips" tipo={tipRole} />;
+      case "convenios": return <ConvenioCard key="convenios" />;
+      case "birthdays": return birthdays.length > 0 ? (
+        <Card key="birthdays" className="border-pink-200 bg-pink-50/50">
+          <CardHeader className="py-3">
+            <CardTitle className="text-md flex items-center gap-2 text-pink-700">
+              <PartyPopper className="h-5 w-5" /> Aniversariantes da Semana
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <div className="flex flex-wrap gap-2">
+              {birthdays.map((b: any) => (
+                <Badge key={b.id} variant="outline" className="bg-white border-pink-200 text-pink-700 py-1.5 px-3 gap-2 flex items-center cursor-pointer hover:bg-pink-100 transition-colors"
+                  onClick={() => sendBirthdayWishes(b.nome, b.telefone)}>
+                  <span className="font-bold">{b.nome}</span>
+                  <MessageCircle className="h-3 w-3" />
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null;
+      case "stats": return (
+        <div key="stats" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {stats.map((stat) => (
+            <Card key={stat.title} className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                <div className={`rounded-lg p-2 ${stat.color}`}><stat.icon className="h-4 w-4" /></div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+      case "chart": return monthlyChart.length > 0 ? (
+        <Card key="chart">
+          <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary" /> Sessões por Mês (Últimos 6 meses)</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={monthlyChart}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="mes" className="text-xs" /><YAxis className="text-xs" /><Tooltip />
+                <Bar dataKey="realizadas" name="Realizadas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="faltas" name="Faltas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="canceladas" name="Canceladas" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      ) : null;
+      case "ai-insights": return (isAdmin || isGestor) ? (
+        <AIKpiInsights key="ai-insights" kpiData={{
+          pacientesAtivos: pacientes.filter((p: any) => p.status === "ativo").length,
+          sessoesRealizadas: todayStats?.realizados || 0,
+          taxaFaltas: todayStats?.total ? Math.round((todayStats.faltas / todayStats.total) * 100) : 0,
+          faturamento: financeData?.receita || 0,
+          despesas: financeData?.custos || 0,
+          ocupacao: occupancyRate,
+        }} />
+      ) : null;
+      case "requests": return <RequestsCard key="requests" />;
+      default: return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AdminOnboardingWizard />
