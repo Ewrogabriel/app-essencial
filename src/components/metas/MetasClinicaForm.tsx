@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "@/hooks/use-toast";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Target, Plus, Pencil, Trash2, Calendar, DollarSign, Users, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Target, Plus, Pencil, Trash2, Calendar, DollarSign, Users, CheckCircle2, XCircle, Clock, Sparkles, Loader2 } from "lucide-react";
 
 interface Meta {
   id: string;
@@ -61,6 +61,8 @@ export function MetasClinicaForm() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMeta, setEditingMeta] = useState<Meta | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [loadingAi, setLoadingAi] = useState(false);
 
   // Form state
   const [titulo, setTitulo] = useState("");
@@ -72,6 +74,26 @@ export function MetasClinicaForm() {
   const [dataInicio, setDataInicio] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [dataFim, setDataFim] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [statusMeta, setStatusMeta] = useState("ativa");
+
+  const fetchAiSuggestions = async () => {
+    setLoadingAi(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-goals-suggestions", {
+        body: { clinicId: activeClinicId }
+      });
+      if (error) throw error;
+      setAiSuggestions(data?.suggestions || []);
+    } catch (err: any) {
+      toast({ title: "Erro ao buscar sugestões", description: err.message, variant: "destructive" });
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    setTitulo(suggestion);
+    setAiSuggestions([]);
+  };
 
   const { data: metas = [], isLoading } = useQuery({
     queryKey: ["metas-clinica", activeClinicId],
@@ -224,18 +246,56 @@ export function MetasClinicaForm() {
           <h2 className="text-xl font-bold tracking-tight">Metas da Clínica</h2>
           <p className="text-muted-foreground text-sm">Defina metas mensais, anuais e acompanhe o progresso</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { resetForm(); setAiSuggestions([]); } }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
               Nova Meta
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingMeta ? "Editar Meta" : "Cadastrar Nova Meta"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-4">
+              {/* AI Suggestions Section */}
+              {!editingMeta && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Sugestões da IA
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchAiSuggestions}
+                      disabled={loadingAi}
+                      className="gap-2"
+                    >
+                      {loadingAi ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {loadingAi ? "Gerando..." : "Gerar Sugestões"}
+                    </Button>
+                  </div>
+                  {aiSuggestions.length > 0 && (
+                    <div className="grid gap-2">
+                      {aiSuggestions.map((suggestion, idx) => (
+                        <Button
+                          key={idx}
+                          variant="ghost"
+                          size="sm"
+                          className="justify-start text-left h-auto py-2 px-3 border border-border hover:bg-accent"
+                          onClick={() => applySuggestion(suggestion)}
+                        >
+                          <Target className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                          <span className="text-sm">{suggestion}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Título *</Label>
                 <Input
