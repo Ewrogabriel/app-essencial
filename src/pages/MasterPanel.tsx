@@ -796,6 +796,9 @@ export default function MasterPanel() {
           <TabsTrigger value="marketing" className="gap-1 text-xs sm:text-sm">
             <Rocket className="h-3 w-3" /> Marketing
           </TabsTrigger>
+          <TabsTrigger value="manual" className="gap-1 text-xs sm:text-sm">
+            <BookOpen className="h-3 w-3" /> Manual
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="dashboard"><MasterDashboardTab /></TabsContent>
         <TabsContent value="clinics"><ClinicsTab /></TabsContent>
@@ -803,6 +806,7 @@ export default function MasterPanel() {
         <TabsContent value="payments"><PaymentsTab /></TabsContent>
         <TabsContent value="groups"><GroupsTab /></TabsContent>
         <TabsContent value="marketing"><MasterMarketingTab /></TabsContent>
+        <TabsContent value="manual"><ManualTab /></TabsContent>
       </Tabs>
     </div>
   );
