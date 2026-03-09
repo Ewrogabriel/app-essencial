@@ -58,7 +58,7 @@ export const FichaRequestsPanel = () => {
         if (profs) profMap = Object.fromEntries(profs.map((p) => [p.user_id, p.nome]));
       }
 
-      // Generate and download PDF
+      // Generate PDF and download
       const pdfBlob = await downloadPatientCompletePDF({
         paciente: pacRes.data,
         avaliacao: evalRes.data,
@@ -70,16 +70,14 @@ export const FichaRequestsPanel = () => {
 
       // Upload PDF to storage for patient access
       let pdfUrl: string | null = null;
-      if (pdfBlob) {
-        const fileName = `prontuarios/${pacienteId}/ficha_${request.id}.pdf`;
-        const { error: uploadError } = await supabase.storage
-          .from("clinic-uploads")
-          .upload(fileName, pdfBlob, { upsert: true, contentType: "application/pdf" });
-        
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from("clinic-uploads").getPublicUrl(fileName);
-          pdfUrl = urlData.publicUrl;
-        }
+      const fileName = `prontuarios/${pacienteId}/ficha_${request.id}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("clinic-uploads")
+        .upload(fileName, pdfBlob, { upsert: true, contentType: "application/pdf" });
+      
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from("clinic-uploads").getPublicUrl(fileName);
+        pdfUrl = urlData.publicUrl;
       }
 
       // Calculate 30 days from now
