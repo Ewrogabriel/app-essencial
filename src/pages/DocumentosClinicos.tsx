@@ -365,7 +365,7 @@ const DocumentosClinicos = () => {
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <Label>Conteúdo</Label>
+                <Label>{t("docs.content")}</Label>
                 <div className="flex gap-1">
                   <Button
                     variant="outline"
@@ -375,7 +375,7 @@ const DocumentosClinicos = () => {
                     onClick={handleAIGenerate}
                   >
                     <Sparkles className="h-3 w-3" />
-                    {aiGenerating ? "Gerando..." : "Gerar Texto"}
+                    {aiGenerating ? t("docs.generating") : t("docs.generate_text")}
                   </Button>
                   <Button
                     variant="outline"
@@ -385,18 +385,18 @@ const DocumentosClinicos = () => {
                     onClick={handleAISuggest}
                   >
                     <Sparkles className="h-3 w-3" />
-                    {aiLoading ? "Melhorando..." : "Melhorar"}
+                    {aiLoading ? t("docs.improving") : t("docs.improve")}
                   </Button>
                 </div>
               </div>
               <Textarea
                 value={conteudo}
                 onChange={e => setConteudo(e.target.value)}
-                placeholder="Selecione o paciente e clique em 'Gerar Texto' para criar um modelo, ou digite o conteúdo manualmente..."
+                placeholder={t("docs.generate_hint")}
                 className="min-h-[200px]"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                <strong>Gerar Texto:</strong> Cria um modelo baseado no tipo de documento e dados do paciente. <strong>Melhorar:</strong> Aprimora o texto já escrito.
+                <strong>{t("docs.generate_text")}:</strong> {t("docs.generate_hint")} <strong>{t("docs.improve")}:</strong> {t("docs.improve_hint")}
               </p>
             </div>
 
