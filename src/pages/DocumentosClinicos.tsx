@@ -359,7 +359,7 @@ const DocumentosClinicos = () => {
             )}
 
             <div>
-              <Label>Profissional</Label>
+              <Label>{t("common.professional")}</Label>
               <Input value={profile?.nome || ""} disabled className="bg-muted" />
             </div>
 
