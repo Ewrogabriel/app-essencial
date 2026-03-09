@@ -116,7 +116,8 @@ export default function GamificationAdminPanel() {
 
   // Mutations
   const saveGoalMutation = useMutation({
-    mutationFn: async (goal: Goal) => {
+    mutationFn: async (goalData: Goal) => {
+      const goal = { ...goalData, created_by: user?.id };
       if (editingGoal) {
         const { error } = await supabase.from("professional_goals").update(goal).eq("id", editingGoal.id);
         if (error) throw error;
