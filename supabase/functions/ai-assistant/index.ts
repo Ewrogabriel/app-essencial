@@ -235,6 +235,24 @@ Contexto:
 - Sessões restantes no plano: ${context.sessoesRestantes || "N/A"}`;
         break;
 
+      case "document_suggest":
+        systemPrompt = `Você é um fisioterapeuta experiente que auxilia na redação de documentos clínicos.
+Sua tarefa é melhorar o texto do documento mantendo a essência do que o profissional escreveu.
+Use linguagem técnica apropriada, seja claro e objetivo.
+Considere o histórico clínico do paciente (evoluções e avaliações) para enriquecer o documento.
+Retorne APENAS o texto melhorado, sem explicações adicionais.`;
+        userPrompt = `Tipo de documento: ${context.tipo_documento}
+Texto atual do profissional:
+${context.conteudo_atual}
+
+Dados clínicos do paciente:
+Avaliação: ${context.avaliacao}
+Evoluções recentes:
+${context.evolucoes_recentes}
+
+Melhore o texto acima mantendo o sentido original, enriquecendo com dados clínicos relevantes e usando linguagem técnica apropriada.`;
+        break;
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }
