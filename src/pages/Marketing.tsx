@@ -18,6 +18,7 @@ import {
   Megaphone, Image, Clock, Hash, ExternalLink, RefreshCw, FileText,
   Save, History, Trash2
 } from "lucide-react";
+import { MarketingImageGenerator } from "@/components/marketing/MarketingImageGenerator";
 
 interface Ad {
   titulo: string;
