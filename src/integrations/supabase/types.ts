@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          condicao: Json
+          created_at: string
+          descricao: string
+          icone: string
+          id: string
+          nome: string
+          pontos: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          condicao: Json
+          created_at?: string
+          descricao: string
+          icone: string
+          id?: string
+          nome: string
+          pontos?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          condicao?: Json
+          created_at?: string
+          descricao?: string
+          icone?: string
+          id?: string
+          nome?: string
+          pontos?: number
+        }
+        Relationships: []
+      }
       agenda_extra: {
         Row: {
           clinic_id: string | null
@@ -303,6 +339,48 @@ export type Database = {
           created_by?: string
           id?: string
           nome?: string
+        }
+        Relationships: []
+      }
+      challenges: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          descricao: string
+          icone: string
+          id: string
+          meta: Json
+          pontos_recompensa: number
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          descricao: string
+          icone: string
+          id?: string
+          meta: Json
+          pontos_recompensa?: number
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string
+          icone?: string
+          id?: string
+          meta?: Json
+          pontos_recompensa?: number
+          tipo?: string
+          titulo?: string
         }
         Relationships: []
       }
@@ -2090,6 +2168,45 @@ export type Database = {
           },
         ]
       }
+      patient_achievements: {
+        Row: {
+          achievement_id: string
+          desbloqueada_em: string
+          id: string
+          paciente_id: string
+          visualizada: boolean
+        }
+        Insert: {
+          achievement_id: string
+          desbloqueada_em?: string
+          id?: string
+          paciente_id: string
+          visualizada?: boolean
+        }
+        Update: {
+          achievement_id?: string
+          desbloqueada_em?: string
+          id?: string
+          paciente_id?: string
+          visualizada?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_achievements_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_attachments: {
         Row: {
           created_at: string
@@ -2127,6 +2244,102 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "patient_attachments_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_challenges: {
+        Row: {
+          challenge_id: string
+          completado: boolean
+          completado_em: string | null
+          created_at: string
+          id: string
+          meta: number
+          paciente_id: string
+          progresso: number
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          completado?: boolean
+          completado_em?: string | null
+          created_at?: string
+          id?: string
+          meta: number
+          paciente_id: string
+          progresso?: number
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          completado?: boolean
+          completado_em?: string | null
+          created_at?: string
+          id?: string
+          meta?: number
+          paciente_id?: string
+          progresso?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_challenges_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_points: {
+        Row: {
+          agendamento_id: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          origem: string
+          paciente_id: string
+          pontos: number
+        }
+        Insert: {
+          agendamento_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          origem: string
+          paciente_id: string
+          pontos?: number
+        }
+        Update: {
+          agendamento_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          origem?: string
+          paciente_id?: string
+          pontos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_points_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_points_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
@@ -3084,6 +3297,15 @@ export type Database = {
       check_plan_limit: {
         Args: { _clinic_id: string; _resource: string }
         Returns: Json
+      }
+      get_gamification_ranking: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar: string
+          nome: string
+          paciente_id: string
+          total_pontos: number
+        }[]
       }
       has_role: {
         Args: {
