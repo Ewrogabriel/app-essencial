@@ -34,8 +34,23 @@ import { AIPatientAnalysisButton } from "@/components/patient/AIPatientAnalysisB
 const PacienteDetalhes = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const _auth = useAuth();
+    const { isAdmin, isProfissional } = useAuth();
     const queryClient = useQueryClient();
+    const [activeTab, setActiveTab] = useState("prontuario");
+    const [evolutionOpen, setEvolutionOpen] = useState(false);
+    const [evaluationOpen, setEvaluationOpen] = useState(false);
+    const [contractOpen, setContractOpen] = useState(false);
+
+    // Block patient access
+    if (!isAdmin && !isProfissional) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-muted-foreground">
+                <p className="text-lg font-medium">Acesso restrito</p>
+                <p className="text-sm">Apenas profissionais e administradores podem acessar detalhes do paciente.</p>
+                <Button variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
+            </div>
+        );
+    }
     const [activeTab, setActiveTab] = useState("prontuario");
     const [evolutionOpen, setEvolutionOpen] = useState(false);
     const [evaluationOpen, setEvaluationOpen] = useState(false);
