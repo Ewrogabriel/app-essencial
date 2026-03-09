@@ -18,14 +18,15 @@ import { toast } from "sonner";
 interface Goal {
   id?: string;
   titulo: string;
-  descricao: string;
-  tipo: "individual" | "equipe";
-  categoria: "atendimentos" | "presenca" | "faturamento" | "pontos" | "custom";
-  meta_valor: number;
-  pontos_recompensa: number;
-  data_inicio: string;
-  data_fim: string;
-  ativo: boolean;
+  descricao?: string;
+  tipo?: string;
+  meta_tipo: string;
+  meta_valor?: number;
+  pontos_recompensa?: number;
+  data_inicio?: string;
+  data_fim?: string;
+  ativo?: boolean;
+  created_by: string;
   target_user_id?: string | null;
 }
 
