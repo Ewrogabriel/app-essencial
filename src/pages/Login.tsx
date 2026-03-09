@@ -6,14 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/hooks/useI18n";
 import { toast } from "@/hooks/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
   const { signIn, resetPassword } = useAuth();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
 
-  // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginSenha, setLoginSenha] = useState("");
 
@@ -23,15 +24,13 @@ const Login = () => {
 
     let authEmail = loginEmail.trim();
 
-    // Check if it's an email or a CPF
     if (!authEmail.includes("@")) {
-      // It's likely a CPF, so we strip everything that is not a number
       const cleanCpf = authEmail.replace(/\D/g, "");
       if (cleanCpf.length === 11) {
         authEmail = `${cleanCpf}@paciente.essencial.com`;
       } else {
         toast({
-          title: "Formato inválido",
+          title: t("common.error"),
           description: "CPF deve conter 11 dígitos ou informe um e-mail válido.",
           variant: "destructive",
         });
@@ -44,14 +43,13 @@ const Login = () => {
 
     if (error) {
       toast({
-        title: "Erro ao entrar",
+        title: t("common.error"),
         description: error.message === "Invalid login credentials"
           ? "E-mail ou senha incorretos"
           : error.message,
         variant: "destructive",
       });
     } else {
-      // Navigate to clinic selector (it auto-redirects to dashboard if only 1 clinic)
       navigate("/selecionar-clinica");
     }
 
@@ -61,7 +59,7 @@ const Login = () => {
   const handleResetPassword = async () => {
     if (!loginEmail) {
       toast({
-        title: "E-mail necessário",
+        title: t("common.error"),
         description: "Por favor, insira seu e-mail para redefinir a senha.",
         variant: "destructive",
       });
@@ -74,14 +72,14 @@ const Login = () => {
       const cleanCpf = resetEmail.replace(/\D/g, "");
       if (cleanCpf.length === 11) {
         toast({
-          title: "Acesso de Paciente",
+          title: t("common.error"),
           description: "Para redefinir a senha da sua conta via CPF, entre em contato com a recepção da clínica.",
           variant: "destructive",
         });
         return;
       } else {
         toast({
-          title: "Formato inválido",
+          title: t("common.error"),
           description: "CPF deve conter 11 dígitos ou informe um e-mail válido.",
           variant: "destructive",
         });
@@ -94,13 +92,13 @@ const Login = () => {
 
     if (error) {
       toast({
-        title: "Erro ao redefinir senha",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "E-mail de redefinição enviado",
+        title: t("common.success"),
         description: "Verifique sua caixa de entrada para redefinir sua senha.",
       });
     }
@@ -122,7 +120,7 @@ const Login = () => {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Login - Profissionais</CardTitle>
+            <CardTitle className="text-xl">{t("auth.login")} - {t("nav.professionals")}</CardTitle>
             <CardDescription>
               Acesse sua conta para gerenciar a clínica
             </CardDescription>
@@ -130,7 +128,7 @@ const Login = () => {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="login-email">E-mail</Label>
+                <Label htmlFor="login-email">{t("auth.email")}</Label>
                 <Input
                   id="login-email"
                   type="email"
@@ -142,7 +140,7 @@ const Login = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="login-senha">Senha</Label>
+                <Label htmlFor="login-senha">{t("auth.password")}</Label>
                 <Input
                   id="login-senha"
                   type="password"
@@ -155,7 +153,7 @@ const Login = () => {
               <div className="flex flex-col space-y-2">
                 <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="h-4 w-4 mr-2" />
-                  {loading ? "Entrando..." : "Entrar"}
+                  {loading ? t("auth.logging_in") : t("auth.login")}
                 </Button>
                 <Button
                   type="button"
@@ -164,7 +162,7 @@ const Login = () => {
                   onClick={handleResetPassword}
                   className="text-muted-foreground"
                 >
-                  Esqueci minha senha
+                  {t("auth.forgot_password")}
                 </Button>
               </div>
             </form>
