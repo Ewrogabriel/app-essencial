@@ -146,19 +146,42 @@ const MetasGamificacao = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">Metas & Ranking</h1>
-          <p className="text-muted-foreground">KPIs, gamificação e ranking de desempenho profissional</p>
+          <p className="text-muted-foreground">KPIs, metas da clínica e ranking de desempenho profissional</p>
         </div>
-        <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {monthOptions.map((m) => (
-              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
+
+      <Tabs defaultValue="clinica" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="clinica">Metas da Clínica</TabsTrigger>
+          <TabsTrigger value="ranking">Ranking Profissionais</TabsTrigger>
+        </TabsList>
+
+        {/* Metas da Clínica Tab */}
+        <TabsContent value="clinica" className="space-y-6">
+          {(isAdmin || isGestor) ? (
+            <MetasClinicaForm />
+          ) : (
+            <Card className="p-8 text-center">
+              <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Apenas administradores podem gerenciar metas da clínica.</p>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Ranking Tab */}
+        <TabsContent value="ranking" className="space-y-6">
+          <div className="flex justify-end">
+            <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
       {/* Global KPIs */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
