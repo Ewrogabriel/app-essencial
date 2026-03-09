@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -20,13 +21,15 @@ import {
 } from "@/components/ui/table";
 import {
   Building2, CreditCard, Crown, Link2, Plus, Users, AlertTriangle, Check, X,
-  DollarSign, TrendingUp, Package,
+  DollarSign, TrendingUp, Package, FileText,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { maskPhone, maskCNPJ, maskCEP } from "@/lib/masks";
 import { ClinicDetailDialog } from "@/components/master/ClinicDetailDialog";
+import { ALL_RESOURCES } from "@/lib/resources";
+import { generateSubscriptionContractPDF } from "@/lib/generateSubscriptionContractPDF";
 
 const STATUS_COLORS: Record<string, string> = {
   ativa: "default",
@@ -49,6 +52,7 @@ function ClinicsTab() {
     telefone: "", whatsapp: "", email: "", instagram: "",
     responsavel_nome: "", responsavel_email: "", responsavel_telefone: "",
     plan_id: "", observacoes: "",
+    admin_nome: "", admin_email: "",
   });
 
   const { data: clinics = [], isLoading } = useQuery({
@@ -95,7 +99,7 @@ function ClinicsTab() {
       const vencimento = new Date();
       vencimento.setMonth(vencimento.getMonth() + 1);
 
-      await (supabase.from("clinic_subscriptions") as any).insert({
+      const { data: subscription } = await (supabase.from("clinic_subscriptions") as any).insert({
         clinic_id: clinic.id,
         plan_id: form.plan_id,
         responsavel_nome: form.responsavel_nome || null,
@@ -103,11 +107,63 @@ function ClinicsTab() {
         responsavel_telefone: form.responsavel_telefone || null,
         observacoes: form.observacoes || null,
         data_vencimento: vencimento.toISOString().split("T")[0],
-      });
+      }).select().single();
+
+      // Generate contract PDF if subscription created
+      if (subscription && plan) {
+        const contractData = {
+          clinicaNome: form.nome,
+          clinicaCNPJ: form.cnpj || "",
+          clinicaEndereco: form.endereco || "",
+          clinicaCidade: form.cidade || "",
+          clinicaEstado: form.estado || "",
+          responsavelNome: form.responsavel_nome || "",
+          responsavelEmail: form.responsavel_email || "",
+          responsavelTelefone: form.responsavel_telefone || "",
+          planoNome: plan.nome,
+          planoValor: Number(plan.valor_mensal),
+          recursos: plan.recursos_disponiveis || [],
+          dataContrato: format(new Date(), "dd/MM/yyyy", { locale: ptBR }),
+        };
+
+        const pdfDoc = await generateSubscriptionContractPDF(contractData);
+        pdfDoc.save(`Contrato_${form.nome.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.pdf`);
+      }
+    }
+
+    // Create admin user if provided
+    if (form.admin_email && form.admin_nome && clinic) {
+      try {
+        const { data, error: adminError } = await supabase.functions.invoke('create-clinic-admin', {
+          body: {
+            clinic_id: clinic.id,
+            admin_email: form.admin_email,
+            admin_nome: form.admin_nome,
+            clinic_nome: form.nome,
+          }
+        });
+
+        if (adminError) throw adminError;
+
+        if (data?.tempPassword) {
+          toast({
+            title: "Admin criado com sucesso! 🎉",
+            description: `Email: ${form.admin_email}\nSenha temporária: ${data.tempPassword}`,
+            duration: 10000,
+          });
+        }
+      } catch (adminError: any) {
+        console.error("Error creating admin:", adminError);
+        toast({
+          title: "Clínica criada, mas erro ao criar admin",
+          description: adminError.message,
+          variant: "destructive",
+        });
+      }
     }
 
     toast({ title: "Clínica criada com sucesso! ✅" });
-    setForm({ nome: "", cnpj: "", endereco: "", numero: "", bairro: "", cidade: "", estado: "", cep: "", telefone: "", whatsapp: "", email: "", instagram: "", responsavel_nome: "", responsavel_email: "", responsavel_telefone: "", plan_id: "", observacoes: "" });
+    setForm({ nome: "", cnpj: "", endereco: "", numero: "", bairro: "", cidade: "", estado: "", cep: "", telefone: "", whatsapp: "", email: "", instagram: "", responsavel_nome: "", responsavel_email: "", responsavel_telefone: "", plan_id: "", observacoes: "", admin_nome: "", admin_email: "" });
     setDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: ["master-clinics"] });
     queryClient.invalidateQueries({ queryKey: ["master-subscriptions"] });
@@ -199,6 +255,14 @@ function ClinicsTab() {
             </div>
 
             <hr />
+            <h3 className="font-semibold text-sm">Cadastrar Administrador</h3>
+            <p className="text-xs text-muted-foreground">O admin receberá as credenciais de acesso por este sistema</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><Label>Nome do Admin</Label><Input value={form.admin_nome} onChange={e => setForm(f => ({ ...f, admin_nome: e.target.value }))} placeholder="Nome completo" /></div>
+              <div><Label>E-mail do Admin</Label><Input type="email" value={form.admin_email} onChange={e => setForm(f => ({ ...f, admin_email: e.target.value }))} placeholder="admin@exemplo.com" /></div>
+            </div>
+
+            <hr />
             <h3 className="font-semibold text-sm">Plano</h3>
             <Select value={form.plan_id} onValueChange={v => setForm(f => ({ ...f, plan_id: v }))}>
               <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
@@ -213,7 +277,7 @@ function ClinicsTab() {
 
             <div><Label>Observações</Label><Textarea value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} /></div>
 
-            <Button onClick={handleSave}>Criar Clínica</Button>
+            <Button onClick={handleSave}>Criar Clínica e Gerar Contrato</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -233,6 +297,7 @@ function PlansTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
     nome: "", descricao: "", valor_mensal: "", max_pacientes: "", max_profissionais: "", max_clinicas: "1", cor: "#3b82f6", destaque: false,
+    recursos_selecionados: [] as string[],
   });
 
   const { data: plans = [] } = useQuery({
@@ -246,6 +311,11 @@ function PlansTab() {
   const handleSave = async () => {
     if (!form.nome || !form.valor_mensal) { toast({ title: "Nome e valor são obrigatórios", variant: "destructive" }); return; }
 
+    const recursos = form.recursos_selecionados.map(key => {
+      const recurso = ALL_RESOURCES.find(r => r.key === key);
+      return recurso ? recurso.label : key;
+    });
+
     const { error } = await (supabase.from("platform_plans") as any).insert({
       nome: form.nome,
       descricao: form.descricao || null,
@@ -255,12 +325,13 @@ function PlansTab() {
       max_clinicas: parseInt(form.max_clinicas) || 1,
       cor: form.cor,
       destaque: form.destaque,
+      recursos_disponiveis: recursos,
     });
 
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
 
     toast({ title: "Plano criado! ✅" });
-    setForm({ nome: "", descricao: "", valor_mensal: "", max_pacientes: "", max_profissionais: "", max_clinicas: "1", cor: "#3b82f6", destaque: false });
+    setForm({ nome: "", descricao: "", valor_mensal: "", max_pacientes: "", max_profissionais: "", max_clinicas: "1", cor: "#3b82f6", destaque: false, recursos_selecionados: [] });
     setDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: ["platform-plans"] });
   };
@@ -302,9 +373,12 @@ function PlansTab() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo Plano</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Novo Plano</DialogTitle>
+            <DialogDescription>Configure os recursos e limites do plano</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
             <div><Label>Nome *</Label><Input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder="Ex: Profissional" /></div>
             <div><Label>Descrição</Label><Textarea value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} /></div>
             <div><Label>Valor mensal (R$) *</Label><Input type="number" value={form.valor_mensal} onChange={e => setForm(f => ({ ...f, valor_mensal: e.target.value }))} /></div>
@@ -314,6 +388,36 @@ function PlansTab() {
               <div><Label>Máx. Unidades</Label><Input type="number" value={form.max_clinicas} onChange={e => setForm(f => ({ ...f, max_clinicas: e.target.value }))} /></div>
             </div>
             <div><Label>Cor</Label><Input type="color" value={form.cor} onChange={e => setForm(f => ({ ...f, cor: e.target.value }))} className="h-10 w-20" /></div>
+            
+            <hr />
+            <div>
+              <Label className="text-base font-semibold">Recursos Disponíveis no Plano</Label>
+              <p className="text-xs text-muted-foreground mb-3">Selecione os recursos que estarão disponíveis neste plano. Deixe em branco para liberar todos.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto border rounded-lg p-3">
+                {ALL_RESOURCES.map((recurso) => (
+                  <div key={recurso.key} className="flex items-start space-x-2">
+                    <Checkbox
+                      id={`recurso-${recurso.key}`}
+                      checked={form.recursos_selecionados.includes(recurso.key)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setForm(f => ({ ...f, recursos_selecionados: [...f.recursos_selecionados, recurso.key] }));
+                        } else {
+                          setForm(f => ({ ...f, recursos_selecionados: f.recursos_selecionados.filter(k => k !== recurso.key) }));
+                        }
+                      }}
+                    />
+                    <div className="grid gap-1 leading-none">
+                      <label htmlFor={`recurso-${recurso.key}`} className="text-sm font-medium cursor-pointer">
+                        {recurso.label}
+                      </label>
+                      <p className="text-xs text-muted-foreground">{recurso.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
             <Button onClick={handleSave}>Criar Plano</Button>
           </div>
         </DialogContent>
