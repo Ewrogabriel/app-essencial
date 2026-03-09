@@ -474,6 +474,9 @@ const PatientDashboard = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Avaliação de Experiência - NPS Survey (no final do dashboard) */}
+      {patientId && <NpsSurvey pacienteId={patientId} />}
+
       {/* Reserva Dialog */}
       {isReservaDialogOpen && selectedProduto && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
