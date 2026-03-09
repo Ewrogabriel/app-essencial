@@ -1073,6 +1073,12 @@ const SolicitacoesAlteracao = () => {
         </DialogContent>
       </Dialog>
 
+        {/* Tab Fichas */}
+        <TabsContent value="fichas" className="mt-4">
+          <FichaRequestsPanel />
+        </TabsContent>
+      </Tabs>
+
       {/* Reject Dialog */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>
