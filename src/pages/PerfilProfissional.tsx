@@ -112,11 +112,11 @@ const PerfilProfissional = () => {
     if (!file || !user) return;
     const filePath = `${user.id}/avatar.${file.name.split(".").pop()}`;
     const { error: uploadError } = await supabase.storage.from("professional-documents").upload(filePath, file, { upsert: true });
-    if (uploadError) { toast({ title: "Erro no upload", description: uploadError.message, variant: "destructive" }); return; }
+    if (uploadError) { toast({ title: t("common.error"), description: uploadError.message, variant: "destructive" }); return; }
     const { data: urlData } = supabase.storage.from("professional-documents").getPublicUrl(filePath);
     await supabase.from("profiles").update({ foto_url: urlData.publicUrl } as any).eq("user_id", user.id);
     queryClient.invalidateQueries({ queryKey: ["my-professional-profile"] });
-    toast({ title: "Foto atualizada!" });
+    toast({ title: t("profile.photo_updated") });
   };
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
