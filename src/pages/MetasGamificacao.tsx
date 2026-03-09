@@ -327,6 +327,8 @@ const MetasGamificacao = () => {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
