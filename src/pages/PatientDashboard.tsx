@@ -44,6 +44,7 @@ const PatientInfoTab = lazy(() => import("@/components/patient/PatientInfoTab").
 const GamificationDashboard = lazy(() => import("@/components/gamification/GamificationDashboard").then(m => ({ default: m.GamificationDashboard })));
 
 const PatientDashboard = () => {
+  const navigate = useNavigate();
   const { profile, patientId, loading } = useAuth();
   const { data: clinicSettings } = useClinicSettings();
   const queryClient = useQueryClient();
