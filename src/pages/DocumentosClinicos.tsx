@@ -47,6 +47,7 @@ const DocumentosClinicos = () => {
   const [conteudo, setConteudo] = useState("");
   const [pacienteId, setPacienteId] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
   const [incluirCarimbo, setIncluirCarimbo] = useState(true);
 
   // Fetch documents
@@ -159,6 +160,53 @@ const DocumentosClinicos = () => {
       toast({ title: "Erro na sugestão de IA", description: e.message, variant: "destructive" });
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  // Generate initial document text
+  const handleAIGenerate = async () => {
+    if (!pacienteId) {
+      toast({ title: "Selecione um paciente primeiro.", variant: "destructive" });
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const paciente = pacientes.find((p: any) => p.id === pacienteId);
+
+      const { data: evolutions } = await supabase.from("evolutions")
+        .select("descricao, conduta, data_evolucao")
+        .eq("paciente_id", pacienteId)
+        .order("data_evolucao", { ascending: false })
+        .limit(1);
+
+      const { data: evaluations } = await supabase.from("evaluations")
+        .select("queixa_principal, objetivos_tratamento")
+        .eq("paciente_id", pacienteId)
+        .limit(1);
+
+      const context = {
+        tipo_documento: tipo,
+        paciente_nome: paciente?.nome || "Paciente",
+        data: format(new Date(), "dd/MM/yyyy"),
+        profissional_nome: profile?.nome || "Profissional",
+        profissional_registro: profile?.registro_profissional || "",
+        avaliacao: evaluations?.[0] ? `Queixa: ${evaluations[0].queixa_principal}. Objetivos: ${evaluations[0].objetivos_tratamento || "N/A"}` : "",
+        ultima_evolucao: evolutions?.[0]?.descricao || "",
+      };
+
+      const { data, error } = await supabase.functions.invoke("ai-assistant", {
+        body: { action: "document_generate", context },
+      });
+
+      if (error) throw error;
+      if (data?.suggestion || data?.response) {
+        setConteudo(data.suggestion || data.response);
+        toast({ title: "Texto gerado! Revise e personalize conforme necessário." });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar texto", description: e.message, variant: "destructive" });
+    } finally {
+      setAiGenerating(false);
     }
   };
 
@@ -316,25 +364,37 @@ const DocumentosClinicos = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Conteúdo</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 text-xs"
-                  disabled={aiLoading || !conteudo.trim()}
-                  onClick={handleAISuggest}
-                >
-                  <Sparkles className="h-3 w-3" />
-                  {aiLoading ? "Analisando..." : "Sugestão IA"}
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 text-xs"
+                    disabled={aiGenerating || !pacienteId}
+                    onClick={handleAIGenerate}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {aiGenerating ? "Gerando..." : "Gerar Texto"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 text-xs"
+                    disabled={aiLoading || !conteudo.trim() || !pacienteId}
+                    onClick={handleAISuggest}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {aiLoading ? "Melhorando..." : "Melhorar"}
+                  </Button>
+                </div>
               </div>
               <Textarea
                 value={conteudo}
                 onChange={e => setConteudo(e.target.value)}
-                placeholder="Digite o conteúdo do documento..."
+                placeholder="Selecione o paciente e clique em 'Gerar Texto' para criar um modelo, ou digite o conteúdo manualmente..."
                 className="min-h-[200px]"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Preencha o conteúdo e clique em "Sugestão IA" para obter melhorias baseadas no prontuário do paciente.
+                <strong>Gerar Texto:</strong> Cria um modelo baseado no tipo de documento e dados do paciente. <strong>Melhorar:</strong> Aprimora o texto já escrito.
               </p>
             </div>
 
