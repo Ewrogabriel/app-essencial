@@ -414,12 +414,12 @@ const DocumentosClinicos = () => {
             </div>
 
             <div className="flex gap-2 justify-end pt-2">
-              <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+              <Button variant="outline" onClick={resetForm}>{t("common.cancel")}</Button>
               <Button
                 disabled={!pacienteId || !conteudo.trim() || (tipo === "outros" && !titulo.trim()) || saveMutation.isPending}
                 onClick={() => saveMutation.mutate()}
               >
-                {saveMutation.isPending ? "Salvando..." : editingDoc ? "Atualizar" : "Salvar Documento"}
+                {saveMutation.isPending ? t("common.saving") : editingDoc ? t("common.save") : t("common.save")}
               </Button>
             </div>
           </div>
