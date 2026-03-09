@@ -163,6 +163,53 @@ const DocumentosClinicos = () => {
     }
   };
 
+  // Generate initial document text
+  const handleAIGenerate = async () => {
+    if (!pacienteId) {
+      toast({ title: "Selecione um paciente primeiro.", variant: "destructive" });
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const paciente = pacientes.find((p: any) => p.id === pacienteId);
+
+      const { data: evolutions } = await supabase.from("evolutions")
+        .select("descricao, conduta, data_evolucao")
+        .eq("paciente_id", pacienteId)
+        .order("data_evolucao", { ascending: false })
+        .limit(1);
+
+      const { data: evaluations } = await supabase.from("evaluations")
+        .select("queixa_principal, objetivos_tratamento")
+        .eq("paciente_id", pacienteId)
+        .limit(1);
+
+      const context = {
+        tipo_documento: tipo,
+        paciente_nome: paciente?.nome || "Paciente",
+        data: format(new Date(), "dd/MM/yyyy"),
+        profissional_nome: profile?.nome || "Profissional",
+        profissional_registro: profile?.registro_profissional || "",
+        avaliacao: evaluations?.[0] ? `Queixa: ${evaluations[0].queixa_principal}. Objetivos: ${evaluations[0].objetivos_tratamento || "N/A"}` : "",
+        ultima_evolucao: evolutions?.[0]?.descricao || "",
+      };
+
+      const { data, error } = await supabase.functions.invoke("ai-assistant", {
+        body: { action: "document_generate", context },
+      });
+
+      if (error) throw error;
+      if (data?.suggestion || data?.response) {
+        setConteudo(data.suggestion || data.response);
+        toast({ title: "Texto gerado! Revise e personalize conforme necessário." });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar texto", description: e.message, variant: "destructive" });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   const resetForm = () => {
     setIsFormOpen(false);
     setEditingDoc(null);
