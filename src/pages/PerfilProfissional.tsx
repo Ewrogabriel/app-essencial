@@ -265,8 +265,8 @@ const PerfilProfissional = () => {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-sm">Aceita atendimento domiciliar?</p>
-              <p className="text-xs text-muted-foreground">Permitir agendamentos em domicílio</p>
+              <p className="font-medium text-sm">{t("profile.accept_home")}</p>
+              <p className="text-xs text-muted-foreground">{t("profile.allow_home")}</p>
             </div>
             <Switch checked={aceitaDomiciliar} onCheckedChange={setAceitaDomiciliar} />
           </div>
