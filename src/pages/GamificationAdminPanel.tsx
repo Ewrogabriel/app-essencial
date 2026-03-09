@@ -370,7 +370,7 @@ export default function GamificationAdminPanel() {
               </div>
               <div>
                 <Label>Categoria</Label>
-                <Select value={goalForm.categoria} onValueChange={(value: any) => setGoalForm({ ...goalForm, categoria: value })}>
+                <Select value={goalForm.meta_tipo} onValueChange={(value: any) => setGoalForm({ ...goalForm, meta_tipo: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
