@@ -458,6 +458,54 @@ const MeuPerfil = () => {
         </CardContent>
       </Card>
 
+      {/* Available PDF from Approved Ficha Requests */}
+      {approvedFichas.length > 0 && (
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileDown className="h-5 w-5 text-green-600" />
+              Prontuário Disponível
+            </CardTitle>
+            <CardDescription>
+              Seu prontuário foi aprovado e está disponível para download por tempo limitado.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {approvedFichas.map((ficha: any) => {
+                const expiryDate = new Date(ficha.pdf_available_until);
+                const daysRemaining = differenceInDays(expiryDate, new Date());
+                return (
+                  <div key={ficha.id} className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                    <div>
+                      <p className="font-medium text-sm">Ficha Completa do Prontuário</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="gap-1 text-xs">
+                          <Clock className="h-3 w-3" />
+                          {daysRemaining > 0 ? `${daysRemaining} dias restantes` : "Expira hoje"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Aprovado em {format(new Date(ficha.reviewed_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => window.open(ficha.pdf_url, "_blank")}
+                      className="gap-2"
+                    >
+                      <FileDown className="h-4 w-4" />
+                      Baixar PDF
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Documents */}
       <PatientAttachments pacienteId={patientId!} />
     </div>
