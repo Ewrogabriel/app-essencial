@@ -52,6 +52,7 @@ function ClinicsTab() {
     telefone: "", whatsapp: "", email: "", instagram: "",
     responsavel_nome: "", responsavel_email: "", responsavel_telefone: "",
     plan_id: "", observacoes: "",
+    admin_nome: "", admin_email: "",
   });
 
   const { data: clinics = [], isLoading } = useQuery({
