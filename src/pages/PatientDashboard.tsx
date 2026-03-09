@@ -78,12 +78,12 @@ export default function PatientDashboard() {
     queryKey: ["planos-exercicios-count", paciente?.id],
     queryFn: async () => {
       if (!paciente?.id) return 0;
-      const { count } = await supabase
+      const { count } = await (supabase
         .from("planos_exercicios")
         .select("*", { count: "exact", head: true })
-        .eq("paciente_id", paciente.id as string)
-        .eq("ativo", true as any);
-      return count || 0;
+        .eq("paciente_id", paciente.id) as any)
+        .eq("ativo", true);
+      return (count as number) || 0;
     },
     enabled: !!paciente?.id,
   });
