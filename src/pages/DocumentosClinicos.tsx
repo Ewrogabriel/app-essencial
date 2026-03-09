@@ -318,16 +318,16 @@ const DocumentosClinicos = () => {
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Tipo de Documento</Label>
+                <Label>{t("docs.type")}</Label>
                 <Select value={tipo} onValueChange={(v) => { setTipo(v); if (v !== "outros") setTitulo(""); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="receituario">Receituário</SelectItem>
-                    <SelectItem value="relatorio">Relatório Clínico</SelectItem>
-                    <SelectItem value="atestado">Atestado</SelectItem>
-                    <SelectItem value="encaminhamento">Encaminhamento</SelectItem>
-                    <SelectItem value="comparecimento">Comprovante de Comparecimento</SelectItem>
-                    <SelectItem value="outros">Outros</SelectItem>
+                    <SelectItem value="receituario">{t("docs.prescription")}</SelectItem>
+                    <SelectItem value="relatorio">{t("docs.report")}</SelectItem>
+                    <SelectItem value="atestado">{t("docs.certificate")}</SelectItem>
+                    <SelectItem value="encaminhamento">{t("docs.referral")}</SelectItem>
+                    <SelectItem value="comparecimento">{t("docs.attendance")}</SelectItem>
+                    <SelectItem value="outros">{t("docs.other")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
