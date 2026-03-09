@@ -364,25 +364,37 @@ const DocumentosClinicos = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Conteúdo</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 text-xs"
-                  disabled={aiLoading || !conteudo.trim()}
-                  onClick={handleAISuggest}
-                >
-                  <Sparkles className="h-3 w-3" />
-                  {aiLoading ? "Analisando..." : "Sugestão IA"}
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 text-xs"
+                    disabled={aiGenerating || !pacienteId}
+                    onClick={handleAIGenerate}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {aiGenerating ? "Gerando..." : "Gerar Texto"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 text-xs"
+                    disabled={aiLoading || !conteudo.trim() || !pacienteId}
+                    onClick={handleAISuggest}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {aiLoading ? "Melhorando..." : "Melhorar"}
+                  </Button>
+                </div>
               </div>
               <Textarea
                 value={conteudo}
                 onChange={e => setConteudo(e.target.value)}
-                placeholder="Digite o conteúdo do documento..."
+                placeholder="Selecione o paciente e clique em 'Gerar Texto' para criar um modelo, ou digite o conteúdo manualmente..."
                 className="min-h-[200px]"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Preencha o conteúdo e clique em "Sugestão IA" para obter melhorias baseadas no prontuário do paciente.
+                <strong>Gerar Texto:</strong> Cria um modelo baseado no tipo de documento e dados do paciente. <strong>Melhorar:</strong> Aprimora o texto já escrito.
               </p>
             </div>
 
