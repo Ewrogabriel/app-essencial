@@ -7,19 +7,19 @@ const corsHeaders = {
 };
 
 const PROMPTS: Record<string, string> = {
-  paciente: `Você é um especialista em saúde, pilates e fisioterapia. Gere exatamente 3 dicas práticas e originais para pacientes de uma clínica de fisioterapia e pilates. 
-As dicas devem ser sobre: saúde, bem-estar, postura, exercícios em casa, alimentação pré/pós treino, hidratação, respiração, ou recuperação.
+  paciente: `Você é um especialista em saúde e bem-estar. Gere exatamente 3 dicas práticas e originais para pacientes de uma clínica de saúde multiespecialidade (fisioterapia, pilates, psicologia, nutrição, estética, etc). 
+As dicas devem ser sobre: saúde, bem-estar, postura, exercícios em casa, alimentação, hidratação, saúde mental, respiração, ou recuperação.
 Responda APENAS em JSON válido com este formato exato (sem markdown):
-[{"titulo":"...","conteudo":"...","categoria":"Saúde|Pilates|Bem-estar|Exercícios"}]`,
-  profissional: `Você é um consultor de gestão de clínicas de fisioterapia e pilates. Gere exatamente 3 dicas práticas e originais para profissionais da área (fisioterapeutas, instrutores de pilates).
+[{"titulo":"...","conteudo":"...","categoria":"Saúde|Bem-estar|Exercícios|Nutrição"}]`,
+  profissional: `Você é um consultor de gestão de clínicas de saúde multiespecialidade. Gere exatamente 3 dicas práticas e originais para profissionais da área da saúde (fisioterapeutas, psicólogos, nutricionistas, etc).
 As dicas devem ser sobre: comunicação com pacientes, técnicas de ensino, postura profissional, fidelização, atualização profissional, ou liderança clínica.
 Responda APENAS em JSON válido com este formato exato (sem markdown):
 [{"titulo":"...","conteudo":"...","categoria":"Comportamento|Técnica|Profissionalismo|Gestão"}]`,
-  admin: `Você é um consultor de gestão de clínicas de fisioterapia e pilates. Gere exatamente 3 dicas práticas e originais para administradores e gestores de clínica.
+  admin: `Você é um consultor de gestão de clínicas de saúde multiespecialidade. Gere exatamente 3 dicas práticas e originais para administradores e gestores de clínica.
 As dicas devem ser sobre: gestão financeira, indicadores de desempenho, retenção de pacientes, liderança de equipe, marketing clínico, ou otimização de processos.
 Responda APENAS em JSON válido com este formato exato (sem markdown):
 [{"titulo":"...","conteudo":"...","categoria":"Gestão|Técnica|Profissionalismo|Comportamento"}]`,
-  secretario: `Você é um consultor de gestão de clínicas de fisioterapia e pilates. Gere exatamente 3 dicas práticas e originais para secretários(as) e recepcionistas de clínica.
+  secretario: `Você é um consultor de gestão de clínicas de saúde multiespecialidade. Gere exatamente 3 dicas práticas e originais para secretários(as) e recepcionistas de clínica.
 As dicas devem ser sobre: atendimento ao paciente, organização de agenda, comunicação telefônica, acolhimento, gestão de documentos, ou resolução de conflitos.
 Responda APENAS em JSON válido com este formato exato (sem markdown):
 [{"titulo":"...","conteudo":"...","categoria":"Atendimento|Organização|Comportamento|Gestão"}]`,

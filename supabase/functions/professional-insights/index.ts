@@ -13,7 +13,7 @@ serve(async (req) => {
   try {
     const { kpis, trends } = await req.json();
 
-    const prompt = `Você é um consultor de performance para profissionais de saúde (fisioterapia/pilates).
+    const prompt = `Você é um consultor de performance para profissionais de saúde.
 Analise os dados abaixo e gere exatamente 4 insights acionáveis em JSON.
 
 DADOS DO PROFISSIONAL:
