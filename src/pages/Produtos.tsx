@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, ShoppingCart, Trash2, Edit2, Package, History, TrendingUp } from "lucide-react";
+import { Plus, ShoppingCart, Trash2, Edit2, Package, History, TrendingUp, Sparkles, Image, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,9 @@ const Produtos = () => {
   const [mesRef, setMesRef] = useState(format(new Date(), "yyyy-MM"));
 
   const [formData, setFormData] = useState({ nome: "", descricao: "", preco: "", estoque: "", foto_url: "" });
+  const [aiDescLoading, setAiDescLoading] = useState(false);
+  const [aiImageLoading, setAiImageLoading] = useState(false);
+  const [descSuggestions, setDescSuggestions] = useState<string[]>([]);
   const [saleData, setSaleData] = useState({ produto_id: "", paciente_id: "", quantidade: "1", data_venda: format(new Date(), "yyyy-MM-dd"), observacoes: "" });
   const [stockData, setStockData] = useState({ produto_id: "", quantidade: "", data_entrada: format(new Date(), "yyyy-MM-dd"), observacoes: "" });
 
@@ -173,7 +176,45 @@ const Produtos = () => {
     onError: (error) => toast({ title: "Erro", description: String(error), variant: "destructive" }),
   });
 
-  const resetForm = () => { setFormData({ nome: "", descricao: "", preco: "", estoque: "", foto_url: "" }); setEditingId(null); };
+  const resetForm = () => { setFormData({ nome: "", descricao: "", preco: "", estoque: "", foto_url: "" }); setEditingId(null); setDescSuggestions([]); };
+
+  const generateDescriptions = async () => {
+    if (!formData.nome) { toast({ title: "Informe o nome do produto primeiro", variant: "destructive" }); return; }
+    setAiDescLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-product", {
+        body: { action: "suggest_description", productName: formData.nome, currentDescription: formData.descricao },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setDescSuggestions(data.suggestions || []);
+      toast({ title: "Sugestões geradas!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao gerar", description: err.message, variant: "destructive" });
+    } finally {
+      setAiDescLoading(false);
+    }
+  };
+
+  const generateProductImage = async () => {
+    if (!formData.nome) { toast({ title: "Informe o nome do produto primeiro", variant: "destructive" }); return; }
+    setAiImageLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-product", {
+        body: { action: "generate_image", productName: formData.nome, currentDescription: formData.descricao },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.imageUrl) {
+        setFormData(prev => ({ ...prev, foto_url: data.imageUrl }));
+        toast({ title: "Imagem gerada com sucesso!" });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro ao gerar imagem", description: err.message, variant: "destructive" });
+    } finally {
+      setAiImageLoading(false);
+    }
+  };
 
   const openEdit = (produto: any) => {
     setEditingId(produto.id);
@@ -366,16 +407,63 @@ const Produtos = () => {
 
       {/* Product Form Dialog */}
       <Dialog open={formOpen} onOpenChange={(open) => { setFormOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingId ? "Editar Produto" : "Novo Produto"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Nome *</Label><Input value={formData.nome} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} /></div>
-            <div><Label>Descrição</Label><Textarea value={formData.descricao} onChange={(e) => setFormData({ ...formData, descricao: e.target.value })} rows={3} /></div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Descrição</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-xs h-7"
+                  disabled={aiDescLoading || !formData.nome}
+                  onClick={generateDescriptions}
+                >
+                  {aiDescLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Sugerir com IA
+                </Button>
+              </div>
+              <Textarea value={formData.descricao} onChange={(e) => setFormData({ ...formData, descricao: e.target.value })} rows={3} placeholder="Descreva o produto ou use a IA para sugerir..." />
+              {descSuggestions.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground font-medium">Sugestões da IA (clique para usar):</p>
+                  {descSuggestions.map((sug, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="block w-full text-left text-xs p-2 rounded-md border bg-muted/50 hover:bg-primary/10 hover:border-primary/30 transition-colors"
+                      onClick={() => { setFormData({ ...formData, descricao: sug }); setDescSuggestions([]); }}
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Preço (R$) *</Label><Input type="number" step="0.01" value={formData.preco} onChange={(e) => setFormData({ ...formData, preco: e.target.value })} /></div>
               <div><Label>Estoque *</Label><Input type="number" value={formData.estoque} onChange={(e) => setFormData({ ...formData, estoque: e.target.value })} /></div>
             </div>
-            <div><Label>Foto</Label><ImageUpload value={formData.foto_url} onChange={(url) => setFormData({ ...formData, foto_url: url })} folder="produtos" /></div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Foto</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-xs h-7"
+                  disabled={aiImageLoading || !formData.nome}
+                  onClick={generateProductImage}
+                >
+                  {aiImageLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Image className="h-3 w-3" />}
+                  Gerar Imagem com IA
+                </Button>
+              </div>
+              <ImageUpload value={formData.foto_url} onChange={(url) => setFormData({ ...formData, foto_url: url })} folder="produtos" />
+            </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => setFormOpen(false)}>Cancelar</Button>
               <Button onClick={() => saveProduto.mutate()} disabled={!formData.nome || !formData.preco || saveProduto.isPending}>
