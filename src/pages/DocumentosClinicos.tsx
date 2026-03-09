@@ -40,6 +40,7 @@ const tipoColors: Record<string, string> = {
 const DocumentosClinicos = () => {
   const { user, profile } = useAuth();
   const { activeClinicId } = useClinic();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<any>(null);
