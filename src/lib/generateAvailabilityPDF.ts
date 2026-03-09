@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { addLogoToPDF, getClinicSettings } from "./pdfLogo";
+import { addLogoToPDF, getClinicSettings, addWatermarkToAllPages } from "./pdfLogo";
 
 interface AvailabilitySlot {
   dia_semana: number;

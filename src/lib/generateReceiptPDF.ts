@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { addLogoToPDF, getClinicSettings, formatClinicAddress } from "./pdfLogo";
+import { addLogoToPDF, getClinicSettings, formatClinicAddress, addWatermarkToAllPages } from "./pdfLogo";
 
 interface ReceiptData {
   numero: string;

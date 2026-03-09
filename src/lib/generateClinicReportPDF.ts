@@ -419,7 +419,8 @@ export async function generateClinicReportPDF(report: ReportData, metrics: Metri
     doc.setTextColor(...COLORS.gray);
     doc.text(address, pw / 2, 88, { align: "center" });
   }
-
+  await addWatermarkToAllPages(doc);
+  
   const dateStr = new Date().toISOString().split("T")[0];
   doc.save(`relatorio-gerencial-${dateStr}.pdf`);
 }

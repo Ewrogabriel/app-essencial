@@ -111,6 +111,8 @@ export async function generateWeeklyPDF(
     },
   });
 
+  await addWatermarkToAllPages(doc);
+  
   const fileName = professionalName
     ? `agenda-semanal-${professionalName.replace(/\s+/g, "_")}-${format(weekStart, "yyyy-MM-dd")}.pdf`
     : `agenda-semanal-${format(weekStart, "yyyy-MM-dd")}.pdf`;
