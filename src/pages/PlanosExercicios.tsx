@@ -604,6 +604,21 @@ export default function PlanosExercicios() {
               </Select>
             </div>
             <div className="space-y-1.5">
+              <Label>Tipo de plano *</Label>
+              <Select value={aiForm.tipo_plano} onValueChange={(v) => setAiForm((f) => ({ ...f, tipo_plano: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fisioterapia">Fisioterapia</SelectItem>
+                  <SelectItem value="pilates_aparelho">Pilates Aparelho (Reformer)</SelectItem>
+                  <SelectItem value="pilates_solo">Pilates Solo (Mat)</SelectItem>
+                  <SelectItem value="pilates_misto">Pilates Misto (Solo + Aparelho)</SelectItem>
+                  <SelectItem value="fortalecimento">Fortalecimento Muscular</SelectItem>
+                  <SelectItem value="alongamento">Alongamento e Flexibilidade</SelectItem>
+                  <SelectItem value="funcional">Treinamento Funcional</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Label>Objetivo principal *</Label>
               <Input value={aiForm.objetivo} onChange={(e) => setAiForm((f) => ({ ...f, objetivo: e.target.value }))}
                 placeholder="Ex: Fortalecimento lombar, reabilitação joelho..." />
@@ -615,13 +630,14 @@ export default function PlanosExercicios() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Nível</Label>
+                <Label>Nível do paciente</Label>
                 <Select value={aiForm.nivel} onValueChange={(v) => setAiForm((f) => ({ ...f, nivel: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="iniciante">Iniciante</SelectItem>
                     <SelectItem value="intermediario">Intermediário</SelectItem>
                     <SelectItem value="avancado">Avançado</SelectItem>
+                    <SelectItem value="adaptado">Adaptado (Restrições)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -632,9 +648,9 @@ export default function PlanosExercicios() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Observações adicionais</Label>
+              <Label>Observações para a IA</Label>
               <Textarea value={aiForm.observacoes} onChange={(e) => setAiForm((f) => ({ ...f, observacoes: e.target.value }))}
-                placeholder="Restrições, preferências, equipamentos disponíveis..." rows={2} />
+                placeholder="Ex: Exercícios no Reformer, sem carga em MMSS, foco em core, usar bola suíça..." rows={3} />
             </div>
           </div>
           <DialogFooter>
