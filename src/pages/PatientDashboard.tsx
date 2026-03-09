@@ -433,12 +433,6 @@ const PatientDashboard = () => {
           </Suspense>
         </TabsContent>
 
-        <TabsContent value="prontuario" className="mt-4">
-          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-            {patientId && <PatientEvolutionsTab pacienteId={patientId} />}
-          </Suspense>
-        </TabsContent>
-
         <TabsContent value="financeiro" className="mt-4">
           <Suspense fallback={<div className="space-y-4"><Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" /></div>}>
             <PatientFinanceTab
