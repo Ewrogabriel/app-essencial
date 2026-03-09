@@ -412,6 +412,23 @@ const PatientDashboard = () => {
         </Card>
       </div>
 
+      {/* Meus Planos de Exercícios - Clickable Card */}
+      <Card
+        className="cursor-pointer hover:shadow-md hover:border-primary/40 transition-all group"
+        onClick={() => navigate("/planos-exercicios")}
+      >
+        <CardContent className="flex items-center gap-4 p-4">
+          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+            <Dumbbell className="h-6 w-6 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-sm">Meus Planos de Exercícios</p>
+            <p className="text-xs text-muted-foreground">Veja seus planos e exercícios prescritos</p>
+          </div>
+          <ChevronDown className="h-4 w-4 text-muted-foreground -rotate-90" />
+        </CardContent>
+      </Card>
+
       {/* Trending Products Card */}
       {trendingProducts.length > 0 && (
         <Card>
