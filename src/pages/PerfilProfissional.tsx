@@ -204,7 +204,7 @@ const PerfilProfissional = () => {
                 <Input value={registroProfissional} onChange={(e) => setRegistroProfissional(e.target.value)} />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>Graduação</Label>
+                <Label>{t("profile.graduation")}</Label>
                 <Input value={graduacao} onChange={(e) => setGraduacao(e.target.value)} placeholder="Ex: Fisioterapia — UFJF 2018" />
               </div>
               <div className="space-y-2 sm:col-span-2">
