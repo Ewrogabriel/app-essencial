@@ -312,7 +312,7 @@ const Marketing = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[800px]">
           <TabsTrigger value="clinic-ads" className="gap-2">
             <Target className="h-4 w-4" /> Anúncios da Clínica
           </TabsTrigger>
@@ -321,6 +321,9 @@ const Marketing = () => {
           </TabsTrigger>
           <TabsTrigger value="social-posts" className="gap-2">
             <Instagram className="h-4 w-4" /> Posts Sociais
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-2">
+            <History className="h-4 w-4" /> Histórico
           </TabsTrigger>
         </TabsList>
 
