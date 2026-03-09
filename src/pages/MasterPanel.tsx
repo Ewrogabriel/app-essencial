@@ -781,18 +781,22 @@ export default function MasterPanel() {
       </div>
 
       <Tabs defaultValue="dashboard">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="dashboard">Visão Geral</TabsTrigger>
           <TabsTrigger value="clinics">Clínicas</TabsTrigger>
           <TabsTrigger value="plans">Planos</TabsTrigger>
           <TabsTrigger value="payments">Pagamentos</TabsTrigger>
           <TabsTrigger value="groups">Grupos</TabsTrigger>
+          <TabsTrigger value="marketing" className="gap-1">
+            <Rocket className="h-3 w-3" /> Marketing
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="dashboard"><MasterDashboardTab /></TabsContent>
         <TabsContent value="clinics"><ClinicsTab /></TabsContent>
         <TabsContent value="plans"><PlansTab /></TabsContent>
         <TabsContent value="payments"><PaymentsTab /></TabsContent>
         <TabsContent value="groups"><GroupsTab /></TabsContent>
+        <TabsContent value="marketing"><MasterMarketingTab /></TabsContent>
       </Tabs>
     </div>
   );
