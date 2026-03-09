@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
+import { useI18n } from "@/hooks/useI18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ const tipoColors: Record<string, string> = {
 const DocumentosClinicos = () => {
   const { user, profile } = useAuth();
   const { activeClinicId } = useClinic();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<any>(null);
@@ -249,22 +251,22 @@ const DocumentosClinicos = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Documentos Clínicos</h1>
-          <p className="text-muted-foreground">Receituários, relatórios, atestados, encaminhamentos e mais</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("docs.title")}</h1>
+          <p className="text-muted-foreground">{t("docs.subtitle")}</p>
         </div>
         <Button className="gap-2" onClick={() => { resetForm(); setIsFormOpen(true); }}>
-          <Plus className="h-4 w-4" /> Novo Documento
+          <Plus className="h-4 w-4" /> {t("docs.new")}
         </Button>
       </div>
 
       {/* List */}
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+        <div className="text-center py-12 text-muted-foreground">{t("common.loading")}</div>
       ) : documentos.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-            <p>Nenhum documento criado ainda.</p>
+            <p>{t("docs.no_docs")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -311,28 +313,28 @@ const DocumentosClinicos = () => {
       <Dialog open={isFormOpen} onOpenChange={(o) => { if (!o) resetForm(); }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingDoc ? "Editar Documento" : "Novo Documento Clínico"}</DialogTitle>
+            <DialogTitle>{editingDoc ? t("docs.edit") : t("docs.new_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Tipo de Documento</Label>
+                <Label>{t("docs.type")}</Label>
                 <Select value={tipo} onValueChange={(v) => { setTipo(v); if (v !== "outros") setTitulo(""); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="receituario">Receituário</SelectItem>
-                    <SelectItem value="relatorio">Relatório Clínico</SelectItem>
-                    <SelectItem value="atestado">Atestado</SelectItem>
-                    <SelectItem value="encaminhamento">Encaminhamento</SelectItem>
-                    <SelectItem value="comparecimento">Comprovante de Comparecimento</SelectItem>
-                    <SelectItem value="outros">Outros</SelectItem>
+                    <SelectItem value="receituario">{t("docs.prescription")}</SelectItem>
+                    <SelectItem value="relatorio">{t("docs.report")}</SelectItem>
+                    <SelectItem value="atestado">{t("docs.certificate")}</SelectItem>
+                    <SelectItem value="encaminhamento">{t("docs.referral")}</SelectItem>
+                    <SelectItem value="comparecimento">{t("docs.attendance")}</SelectItem>
+                    <SelectItem value="outros">{t("docs.other")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Paciente</Label>
+                <Label>{t("common.patient")}</Label>
                 <Select value={pacienteId} onValueChange={setPacienteId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o paciente" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("docs.select_patient")} /></SelectTrigger>
                   <SelectContent>
                     {pacientes.map((p: any) => (
                       <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
@@ -344,26 +346,26 @@ const DocumentosClinicos = () => {
 
             {tipo === "outros" && (
               <div>
-                <Label>Nome do Tipo de Documento *</Label>
+                <Label>{t("docs.doc_type_name")} *</Label>
                 <Input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Ex: Declaração, Laudo, etc." />
               </div>
             )}
 
             {tipo !== "outros" && (
               <div>
-                <Label>Título (opcional)</Label>
+                <Label>{t("docs.title_optional")}</Label>
                 <Input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder={tipoLabels[tipo]} />
               </div>
             )}
 
             <div>
-              <Label>Profissional</Label>
+              <Label>{t("common.professional")}</Label>
               <Input value={profile?.nome || ""} disabled className="bg-muted" />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <Label>Conteúdo</Label>
+                <Label>{t("docs.content")}</Label>
                 <div className="flex gap-1">
                   <Button
                     variant="outline"
@@ -373,7 +375,7 @@ const DocumentosClinicos = () => {
                     onClick={handleAIGenerate}
                   >
                     <Sparkles className="h-3 w-3" />
-                    {aiGenerating ? "Gerando..." : "Gerar Texto"}
+                    {aiGenerating ? t("docs.generating") : t("docs.generate_text")}
                   </Button>
                   <Button
                     variant="outline"
@@ -383,18 +385,18 @@ const DocumentosClinicos = () => {
                     onClick={handleAISuggest}
                   >
                     <Sparkles className="h-3 w-3" />
-                    {aiLoading ? "Melhorando..." : "Melhorar"}
+                    {aiLoading ? t("docs.improving") : t("docs.improve")}
                   </Button>
                 </div>
               </div>
               <Textarea
                 value={conteudo}
                 onChange={e => setConteudo(e.target.value)}
-                placeholder="Selecione o paciente e clique em 'Gerar Texto' para criar um modelo, ou digite o conteúdo manualmente..."
+                placeholder={t("docs.generate_hint")}
                 className="min-h-[200px]"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                <strong>Gerar Texto:</strong> Cria um modelo baseado no tipo de documento e dados do paciente. <strong>Melhorar:</strong> Aprimora o texto já escrito.
+                <strong>{t("docs.generate_text")}:</strong> {t("docs.generate_hint")} <strong>{t("docs.improve")}:</strong> {t("docs.improve_hint")}
               </p>
             </div>
 
@@ -402,22 +404,22 @@ const DocumentosClinicos = () => {
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
                 <Label className="font-medium flex items-center gap-2">
-                  <Stamp className="h-4 w-4" /> Incluir Carimbo Profissional
+                  <Stamp className="h-4 w-4" /> {t("docs.stamp")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Adiciona carimbo com nome, registro profissional e especialidade no documento
+                  {t("docs.stamp_desc")}
                 </p>
               </div>
               <Switch checked={incluirCarimbo} onCheckedChange={setIncluirCarimbo} />
             </div>
 
             <div className="flex gap-2 justify-end pt-2">
-              <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+              <Button variant="outline" onClick={resetForm}>{t("common.cancel")}</Button>
               <Button
                 disabled={!pacienteId || !conteudo.trim() || (tipo === "outros" && !titulo.trim()) || saveMutation.isPending}
                 onClick={() => saveMutation.mutate()}
               >
-                {saveMutation.isPending ? "Salvando..." : editingDoc ? "Atualizar" : "Salvar Documento"}
+                {saveMutation.isPending ? t("common.saving") : editingDoc ? t("common.save") : t("common.save")}
               </Button>
             </div>
           </div>

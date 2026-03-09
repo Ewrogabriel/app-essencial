@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/hooks/useI18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 
 const PerfilProfissional = () => {
   const { user, profile: authProfile } = useAuth();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
@@ -99,10 +101,10 @@ const PerfilProfissional = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Perfil atualizado!" });
+      toast({ title: t("profile.updated") });
       queryClient.invalidateQueries({ queryKey: ["my-professional-profile"] });
     },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("common.error"), description: e.message, variant: "destructive" }),
   });
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,11 +112,11 @@ const PerfilProfissional = () => {
     if (!file || !user) return;
     const filePath = `${user.id}/avatar.${file.name.split(".").pop()}`;
     const { error: uploadError } = await supabase.storage.from("professional-documents").upload(filePath, file, { upsert: true });
-    if (uploadError) { toast({ title: "Erro no upload", description: uploadError.message, variant: "destructive" }); return; }
+    if (uploadError) { toast({ title: t("common.error"), description: uploadError.message, variant: "destructive" }); return; }
     const { data: urlData } = supabase.storage.from("professional-documents").getPublicUrl(filePath);
     await supabase.from("profiles").update({ foto_url: urlData.publicUrl } as any).eq("user_id", user.id);
     queryClient.invalidateQueries({ queryKey: ["my-professional-profile"] });
-    toast({ title: "Foto atualizada!" });
+    toast({ title: t("profile.photo_updated") });
   };
 
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,7 +124,7 @@ const PerfilProfissional = () => {
     if (!file || !user) return;
     const filePath = `${user.id}/docs/${Date.now()}_${file.name}`;
     const { error: uploadError } = await supabase.storage.from("professional-documents").upload(filePath, file);
-    if (uploadError) { toast({ title: "Erro no upload", description: uploadError.message, variant: "destructive" }); return; }
+    if (uploadError) { toast({ title: t("common.error"), description: uploadError.message, variant: "destructive" }); return; }
     await (supabase.from("professional_documents") as any).insert({
       profissional_id: user.id,
       nome: file.name,
@@ -132,21 +134,21 @@ const PerfilProfissional = () => {
       file_size: file.size,
     });
     queryClient.invalidateQueries({ queryKey: ["my-professional-docs"] });
-    toast({ title: "Documento anexado!" });
+    toast({ title: t("profile.doc_attached") });
   };
 
   const handleDeleteDoc = async (doc: any) => {
     await supabase.storage.from("professional-documents").remove([doc.file_path]);
     await (supabase.from("professional_documents") as any).delete().eq("id", doc.id);
     queryClient.invalidateQueries({ queryKey: ["my-professional-docs"] });
-    toast({ title: "Documento removido." });
+    toast({ title: t("profile.doc_removed") });
   };
 
   const initials = nome ? nome.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "P";
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">Meu Perfil Profissional</h1>
+      <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">{t("profile.title")}</h1>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Avatar + basic info */}
@@ -166,15 +168,15 @@ const PerfilProfissional = () => {
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-lg">{nome || "Profissional"}</p>
+              <p className="font-semibold text-lg">{nome || t("common.professional")}</p>
               {especialidade && <Badge variant="secondary" className="mt-1 capitalize">{especialidade}</Badge>}
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
               {aceitaTeleconsulta && (
-                <Badge variant="outline" className="gap-1"><Video className="h-3 w-3" /> Teleconsulta</Badge>
+                <Badge variant="outline" className="gap-1"><Video className="h-3 w-3" /> {t("profile.teleconsultation")}</Badge>
               )}
               {aceitaDomiciliar && (
-                <Badge variant="outline" className="gap-1"><Home className="h-3 w-3" /> Domiciliar</Badge>
+                <Badge variant="outline" className="gap-1"><Home className="h-3 w-3" /> {t("profile.home_visit")}</Badge>
               )}
             </div>
           </CardContent>
@@ -182,36 +184,36 @@ const PerfilProfissional = () => {
 
         {/* Profile form */}
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle>Informações Pessoais</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t("profile.personal_info")}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Nome completo</Label>
+                <Label>{t("profile.full_name")}</Label>
                 <Input value={nome} onChange={(e) => setNome(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Telefone</Label>
+                <Label>{t("common.phone")}</Label>
                 <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Especialidade</Label>
+                <Label>{t("profile.specialty")}</Label>
                 <Input value={especialidade} onChange={(e) => setEspecialidade(e.target.value)} placeholder="Ex: Fisioterapia, Pilates" />
               </div>
               <div className="space-y-2">
-                <Label>Registro Profissional (CREFITO)</Label>
+                <Label>{t("profile.registration")}</Label>
                 <Input value={registroProfissional} onChange={(e) => setRegistroProfissional(e.target.value)} />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>Graduação</Label>
+                <Label>{t("profile.graduation")}</Label>
                 <Input value={graduacao} onChange={(e) => setGraduacao(e.target.value)} placeholder="Ex: Fisioterapia — UFJF 2018" />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>Cursos e Especializações (separe por vírgula)</Label>
+                <Label>{t("profile.courses")} ({t("profile.courses_hint")})</Label>
                 <Input value={cursos} onChange={(e) => setCursos(e.target.value)} placeholder="Pilates Clínico, RPG Souchard, Dry Needling" />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label>Bio / Sobre Mim</Label>
-                <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} placeholder="Fale um pouco sobre sua experiência..." />
+                <Label>{t("profile.bio")}</Label>
+                <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} placeholder={t("profile.bio_placeholder")} />
               </div>
             </div>
           </CardContent>
@@ -221,20 +223,20 @@ const PerfilProfissional = () => {
       {/* Teleconsulta Settings */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Video className="h-5 w-5 text-primary" /> Teleconsulta</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Video className="h-5 w-5 text-primary" /> {t("profile.teleconsultation")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-sm">Aceita teleconsulta?</p>
-              <p className="text-xs text-muted-foreground">Permitir agendamentos de tele atendimento</p>
+              <p className="font-medium text-sm">{t("profile.accept_teleconsultation")}</p>
+              <p className="text-xs text-muted-foreground">{t("profile.allow_tele")}</p>
             </div>
             <Switch checked={aceitaTeleconsulta} onCheckedChange={setAceitaTeleconsulta} />
           </div>
           {aceitaTeleconsulta && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
               <div className="space-y-2">
-                <Label>Plataforma</Label>
+                <Label>{t("profile.platform")}</Label>
                 <Select value={teleconsultaPlataforma} onValueChange={setTeleconsultaPlataforma}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
@@ -247,7 +249,7 @@ const PerfilProfissional = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Link da sala (opcional)</Label>
+                <Label>{t("profile.room_link")}</Label>
                 <Input value={teleconsultaLink} onChange={(e) => setTeleconsultaLink(e.target.value)} placeholder="https://meet.google.com/..." />
               </div>
             </div>
@@ -258,29 +260,29 @@ const PerfilProfissional = () => {
       {/* Atendimento Domiciliar */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Home className="h-5 w-5 text-primary" /> Atendimento Domiciliar</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Home className="h-5 w-5 text-primary" /> {t("profile.home_visit")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-sm">Aceita atendimento domiciliar?</p>
-              <p className="text-xs text-muted-foreground">Permitir agendamentos em domicílio</p>
+              <p className="font-medium text-sm">{t("profile.accept_home")}</p>
+              <p className="text-xs text-muted-foreground">{t("profile.allow_home")}</p>
             </div>
             <Switch checked={aceitaDomiciliar} onCheckedChange={setAceitaDomiciliar} />
           </div>
           {aceitaDomiciliar && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t">
               <div className="space-y-2">
-                <Label>Raio de atendimento (km)</Label>
+                <Label>{t("profile.radius_km")}</Label>
                 <Input type="number" value={domiciliarRaioKm} onChange={(e) => setDomiciliarRaioKm(e.target.value)} placeholder="Ex: 15" />
               </div>
               <div className="space-y-2">
-                <Label>Valor adicional (R$)</Label>
+                <Label>{t("profile.additional_fee")}</Label>
                 <Input type="number" step="0.01" value={domiciliarValorAdicional} onChange={(e) => setDomiciliarValorAdicional(e.target.value)} placeholder="0.00" />
               </div>
               <div className="space-y-2 sm:col-span-1">
-                <Label>Observações</Label>
-                <Input value={domiciliarObservacoes} onChange={(e) => setDomiciliarObservacoes(e.target.value)} placeholder="Restrições, bairros..." />
+                <Label>{t("common.obs")}</Label>
+                <Input value={domiciliarObservacoes} onChange={(e) => setDomiciliarObservacoes(e.target.value)} placeholder={t("profile.restrictions")} />
               </div>
             </div>
           )}
@@ -289,7 +291,7 @@ const PerfilProfissional = () => {
 
       <div className="flex justify-end">
         <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} size="lg">
-          {saveMutation.isPending ? "Salvando..." : "Salvar Perfil"}
+          {saveMutation.isPending ? t("common.saving") : t("profile.save")}
         </Button>
       </div>
 
@@ -297,16 +299,16 @@ const PerfilProfissional = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> Documentos & Certificados</CardTitle>
+            <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> {t("profile.documents")}</CardTitle>
             <Button size="sm" variant="outline" onClick={() => docInputRef.current?.click()}>
-              <Upload className="h-4 w-4 mr-1" /> Anexar
+              <Upload className="h-4 w-4 mr-1" /> {t("profile.attach")}
             </Button>
             <input ref={docInputRef} type="file" className="hidden" onChange={handleDocUpload} />
           </div>
         </CardHeader>
         <CardContent>
           {documents.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-6">Nenhum documento anexado.</p>
+            <p className="text-center text-sm text-muted-foreground py-6">{t("profile.no_docs")}</p>
           ) : (
             <div className="space-y-2">
               {documents.map((doc: any) => (
