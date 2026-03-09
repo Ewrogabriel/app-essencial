@@ -20,7 +20,7 @@ serve(async (req) => {
 
     switch (action) {
       case "churn_reengagement":
-        systemPrompt = `Você é especialista em retenção de pacientes para clínicas de fisioterapia e pilates.
+        systemPrompt = `Você é especialista em retenção de pacientes para clínicas de saúde (fisioterapia, pilates, psicologia, nutrição, estética, etc).
 Analise os dados do paciente em risco de churn e sugira 3 ações personalizadas de reengajamento.
 Seja criativo, empático e específico. Considere promoções, mensagens personalizadas, ofertas especiais.`;
         userPrompt = `Paciente: ${context.nome}
@@ -99,7 +99,7 @@ Sugira os pacientes prioritários para cada vaga, explicando o motivo.`;
         break;
 
       case "kpi_insights":
-        systemPrompt = `Você é um analista de dados para clínicas de fisioterapia e pilates.
+        systemPrompt = `Você é um analista de dados para clínicas de saúde multiespecialidade.
 Analise os KPIs fornecidos e gere insights em linguagem natural, fácil de entender.
 Destaque pontos positivos, alertas e oportunidades de melhoria.
 Seja conciso mas informativo. Use emojis para tornar mais visual.`;
@@ -222,7 +222,7 @@ Sugira os 3 melhores horários para este paciente.`;
         break;
 
       case "patient_chatbot":
-        systemPrompt = `Você é um assistente virtual da clínica de fisioterapia e pilates.
+        systemPrompt = `Você é um assistente virtual de uma clínica de saúde multiespecialidade.
 Ajude pacientes com dúvidas sobre agendamentos, pagamentos, horários e serviços.
 Seja cordial, prestativo e objetivo. Use linguagem simples e amigável.
 IMPORTANTE: Você NÃO pode marcar ou cancelar consultas - apenas informar e orientar.
@@ -236,7 +236,7 @@ Contexto:
         break;
 
       case "document_suggest":
-        systemPrompt = `Você é um fisioterapeuta experiente que auxilia na redação de documentos clínicos.
+        systemPrompt = `Você é um profissional de saúde experiente que auxilia na redação de documentos clínicos.
 Sua tarefa é melhorar o texto do documento mantendo a essência do que o profissional escreveu.
 Use linguagem técnica apropriada, seja claro e objetivo.
 Considere o histórico clínico do paciente (evoluções e avaliações) para enriquecer o documento.
@@ -260,21 +260,21 @@ Melhore o texto acima mantendo o sentido original, enriquecendo com dados clíni
 - Declaração formal de que o paciente compareceu à clínica
 - Data e horário do atendimento
 - Nome do profissional responsável
-- Finalidade genérica (consulta de fisioterapia/pilates)
+- Finalidade genérica (consulta/atendimento clínico)
 Use linguagem formal e objetiva. O texto deve servir para apresentar a empregadores ou instituições.`,
-          atestado: `Gere um Atestado clínico para fisioterapia/pilates. Deve conter:
+          atestado: `Gere um Atestado clínico. Deve conter:
 - Declaração de atendimento
 - Período de afastamento se aplicável
 - CID se informado no contexto
 - Recomendações gerais
 Use linguagem formal e técnica.`,
-          receituario: `Gere um modelo de Receituário para fisioterapia. Pode incluir:
-- Exercícios domiciliares
-- Orientações posturais
+          receituario: `Gere um modelo de Receituário/Prescrição clínica. Pode incluir:
+- Orientações terapêuticas
+- Exercícios ou cuidados domiciliares
 - Recomendações de frequência
 - Cuidados específicos
 Use linguagem clara e didática para o paciente.`,
-          relatorio: `Gere um modelo de Relatório Clínico para fisioterapia/pilates. Deve conter:
+          relatorio: `Gere um modelo de Relatório Clínico. Deve conter:
 - Identificação do paciente
 - Diagnóstico clínico/funcional
 - Objetivos do tratamento

@@ -112,9 +112,9 @@ const Login = () => {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground mb-4">
             <Activity className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold font-[Plus_Jakarta_Sans]">Essencial FisioPilates</h1>
+          <h1 className="text-2xl font-bold font-[Plus_Jakarta_Sans]">Essencial Clínicas</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Gestão Inteligente para Fisioterapia e Pilates
+            Gestão Inteligente para Clínicas de Saúde
           </p>
         </div>
 
@@ -180,7 +180,7 @@ const Login = () => {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          Sistema de Gestão para Fisioterapia e Pilates
+          Sistema de Gestão para Clínicas de Saúde
         </p>
       </div>
     </div>
