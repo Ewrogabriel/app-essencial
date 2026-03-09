@@ -13,7 +13,7 @@ interface PatientPDFData {
   anexos?: any[];
 }
 
-export const generatePatientCompletePDF = (data: PatientPDFData) => {
+export const generatePatientCompletePDF = async (data: PatientPDFData) => {
   const doc = new jsPDF();
   const { paciente, avaliacao, evolucoes = [], agendamentos = [], pagamentos = [], anexos = [] } = data;
   let y = 20;
