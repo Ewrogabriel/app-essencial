@@ -195,9 +195,10 @@ export function AppSidebar() {
         {isMaster && renderGroup(t("group.master"), menuMaster)}
         {(isAdmin || isGestor) ? (
           <>
-            {renderGroup(t("group.care"), menuAtendimento)}
-            {renderGroup(t("group.team_finance"), menuEquipeFinanceiro)}
-            {renderGroup(t("group.intelligence"), menuInteligencia)}
+            {renderGroup("Clínico", menuClinico)}
+            {renderGroup("Administrativo", menuAdministrativo)}
+            {renderGroup("Financeiro", menuFinanceiro)}
+            {renderGroup("Relatórios", menuRelatorios)}
             {renderGroup(t("group.communication"), menuComunicacao)}
             {renderGroup(t("group.settings"), menuConfig)}
             {isProfissional && renderGroup(t("group.profile"), [
