@@ -261,7 +261,7 @@ const DocumentosClinicos = () => {
 
       {/* List */}
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+        <div className="text-center py-12 text-muted-foreground">{t("common.loading")}</div>
       ) : documentos.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
