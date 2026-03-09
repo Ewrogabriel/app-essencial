@@ -52,6 +52,29 @@ const MeuPerfil = () => {
     enabled: !!patientId,
   });
 
+  // Fetch approved ficha requests with available PDFs
+  const { data: approvedFichas = [] } = useQuery({
+    queryKey: ["patient-approved-fichas", patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+      const now = new Date().toISOString();
+      const { data, error } = await (supabase
+        .from("ficha_requests" as any) as any)
+        .select("*")
+        .eq("paciente_id", patientId)
+        .eq("status", "aprovado")
+        .not("pdf_url", "is", null)
+        .gte("pdf_available_until", now)
+        .order("reviewed_at", { ascending: false });
+      if (error) {
+        console.error("Error fetching approved fichas:", error);
+        return [];
+      }
+      return data ?? [];
+    },
+    enabled: !!patientId,
+  });
+
   const submitChanges = useMutation({
     mutationFn: async () => {
       if (!patientId || !editData) throw new Error("Dados inválidos");
