@@ -203,7 +203,7 @@ export default function PlanosExercicios() {
     setGeneratingAI(true);
     try {
       const { data, error } = await supabase.functions.invoke("ai-exercise-plan", {
-        body: aiForm,
+        body: { ...aiForm },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
