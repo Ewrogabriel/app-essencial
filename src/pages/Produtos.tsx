@@ -176,7 +176,45 @@ const Produtos = () => {
     onError: (error) => toast({ title: "Erro", description: String(error), variant: "destructive" }),
   });
 
-  const resetForm = () => { setFormData({ nome: "", descricao: "", preco: "", estoque: "", foto_url: "" }); setEditingId(null); };
+  const resetForm = () => { setFormData({ nome: "", descricao: "", preco: "", estoque: "", foto_url: "" }); setEditingId(null); setDescSuggestions([]); };
+
+  const generateDescriptions = async () => {
+    if (!formData.nome) { toast({ title: "Informe o nome do produto primeiro", variant: "destructive" }); return; }
+    setAiDescLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-product", {
+        body: { action: "suggest_description", productName: formData.nome, currentDescription: formData.descricao },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setDescSuggestions(data.suggestions || []);
+      toast({ title: "Sugestões geradas!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao gerar", description: err.message, variant: "destructive" });
+    } finally {
+      setAiDescLoading(false);
+    }
+  };
+
+  const generateProductImage = async () => {
+    if (!formData.nome) { toast({ title: "Informe o nome do produto primeiro", variant: "destructive" }); return; }
+    setAiImageLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-product", {
+        body: { action: "generate_image", productName: formData.nome, currentDescription: formData.descricao },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.imageUrl) {
+        setFormData(prev => ({ ...prev, foto_url: data.imageUrl }));
+        toast({ title: "Imagem gerada com sucesso!" });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro ao gerar imagem", description: err.message, variant: "destructive" });
+    } finally {
+      setAiImageLoading(false);
+    }
+  };
 
   const openEdit = (produto: any) => {
     setEditingId(produto.id);
