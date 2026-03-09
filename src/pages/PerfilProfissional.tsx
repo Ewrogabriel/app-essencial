@@ -228,8 +228,8 @@ const PerfilProfissional = () => {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-sm">Aceita teleconsulta?</p>
-              <p className="text-xs text-muted-foreground">Permitir agendamentos de tele atendimento</p>
+              <p className="font-medium text-sm">{t("profile.accept_teleconsultation")}</p>
+              <p className="text-xs text-muted-foreground">{t("profile.allow_tele")}</p>
             </div>
             <Switch checked={aceitaTeleconsulta} onCheckedChange={setAceitaTeleconsulta} />
           </div>
