@@ -124,7 +124,7 @@ const PerfilProfissional = () => {
     if (!file || !user) return;
     const filePath = `${user.id}/docs/${Date.now()}_${file.name}`;
     const { error: uploadError } = await supabase.storage.from("professional-documents").upload(filePath, file);
-    if (uploadError) { toast({ title: "Erro no upload", description: uploadError.message, variant: "destructive" }); return; }
+    if (uploadError) { toast({ title: t("common.error"), description: uploadError.message, variant: "destructive" }); return; }
     await (supabase.from("professional_documents") as any).insert({
       profissional_id: user.id,
       nome: file.name,
@@ -134,7 +134,7 @@ const PerfilProfissional = () => {
       file_size: file.size,
     });
     queryClient.invalidateQueries({ queryKey: ["my-professional-docs"] });
-    toast({ title: "Documento anexado!" });
+    toast({ title: t("profile.doc_attached") });
   };
 
   const handleDeleteDoc = async (doc: any) => {
