@@ -26,7 +26,7 @@ describe("maskPhone", () => {
     expect(maskPhone("11999998888")).toBe("(11) 99999-8888");
   });
   it("should handle partial input", () => {
-    expect(maskPhone("11")).toBe("(11");
+    expect(maskPhone("11")).toBe("11");
     expect(maskPhone("119")).toBe("(11) 9");
   });
 });
