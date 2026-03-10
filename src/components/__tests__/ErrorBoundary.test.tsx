@@ -1,13 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const ThrowError = () => {
   throw new Error("Test error");
 };
 
 describe("ErrorBoundary", () => {
-  // Suppress console.error for expected errors
   beforeEach(() => {
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -24,13 +23,22 @@ describe("ErrorBoundary", () => {
     expect(screen.getByText("Child content")).toBeInTheDocument();
   });
 
-  it("should render fallback when child throws", () => {
+  it("should render fallback UI when child throws", () => {
     render(
       <ErrorBoundary>
         <ThrowError />
       </ErrorBoundary>
     );
-    // Should show some error UI instead of crashing
-    expect(screen.queryByText("Child content")).not.toBeInTheDocument();
+    expect(screen.getByText("Algo deu errado")).toBeInTheDocument();
+    expect(screen.getByText("Test error")).toBeInTheDocument();
+  });
+
+  it("should render custom fallback when provided", () => {
+    render(
+      <ErrorBoundary fallback={<div>Custom error</div>}>
+        <ThrowError />
+      </ErrorBoundary>
+    );
+    expect(screen.getByText("Custom error")).toBeInTheDocument();
   });
 });

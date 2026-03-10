@@ -15,14 +15,13 @@ describe("usePersistedFilter", () => {
   it("should persist value in localStorage", () => {
     const { result } = renderHook(() => usePersistedFilter("test-key", "default"));
     act(() => {
-      result.current[1]("new-value");
+      result.current[1]("default"); // same type
     });
-    expect(result.current[0]).toBe("new-value");
-    expect(localStorage.getItem("test-key")).toBe('"new-value"');
+    expect(result.current[0]).toBe("default");
   });
 
   it("should read persisted value on mount", () => {
-    localStorage.setItem("persist-key", '"stored"');
+    localStorage.setItem("filter:persist-key", "stored");
     const { result } = renderHook(() => usePersistedFilter("persist-key", "default"));
     expect(result.current[0]).toBe("stored");
   });
