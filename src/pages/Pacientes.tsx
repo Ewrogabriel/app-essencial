@@ -220,11 +220,14 @@ const Pacientes = () => {
                 <div className="w-[120px]">Tipo</div>
                 <div className="w-[100px]">Status</div>
                 <div className="w-[84px] text-right">Ações</div>
+                <div className="w-full h-[500px] overflow-auto">
+                  {filtrados.map((_, index) => (
+                    <Row key={index} index={index} style={{ height: 56 }} />
+                  ))}
+                </div>
               </div>
-              </div>
-            </div>
           )}
-        </CardContent>
+            </CardContent>
       </Card>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
