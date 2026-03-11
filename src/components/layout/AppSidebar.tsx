@@ -159,7 +159,41 @@ export function AppSidebar() {
     </SidebarGroup>
   );
 
-  // Build permission-based menu for non-admin staff
+  // Menu completo do profissional com todos os recursos necessários
+  const menuProfissionalClinico = [
+    { title: t("nav.home"), url: "/dashboard", icon: LayoutDashboard },
+    { title: t("nav.agenda"), url: "/agenda", icon: Calendar },
+    { title: t("nav.my_agenda"), url: "/minha-agenda", icon: Calendar },
+    { title: t("nav.patients"), url: "/pacientes", icon: Users },
+    { title: t("nav.records"), url: "/prontuarios", icon: ClipboardList },
+    { title: t("nav.documents"), url: "/documentos-clinicos", icon: Stethoscope },
+    { title: "Planos de Exercícios", url: "/planos-exercicios", icon: Dumbbell },
+    { title: "Teleconsulta", url: "/teleconsulta-hub", icon: Video },
+  ];
+
+  const menuProfissionalAdmin = [
+    { title: t("nav.enrollments"), url: "/matriculas", icon: Receipt },
+    { title: "Check-in", url: "/check-in", icon: FileCheck },
+    { title: t("nav.inventory"), url: "/inventario", icon: Tag },
+  ];
+
+  const menuProfissionalFinanceiro = [
+    { title: t("nav.commissions"), url: "/comissoes", icon: Calculator },
+    { title: t("nav.finance"), url: "/financeiro", icon: DollarSign },
+  ];
+
+  const menuProfissionalComunicacao = [
+    { title: t("nav.messages"), url: "/mensagens", icon: MessageSquare },
+    { title: t("nav.notices"), url: "/avisos", icon: Megaphone },
+  ];
+
+  const menuProfissionalConfig = [
+    { title: t("nav.partners"), url: "/convenios", icon: Handshake },
+    { title: t("nav.contracts"), url: "/contratos", icon: FileText },
+    { title: t("nav.my_profile"), url: "/perfil-profissional", icon: User },
+  ];
+
+  // Build permission-based menu for non-admin staff (secretário)
   const buildPermissionMenu = () => {
     const items: { title: string; url: string; icon: any }[] = [
       { title: t("nav.home"), url: "/dashboard", icon: LayoutDashboard },
@@ -205,12 +239,17 @@ export function AppSidebar() {
               { title: t("nav.my_profile"), url: "/perfil-profissional", icon: User },
             ])}
           </>
-        ) : (isProfissional || isSecretario) ? (
+        ) : isProfissional ? (
+          <>
+            {renderGroup("Clínico", menuProfissionalClinico)}
+            {renderGroup("Administrativo", menuProfissionalAdmin)}
+            {renderGroup("Financeiro", menuProfissionalFinanceiro)}
+            {renderGroup(t("group.communication"), menuProfissionalComunicacao)}
+            {renderGroup(t("group.settings"), menuProfissionalConfig)}
+          </>
+        ) : isSecretario ? (
           <>
             {renderGroup(t("group.menu"), buildPermissionMenu())}
-            {isProfissional && renderGroup(t("group.profile"), [
-              { title: t("nav.my_profile"), url: "/perfil-profissional", icon: User },
-            ])}
           </>
         ) : isPatient ? (
           renderGroup(t("group.my_portal"), menuPatient)
