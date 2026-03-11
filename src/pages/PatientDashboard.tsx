@@ -1,15 +1,12 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useClinic } from "@/hooks/useClinic";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { GamificationDashboard } from "@/components/gamification/GamificationDashboard";
-import { PatientAgendaTab } from "@/components/patient/PatientAgendaTab";
-import { PatientFinanceTab } from "@/components/patient/PatientFinanceTab";
-import { PatientProdutosTab } from "@/components/patient/PatientProdutosTab";
-import { PatientInfoTab } from "@/components/patient/PatientInfoTab";
 import {
-  AlertCircle, Calendar, CreditCard, Package, Trophy, Info, Dumbbell,
-  ClipboardList, FileText, MessageSquare, Handshake, User, ChevronRight,
-  Megaphone, CalendarDays, Gift, Star
+  AlertCircle, Calendar, CreditCard, Trophy, Dumbbell,
+  ClipboardList, FileText, MessageSquare, Handshake, User,
+  ChevronRight, Megaphone, CalendarDays, Gift, Star, Phone,
+  MapPin, AlertTriangle, CheckCircle2, Info
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
@@ -19,18 +16,12 @@ import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { usePatientAgenda } from "@/hooks/usePatientAgenda";
-import { usePatientFinance } from "@/hooks/usePatientFinance";
-import { usePatientProdutos } from "@/hooks/usePatientProdutos";
-import { useState } from "react";
 import { toast } from "sonner";
 
 export default function PatientDashboard() {
   const { user, profile } = useAuth();
   const { activeClinicId } = useClinic();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("inicio");
 
   const { data: paciente } = useQuery({
     queryKey: ["paciente-by-user", user?.id],
@@ -46,7 +37,6 @@ export default function PatientDashboard() {
     enabled: !!user?.id,
   });
 
-  // Upcoming appointments count
   const { data: nextAppointments = [] } = useQuery({
     queryKey: ["patient-next-appointments", paciente?.id],
     queryFn: async () => {
@@ -64,7 +54,6 @@ export default function PatientDashboard() {
     enabled: !!paciente?.id,
   });
 
-  // Exercise plans count
   const { data: planosCount } = useQuery({
     queryKey: ["planos-exercicios-count", paciente?.id],
     queryFn: async () => {
@@ -79,7 +68,6 @@ export default function PatientDashboard() {
     enabled: !!paciente?.id,
   });
 
-  // Pending payments count
   const { data: pendingCount } = useQuery({
     queryKey: ["patient-pending-count", paciente?.id],
     queryFn: async () => {
@@ -94,7 +82,6 @@ export default function PatientDashboard() {
     enabled: !!paciente?.id,
   });
 
-  // Rewards available
   const { data: rewardsAvailable = [] } = useQuery({
     queryKey: ["rewards-catalog-active"],
     queryFn: async () => {
@@ -107,7 +94,6 @@ export default function PatientDashboard() {
     },
   });
 
-  // Avisos
   const { data: avisos = [] } = useQuery({
     queryKey: ["avisos-ativos", activeClinicId],
     queryFn: async () => {
@@ -123,7 +109,6 @@ export default function PatientDashboard() {
     enabled: !!activeClinicId,
   });
 
-  // Clinic info
   const { data: clinicSettings } = useQuery({
     queryKey: ["clinic-settings", activeClinicId],
     queryFn: async () => {
@@ -137,7 +122,6 @@ export default function PatientDashboard() {
     enabled: !!activeClinicId,
   });
 
-  // Feriados
   const { data: feriados = [] } = useQuery({
     queryKey: ["feriados-proximos"],
     queryFn: async () => {
@@ -152,7 +136,6 @@ export default function PatientDashboard() {
     },
   });
 
-  // Gamification points
   const { data: totalPoints } = useQuery({
     queryKey: ["patient-total-points", paciente?.id],
     queryFn: async () => {
@@ -176,7 +159,6 @@ export default function PatientDashboard() {
       const expiresAt = reward.validade_dias
         ? new Date(Date.now() + reward.validade_dias * 86400000).toISOString()
         : null;
-
       const { error } = await supabase.from("rewards_redemptions").insert({
         reward_id: reward.id,
         paciente_id: paciente.id,
@@ -205,313 +187,418 @@ export default function PatientDashboard() {
     );
   }
 
+  const recursos = [
+    {
+      label: "Minha Agenda",
+      desc: "Sessões agendadas e histórico",
+      icon: Calendar,
+      badge: nextAppointments.length > 0 ? `${nextAppointments.length} próxima(s)` : null,
+      badgeVariant: "default" as const,
+      route: "/minha-agenda",
+      iconColor: "text-blue-600",
+      iconBg: "bg-blue-50",
+    },
+    {
+      label: "Exercícios",
+      desc: "Planos e atividades prescritas",
+      icon: Dumbbell,
+      badge: planosCount ? `${planosCount} ativo(s)` : null,
+      badgeVariant: "secondary" as const,
+      route: "/planos-exercicios",
+      iconColor: "text-purple-600",
+      iconBg: "bg-purple-50",
+    },
+    {
+      label: "Meus Planos",
+      desc: "Pacotes de sessões contratados",
+      icon: ClipboardList,
+      badge: null,
+      badgeVariant: "secondary" as const,
+      route: "/meus-planos",
+      iconColor: "text-amber-600",
+      iconBg: "bg-amber-50",
+    },
+    {
+      label: "Pagamentos",
+      desc: "Faturas e histórico financeiro",
+      icon: CreditCard,
+      badge: pendingCount ? `${pendingCount} pendente(s)` : null,
+      badgeVariant: "destructive" as const,
+      route: "/meus-pagamentos",
+      iconColor: "text-green-600",
+      iconBg: "bg-green-50",
+    },
+    {
+      label: "Mensagens",
+      desc: "Fale com a clínica e profissionais",
+      icon: MessageSquare,
+      badge: null,
+      badgeVariant: "secondary" as const,
+      route: "/mensagens",
+      iconColor: "text-rose-600",
+      iconBg: "bg-rose-50",
+    },
+    {
+      label: "Contratos",
+      desc: "Documentos e assinaturas",
+      icon: FileText,
+      badge: null,
+      badgeVariant: "secondary" as const,
+      route: "/contratos",
+      iconColor: "text-teal-600",
+      iconBg: "bg-teal-50",
+    },
+    {
+      label: "Convênios",
+      desc: "Parceiros e benefícios",
+      icon: Handshake,
+      badge: null,
+      badgeVariant: "secondary" as const,
+      route: "/convenios",
+      iconColor: "text-sky-600",
+      iconBg: "bg-sky-50",
+    },
+    {
+      label: "Meu Perfil",
+      desc: "Dados pessoais e configurações",
+      icon: User,
+      badge: null,
+      badgeVariant: "secondary" as const,
+      route: "/meu-perfil",
+      iconColor: "text-indigo-600",
+      iconBg: "bg-indigo-50",
+    },
+  ];
+
   return (
     <div className="container mx-auto p-4 space-y-6 max-w-5xl">
+
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          Olá, {profile?.nome || paciente?.nome}! 👋
-        </h1>
-        <p className="text-muted-foreground text-sm">Bem-vindo ao seu portal</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Olá, {profile?.nome || paciente?.nome}!
+          </h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Bem-vindo ao seu portal de saúde</p>
+        </div>
+        <button
+          onClick={() => navigate("/meu-perfil")}
+          className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+        >
+          <User className="h-5 w-5 text-primary" />
+        </button>
       </div>
 
-      {/* Summary Cards Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("agenda")}>
-          <CardContent className="p-4 text-center">
-            <Calendar className="h-6 w-6 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold">{nextAppointments.length}</p>
-            <p className="text-xs text-muted-foreground">Próximas sessões</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/planos-exercicios")}>
-          <CardContent className="p-4 text-center">
-            <Dumbbell className="h-6 w-6 text-purple-600 mx-auto mb-1" />
-            <p className="text-2xl font-bold">{planosCount || 0}</p>
-            <p className="text-xs text-muted-foreground">Planos exercícios</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("financeiro")}>
-          <CardContent className="p-4 text-center">
-            <CreditCard className="h-6 w-6 text-green-600 mx-auto mb-1" />
-            <p className="text-2xl font-bold">{pendingCount || 0}</p>
-            <p className="text-xs text-muted-foreground">Pendentes</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("recompensas")}>
-          <CardContent className="p-4 text-center">
-            <Star className="h-6 w-6 text-amber-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold">{totalPoints || 0}</p>
-            <p className="text-xs text-muted-foreground">Pontos</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Next appointment preview */}
-      {nextAppointments.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" /> Próxima Sessão
-            </CardTitle>
-            <button onClick={() => navigate("/minha-agenda")} className="text-xs text-primary hover:underline flex items-center gap-1">
-              Ver agenda <ChevronRight className="h-3 w-3" />
-            </button>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div>
-                <p className="text-sm font-medium">
-                  {format(new Date(nextAppointments[0].data_horario), "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}
-                </p>
-                <p className="text-xs text-muted-foreground">{nextAppointments[0].tipo_atendimento}</p>
-              </div>
-              <Badge variant={nextAppointments[0].status === "confirmado" ? "default" : "secondary"} className="text-xs">
-                {nextAppointments[0].status}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Alerta de pagamentos pendentes */}
+      {(pendingCount || 0) > 0 && (
+        <button
+          onClick={() => navigate("/meus-pagamentos")}
+          className="w-full text-left"
+        >
+          <Alert className="border-destructive/50 bg-destructive/5 cursor-pointer hover:bg-destructive/10 transition-colors">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive font-medium">
+              Você tem {pendingCount} pagamento(s) pendente(s). Clique para visualizar.
+            </AlertDescription>
+          </Alert>
+        </button>
       )}
 
-      {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="inicio" className="text-xs">Início</TabsTrigger>
-          <TabsTrigger value="agenda" className="text-xs">Agenda</TabsTrigger>
-          <TabsTrigger value="financeiro" className="text-xs">Financeiro</TabsTrigger>
-          <TabsTrigger value="recompensas" className="text-xs">Recompensas</TabsTrigger>
-          <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
-        </TabsList>
+      {/* Resumo rápido */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button
+          onClick={() => navigate("/minha-agenda")}
+          className="group"
+        >
+          <Card className="group-hover:shadow-md transition-all group-hover:border-blue-200 cursor-pointer h-full">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-full mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <Calendar className="h-5 w-5 text-blue-600" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{nextAppointments.length}</p>
+              <p className="text-xs text-muted-foreground">Próximas sessões</p>
+            </CardContent>
+          </Card>
+        </button>
 
-        {/* Início Tab */}
-        <TabsContent value="inicio" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { label: "Minha Agenda", desc: "Visualize suas sessões futuras e histórico de atendimentos", icon: Calendar, route: "/minha-agenda", color: "text-primary", bg: "bg-primary/10", borderColor: "hover:border-primary/50" },
-              { label: "Exercícios", desc: `${planosCount || 0} plano(s) ativo(s) - Veja seus exercícios personalizados`, icon: Dumbbell, route: "/planos-exercicios", color: "text-purple-600", bg: "bg-purple-600/10", borderColor: "hover:border-purple-600/50" },
-              { label: "Meus Planos", desc: "Gerencie seus pacotes de sessões e veja saldo disponível", icon: ClipboardList, route: "/meus-planos", color: "text-amber-600", bg: "bg-amber-600/10", borderColor: "hover:border-amber-600/50" },
-              { label: "Pagamentos", desc: "Histórico financeiro, faturas e comprovantes", icon: CreditCard, route: "/meus-pagamentos", color: "text-green-600", bg: "bg-green-600/10", borderColor: "hover:border-green-600/50" },
-              { label: "Mensagens", desc: "Converse diretamente com a clínica e profissionais", icon: MessageSquare, route: "/mensagens", color: "text-rose-600", bg: "bg-rose-600/10", borderColor: "hover:border-rose-600/50" },
-              { label: "Contratos", desc: "Acesse e assine documentos importantes", icon: FileText, route: "/contratos", color: "text-teal-600", bg: "bg-teal-600/10", borderColor: "hover:border-teal-600/50" },
-              { label: "Convênios", desc: "Parceiros e benefícios disponíveis para você", icon: Handshake, route: "/convenios", color: "text-sky-600", bg: "bg-sky-600/10", borderColor: "hover:border-sky-600/50" },
-              { label: "Meu Perfil", desc: "Atualize seus dados pessoais e informações de contato", icon: User, route: "/meu-perfil", color: "text-indigo-600", bg: "bg-indigo-600/10", borderColor: "hover:border-indigo-600/50" },
-              { label: "Conquistas", desc: `${totalPoints || 0} pontos - Troque por recompensas exclusivas`, icon: Trophy, route: "", color: "text-amber-500", bg: "bg-amber-500/10", borderColor: "hover:border-amber-500/50", tab: "recompensas" },
-            ].map((item) => (
-              <Card
-                key={item.label}
-                className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-transparent ${item.borderColor} group active:scale-[0.98]`}
-                onClick={() => item.route ? navigate(item.route) : item.tab ? setActiveTab(item.tab) : null}
-              >
-                <CardContent className="p-5 flex flex-col h-full min-h-[140px]">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`p-3 ${item.bg} rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-200`}>
-                      <item.icon className={`h-6 w-6 ${item.color}`} />
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-200" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-base font-semibold mb-1">{item.label}</p>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <button onClick={() => navigate("/planos-exercicios")} className="group">
+          <Card className="group-hover:shadow-md transition-all group-hover:border-purple-200 cursor-pointer h-full">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center w-10 h-10 bg-purple-50 rounded-full mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <Dumbbell className="h-5 w-5 text-purple-600" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{planosCount || 0}</p>
+              <p className="text-xs text-muted-foreground">Planos de exercício</p>
+            </CardContent>
+          </Card>
+        </button>
+
+        <button onClick={() => navigate("/meus-pagamentos")} className="group">
+          <Card className={`group-hover:shadow-md transition-all cursor-pointer h-full ${(pendingCount || 0) > 0 ? "border-destructive/30 group-hover:border-destructive/50" : "group-hover:border-green-200"}`}>
+            <CardContent className="p-4 text-center">
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full mx-auto mb-2 group-hover:scale-110 transition-transform ${(pendingCount || 0) > 0 ? "bg-destructive/10" : "bg-green-50"}`}>
+                <CreditCard className={`h-5 w-5 ${(pendingCount || 0) > 0 ? "text-destructive" : "text-green-600"}`} />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{pendingCount || 0}</p>
+              <p className="text-xs text-muted-foreground">Pendências financeiras</p>
+            </CardContent>
+          </Card>
+        </button>
+
+        <button onClick={() => navigate("/minha-agenda")} className="group">
+          <Card className="group-hover:shadow-md transition-all group-hover:border-amber-200 cursor-pointer h-full">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center w-10 h-10 bg-amber-50 rounded-full mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <Star className="h-5 w-5 text-amber-500" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{totalPoints || 0}</p>
+              <p className="text-xs text-muted-foreground">Pontos acumulados</p>
+            </CardContent>
+          </Card>
+        </button>
+      </div>
+
+      {/* Próximas sessões */}
+      {nextAppointments.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-blue-600" />
+              Próximas Sessões
+            </h2>
+            <button
+              onClick={() => navigate("/minha-agenda")}
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              Ver tudo <ChevronRight className="h-3 w-3" />
+            </button>
           </div>
-        </TabsContent>
-
-        {/* Agenda Tab */}
-        <TabsContent value="agenda" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" /> Minhas Sessões
-              </CardTitle>
-              <Button variant="outline" size="sm" onClick={() => navigate("/minha-agenda")}>Ver completa</Button>
-            </CardHeader>
-            <CardContent>
-              {nextAppointments.length > 0 ? (
-                <div className="space-y-2">
-                  {nextAppointments.map((apt) => (
-                    <div key={apt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="space-y-2">
+            {nextAppointments.map((apt) => (
+              <button
+                key={apt.id}
+                onClick={() => navigate("/minha-agenda")}
+                className="w-full text-left"
+              >
+                <Card className="hover:shadow-md hover:border-blue-200 transition-all cursor-pointer">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-9 h-9 bg-blue-50 rounded-lg shrink-0">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium text-foreground">
                           {format(new Date(apt.data_horario), "EEEE, dd/MM 'às' HH:mm", { locale: ptBR })}
                         </p>
                         <p className="text-xs text-muted-foreground">{apt.tipo_atendimento}</p>
                       </div>
-                      <Badge variant={apt.status === "confirmado" ? "default" : "secondary"} className="text-xs">
-                        {apt.status}
-                      </Badge>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma sessão agendada</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <Badge
+                      variant={apt.status === "confirmado" ? "default" : "secondary"}
+                      className="text-xs shrink-0"
+                    >
+                      {apt.status === "confirmado" ? (
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                      ) : null}
+                      {apt.status}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {/* Financeiro Tab */}
-        <TabsContent value="financeiro" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-green-600" /> Financeiro
-              </CardTitle>
-              <Button variant="outline" size="sm" onClick={() => navigate("/meus-pagamentos")}>Ver tudo</Button>
-            </CardHeader>
-            <CardContent>
-              {(pendingCount || 0) > 0 ? (
-                <div className="p-4 bg-destructive/10 rounded-lg text-center">
-                  <p className="text-sm font-medium text-destructive">Você tem {pendingCount} pagamento(s) pendente(s)</p>
-                  <Button variant="destructive" size="sm" className="mt-2" onClick={() => navigate("/meus-pagamentos")}>
-                    Ver pagamentos
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-6">Nenhum pagamento pendente 🎉</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Recompensas Tab */}
-        <TabsContent value="recompensas" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Star className="h-5 w-5 text-amber-500" /> Meus Pontos: {totalPoints || 0}
-              </CardTitle>
-              <CardDescription>Troque seus pontos por descontos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {rewardsAvailable.length > 0 ? (
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {rewardsAvailable.map((reward: any) => {
-                    const canRedeem = (totalPoints || 0) >= reward.pontos_necessarios;
-                    return (
-                      <div key={reward.id} className={`border rounded-lg p-4 ${canRedeem ? "border-primary/30" : "opacity-60"}`}>
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="font-medium text-sm">{reward.nome}</p>
-                            {reward.descricao && <p className="text-xs text-muted-foreground">{reward.descricao}</p>}
-                          </div>
-                          <Badge variant="outline" className="gap-1 shrink-0">
-                            <Star className="h-3 w-3" /> {reward.pontos_necessarios}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between mt-3">
-                          <Badge className="bg-green-600">
-                            {reward.tipo === "desconto_percentual"
-                              ? `${reward.percentual_desconto}% OFF`
-                              : `R$ ${reward.valor_desconto?.toFixed(2)}`}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant={canRedeem ? "default" : "outline"}
-                            disabled={!canRedeem}
-                            onClick={() => redeemReward(reward)}
-                            className="h-7 text-xs"
-                          >
-                            <Gift className="h-3 w-3 mr-1" /> Resgatar
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma recompensa disponível no momento</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-amber-500" /> Conquistas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <GamificationDashboard pacienteId={paciente.id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Info Tab */}
-        <TabsContent value="info" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" /> Informações
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-2 text-sm flex items-center gap-1">
-                    <Megaphone className="h-3.5 w-3.5" /> Mural de Avisos
-                  </h4>
-                  {avisos.length > 0 ? (
-                    <div className="space-y-2">
-                      {avisos.map((aviso) => (
-                        <div key={aviso.id} className="p-3 bg-muted rounded-lg">
-                          <p className="font-medium text-sm">{aviso.titulo}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{aviso.mensagem}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Nenhum aviso</p>
-                  )}
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2 text-sm flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5" /> Próximos Feriados
-                  </h4>
-                  {feriados.length > 0 ? (
-                    <div className="space-y-2">
-                      {feriados.map((f) => (
-                        <div key={f.id} className="p-3 bg-muted rounded-lg">
-                          <p className="font-medium text-sm">{f.descricao}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(f.data), "dd 'de' MMMM", { locale: ptBR })}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Sem feriados próximos</p>
-                  )}
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2 text-sm flex items-center gap-1">
-                    <Info className="h-3.5 w-3.5" /> Dados da Clínica
-                  </h4>
-                  {clinicSettings ? (
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium">{clinicSettings.nome}</p>
-                      {clinicSettings.telefone && <p className="text-muted-foreground">📞 {clinicSettings.telefone}</p>}
-                      {clinicSettings.whatsapp && <p className="text-muted-foreground">💬 {clinicSettings.whatsapp}</p>}
-                      {clinicSettings.endereco && (
-                        <p className="text-muted-foreground text-xs">
-                          📍 {clinicSettings.endereco}
-                          {clinicSettings.numero && `, ${clinicSettings.numero}`}
-                          {clinicSettings.bairro && ` - ${clinicSettings.bairro}`}
-                        </p>
+      {/* Recursos principais */}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground mb-3">Meus Recursos</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {recursos.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => navigate(item.route)}
+              className="text-left group"
+            >
+              <Card className="hover:shadow-md transition-all cursor-pointer h-full group-hover:border-primary/20 active:scale-[0.99]">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className={`flex items-center justify-center w-11 h-11 ${item.iconBg} rounded-xl shrink-0 group-hover:scale-105 transition-transform`}>
+                    <item.icon className={`h-5 w-5 ${item.iconColor}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                      {item.badge && (
+                        <Badge variant={item.badgeVariant} className="text-xs h-5 px-1.5">
+                          {item.badge}
+                        </Badge>
                       )}
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Carregando...</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:translate-x-1 transition-transform" />
+                </CardContent>
+              </Card>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Conquistas / Gamificação */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-amber-500" />
+            Conquistas e Pontos
+          </h2>
+          <Badge variant="outline" className="gap-1">
+            <Star className="h-3 w-3 text-amber-500" />
+            {totalPoints || 0} pts
+          </Badge>
+        </div>
+        <Card>
+          <CardContent className="p-4">
+            <GamificationDashboard pacienteId={paciente.id} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recompensas disponíveis */}
+      {rewardsAvailable.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Gift className="h-4 w-4 text-rose-500" />
+            Recompensas Disponíveis
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {rewardsAvailable.map((reward: any) => {
+              const canRedeem = (totalPoints || 0) >= reward.pontos_necessarios;
+              return (
+                <Card
+                  key={reward.id}
+                  className={`transition-all ${canRedeem ? "border-primary/30 hover:shadow-md hover:border-primary/50" : "opacity-60"}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-foreground">{reward.nome}</p>
+                        {reward.descricao && (
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{reward.descricao}</p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="gap-1 shrink-0 text-xs">
+                        <Star className="h-3 w-3 text-amber-500" />
+                        {reward.pontos_necessarios} pts
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Badge className="bg-green-600 text-white text-xs">
+                        {reward.tipo === "desconto_percentual"
+                          ? `${reward.percentual_desconto}% OFF`
+                          : `R$ ${reward.valor_desconto?.toFixed(2)}`}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant={canRedeem ? "default" : "outline"}
+                        disabled={!canRedeem}
+                        onClick={() => redeemReward(reward)}
+                        className="h-7 text-xs gap-1"
+                      >
+                        <Gift className="h-3 w-3" />
+                        Resgatar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Avisos da clínica */}
+      {avisos.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-primary" />
+            Avisos da Clínica
+          </h2>
+          <div className="space-y-2">
+            {avisos.map((aviso) => (
+              <Card key={aviso.id} className="border-l-4 border-l-primary">
+                <CardContent className="p-4">
+                  <p className="font-semibold text-sm text-foreground">{aviso.titulo}</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{aviso.mensagem}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Informações e Feriados */}
+      <div className="grid sm:grid-cols-2 gap-4">
+
+        {/* Feriados */}
+        {feriados.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-sky-600" />
+              Próximos Feriados
+            </h2>
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                {feriados.map((f) => (
+                  <div key={f.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <p className="text-sm font-medium text-foreground">{f.descricao}</p>
+                    <p className="text-xs text-muted-foreground shrink-0 ml-2">
+                      {format(new Date(f.data), "dd/MM", { locale: ptBR })}
+                    </p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Dados da clínica */}
+        {clinicSettings && (
+          <div>
+            <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Info className="h-4 w-4 text-indigo-600" />
+              Contato da Clínica
+            </h2>
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <p className="font-semibold text-sm text-foreground">{clinicSettings.nome}</p>
+                {clinicSettings.telefone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="h-4 w-4 shrink-0" />
+                    <span>{clinicSettings.telefone}</span>
+                  </div>
+                )}
+                {clinicSettings.whatsapp && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MessageSquare className="h-4 w-4 shrink-0" />
+                    <span>{clinicSettings.whatsapp}</span>
+                  </div>
+                )}
+                {clinicSettings.endereco && (
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>
+                      {clinicSettings.endereco}
+                      {clinicSettings.numero && `, ${clinicSettings.numero}`}
+                      {clinicSettings.bairro && ` - ${clinicSettings.bairro}`}
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
