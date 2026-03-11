@@ -40,47 +40,103 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     const loadUserData = async (userId: string) => {
-        const [p, pId, r, perms] = await Promise.all([
-            authService.getProfile(userId),
-            authService.getPatientId(userId),
-            authService.getRoles(userId),
-            authService.getPermissions(userId),
-        ]);
+        try {
+            console.log("[Auth] Loading data for user:", userId);
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout loading user data")), 5000)
+            );
 
-        setProfile(p as Profile);
-        setPatientId(pId);
-        setRoles(r);
-        setPermissions(perms);
+            const dataPromise = Promise.all([
+                authService.getProfile(userId),
+                authService.getPatientId(userId),
+                authService.getRoles(userId),
+                authService.getPermissions(userId),
+            ]);
+
+            const [p, pId, r, perms] = await Promise.race([dataPromise, timeoutPromise]) as any;
+
+            setProfile(p as Profile);
+            setPatientId(pId);
+            setRoles(r);
+            setPermissions(perms);
+            console.log("[Auth] Data loaded successfully");
+        } catch (error) {
+            console.error("[Auth] Data load failed or timed out:", error);
+        }
     };
 
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                setSession(session);
-                setUser(session?.user ?? null);
+        let mounted = true;
+        console.log("[Auth] Effect mounting...");
+
+        const initialize = async () => {
+            try {
+                console.log("[Auth] Initializing session...");
+                const { data: { session }, error } = await supabase.auth.getSession();
+
+                if (error) {
+                    console.error("[Auth] getSession error:", error);
+                }
+
+                if (!mounted) return;
 
                 if (session?.user) {
+                    setSession(session);
+                    setUser(session.user);
                     await loadUserData(session.user.id);
                 } else {
+                    console.log("[Auth] No active session found");
+                }
+            } catch (err) {
+                console.error("[Auth] Fatal initialization error:", err);
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                    console.log("[Auth] Initial logic finished, loading set to false");
+                }
+            }
+        };
+
+        initialize();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+                console.log("[Auth] onAuthStateChange fired:", event);
+                if (!mounted) return;
+
+                if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+                    setSession(session);
+                    setUser(session?.user ?? null);
+                    if (session?.user) {
+                        await loadUserData(session.user.id);
+                    }
+                    setLoading(false);
+                } else if (event === "SIGNED_OUT") {
+                    setSession(null);
+                    setUser(null);
                     setProfile(null);
                     setRoles([]);
                     setPermissions([]);
                     setPatientId(null);
+                    setLoading(false);
                 }
-                setLoading(false);
             }
         );
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                loadUserData(session.user.id);
+        // Safety timeout to ensure app unblocks even if getSession/onAuthStateChange fail
+        const safetyTimer = setTimeout(() => {
+            if (mounted && loading) {
+                console.warn("[Auth] Safety timeout triggered - forcing loading: false");
+                setLoading(false);
             }
-            setLoading(false);
-        });
+        }, 8000);
 
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+            clearTimeout(safetyTimer);
+            console.log("[Auth] Effect unmounted");
+        };
     }, []);
 
     const signOut = async () => {

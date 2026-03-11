@@ -7,7 +7,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const { isMultiClinic, activeClinicId, isLoading: clinicLoading } = useClinic();
     const location = useLocation();
 
-    if (loading || clinicLoading) {
+    if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <div className="animate-pulse text-muted-foreground">Carregando...</div>

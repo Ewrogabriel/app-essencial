@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,8 @@ import { useClinic } from "@/modules/clinic/hooks/useClinic";
 
 const Comissoes = () => {
   const { user, isAdmin, isGestor, isProfissional } = useAuth();
+  const [busca, setBusca] = useState("");
+  const deferredBusca = useDeferredValue(busca);
   const { activeClinicId } = useClinic();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
