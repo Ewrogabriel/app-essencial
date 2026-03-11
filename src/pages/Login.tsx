@@ -11,9 +11,15 @@ import { toast } from "@/modules/shared/hooks/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, resetPassword } = useAuth();
+  const { signIn, resetPassword, user } = useAuth();
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/selecionar-clinica");
+    }
+  }, [user, navigate]);
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginSenha, setLoginSenha] = useState("");
