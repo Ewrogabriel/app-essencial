@@ -138,23 +138,23 @@ describe("Professional Permissions", () => {
 });
 
 describe("Professional Features", () => {
-  it("professional can view patient list", () => {
-    const { useAuth } = vi.mocked(require("@/hooks/useAuth"));
-    const auth = useAuth();
+  it("professional can view patient list", async () => {
+    const mod = await import("@/hooks/useAuth");
+    const auth = vi.mocked(mod).useAuth();
     
     expect(auth.hasPermission("pacientes")).toBe(true);
   });
 
-  it("professional can edit medical records", () => {
-    const { useAuth } = vi.mocked(require("@/hooks/useAuth"));
-    const auth = useAuth();
+  it("professional can edit medical records", async () => {
+    const mod = await import("@/hooks/useAuth");
+    const auth = vi.mocked(mod).useAuth();
     
     expect(auth.canEdit("prontuarios")).toBe(true);
   });
 
-  it("professional can create exercises", () => {
-    const { useAuth } = vi.mocked(require("@/hooks/useAuth"));
-    const auth = useAuth();
+  it("professional can create exercises", async () => {
+    const mod = await import("@/hooks/useAuth");
+    const auth = vi.mocked(mod).useAuth();
     
     expect(auth.hasPermission("exercicios")).toBe(true);
     expect(auth.canEdit("exercicios")).toBe(true);

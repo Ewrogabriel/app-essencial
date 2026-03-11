@@ -116,9 +116,9 @@ describe("Admin Dashboard", () => {
 });
 
 describe("Admin Features", () => {
-  it("admin should have access to all resources", () => {
-    const { useAuth } = vi.mocked(require("@/hooks/useAuth"));
-    const auth = useAuth();
+  it("admin should have access to all resources", async () => {
+    const mod = await import("@/hooks/useAuth");
+    const auth = vi.mocked(mod).useAuth();
     
     expect(auth.isAdmin).toBe(true);
     expect(auth.hasPermission("pacientes")).toBe(true);

@@ -158,9 +158,9 @@ describe("Patient Dashboard", () => {
 });
 
 describe("Patient Permissions", () => {
-  it("patient should have limited permissions", () => {
-    const { useAuth } = vi.mocked(require("@/hooks/useAuth"));
-    const auth = useAuth();
+  it("patient should have limited permissions", async () => {
+    const mod = await import("@/hooks/useAuth");
+    const auth = vi.mocked(mod).useAuth();
     
     expect(auth.isPatient).toBe(true);
     expect(auth.isAdmin).toBe(false);
