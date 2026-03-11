@@ -88,12 +88,12 @@ export default function PatientDashboard() {
     queryFn: async () => {
       if (!paciente?.id) return [];
       const { data } = await supabase
-        .from("planos_exercicios")
+        .from("planos_exercicios" as never)
         .select("id, nome, descricao, ativo")
         .eq("paciente_id", paciente.id)
         .eq("ativo", true)
         .limit(5);
-      return data || [];
+      return (data as Record<string, unknown>[]) || [];
     },
     enabled: !!paciente?.id,
   });
