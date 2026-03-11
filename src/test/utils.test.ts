@@ -25,7 +25,7 @@ describe("Utility Functions", () => {
         currency: "BRL",
       }).format(value);
       
-      expect(formatted).toContain("1.500,50") || expect(formatted).toContain("1500,50");
+      expect(formatted.includes("1.500,50") || formatted.includes("1500,50")).toBe(true);
       expect(formatted).toContain("R$");
     });
 
