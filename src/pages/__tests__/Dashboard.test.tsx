@@ -22,6 +22,15 @@ vi.mock("@/hooks/useAuth", () => ({
   }),
 }));
 
+vi.mock("@/hooks/useClinic", () => ({
+  useClinic: () => ({
+    activeClinicId: "clinic-1",
+    clinics: [{ id: "clinic-1", nome: "Clínica Teste" }],
+    setActiveClinicId: vi.fn(),
+  }),
+  ClinicProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
     t: (key: string) => key,
