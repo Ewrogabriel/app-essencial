@@ -114,13 +114,12 @@ describe("Admin Dashboard", () => {
 
   it("should render dashboard header", async () => {
     await renderDashboard();
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText(/Bom dia|Boa tarde|Boa noite/i)).toBeInTheDocument();
   });
 
   it("should show admin-specific sections", async () => {
     await renderDashboard();
-    // Dashboard should have admin sections like stats, charts, etc.
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText(/Personalizar/i)).toBeInTheDocument();
   });
 });
 
