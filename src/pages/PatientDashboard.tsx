@@ -103,12 +103,12 @@ export default function PatientDashboard() {
     queryFn: async () => {
       if (!paciente?.id) return [];
       const { data } = await supabase
-        .from("paciente_planos")
-        .select("id, plano:planos_servico(nome), sessoes_restantes, status")
+        .from("planos" as never)
+        .select("id, nome, sessoes_contratadas, sessoes_utilizadas, status")
         .eq("paciente_id", paciente.id)
         .eq("status", "ativo")
         .limit(5);
-      return data || [];
+      return (data as Record<string, unknown>[]) || [];
     },
     enabled: !!paciente?.id,
   });
