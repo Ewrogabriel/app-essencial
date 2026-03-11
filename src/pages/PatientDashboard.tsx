@@ -134,12 +134,12 @@ export default function PatientDashboard() {
     queryFn: async () => {
       if (!paciente?.id) return [];
       const { data } = await supabase
-        .from("mensagens")
+        .from("mensagens" as never)
         .select("id, assunto, created_at, lida")
         .eq("destinatario_id", user?.id)
         .order("created_at", { ascending: false })
         .limit(5);
-      return data || [];
+      return (data as Record<string, unknown>[]) || [];
     },
     enabled: !!paciente?.id && !!user?.id,
   });
