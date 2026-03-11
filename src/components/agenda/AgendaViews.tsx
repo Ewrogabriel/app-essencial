@@ -34,6 +34,7 @@ export interface Agendamento {
 
 interface ViewProps {
   agendamentos: Agendamento[];
+  slots?: any[];
   currentDate: Date;
   onSlotClick?: (date: Date) => void;
   isPatient?: boolean;
@@ -177,6 +178,7 @@ const HOURS = Array.from({ length: 14 }, (_, i) => i + 6);
 
 export function DailyView({
   agendamentos,
+  slots,
   currentDate,
   onSlotClick,
   isPatient,
@@ -226,8 +228,25 @@ export function DailyView({
               onDragLeave={(e) => { e.currentTarget.classList.remove("bg-primary/10"); }}
               onDrop={(e) => { e.currentTarget.classList.remove("bg-primary/10"); handleDrop(e, hour); }}
             >
-              <div className="w-14 shrink-0 text-xs text-muted-foreground py-2 text-right pr-2 border-r">
-                {String(hour).padStart(2, "0")}:00
+              <div className="w-16 shrink-0 text-xs text-muted-foreground py-2 text-right pr-2 border-r flex flex-col justify-start">
+                <span className="font-medium">{String(hour).padStart(2, "0")}:00</span>
+                {(() => {
+                  // Calculate capacity for this hour
+                  const hourSlots = slots?.filter(s => parseInt(s.start_time.split(":")[0]) === hour);
+                  const totalMax = hourSlots?.reduce((acc, s) => acc + s.max_capacity, 0) || 0;
+                  const currentCount = hourAgs.length;
+
+                  if (totalMax === 0) return null;
+
+                  return (
+                    <span className={cn(
+                      "text-[10px] mt-1 font-bold",
+                      currentCount >= totalMax ? "text-red-500" : "text-green-600"
+                    )}>
+                      {currentCount}/{totalMax}
+                    </span>
+                  );
+                })()}
               </div>
               <div className="flex-1 p-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
                 {hourAgs.map((ag) => (
@@ -254,6 +273,7 @@ export function DailyView({
 // ─── Weekly View ─────────────────────────────────────────────
 export function WeeklyView({
   agendamentos,
+  slots,
   currentDate,
   onSlotClick,
   isPatient,
@@ -279,26 +299,26 @@ export function WeeklyView({
         const isToday = isSameDay(day, new Date());
 
         return (
-            <div
-              key={day.toISOString()}
-              className={cn(
-                "bg-card p-1.5 min-h-[180px] cursor-pointer hover:bg-muted/20 transition-colors flex flex-col",
-                isToday && "ring-2 ring-primary ring-inset"
-              )}
-              onClick={() => onSlotClick?.(day)}
-              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
-              onDragLeave={(e) => { e.currentTarget.classList.remove("bg-primary/10"); }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.currentTarget.classList.remove("bg-primary/10");
-                const agId = e.dataTransfer.getData("agendamento-id");
-                if (agId && onDrop) {
-                  const d = new Date(day);
-                  d.setHours(9, 0, 0, 0);
-                  onDrop(agId, d);
-                }
-              }}
-            >
+          <div
+            key={day.toISOString()}
+            className={cn(
+              "bg-card p-1.5 min-h-[180px] cursor-pointer hover:bg-muted/20 transition-colors flex flex-col",
+              isToday && "ring-2 ring-primary ring-inset"
+            )}
+            onClick={() => onSlotClick?.(day)}
+            onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-primary/10"); }}
+            onDragLeave={(e) => { e.currentTarget.classList.remove("bg-primary/10"); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.remove("bg-primary/10");
+              const agId = e.dataTransfer.getData("agendamento-id");
+              if (agId && onDrop) {
+                const d = new Date(day);
+                d.setHours(9, 0, 0, 0);
+                onDrop(agId, d);
+              }
+            }}
+          >
             <div className="text-center mb-1.5 pb-1 border-b">
               <div className="text-[10px] uppercase text-muted-foreground leading-tight">
                 {format(day, "EEE", { locale: ptBR })}

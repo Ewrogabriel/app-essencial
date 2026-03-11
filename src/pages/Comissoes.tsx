@@ -69,11 +69,33 @@ const Comissoes = () => {
 
       const allIds = [...new Set([...roleIds, ...agendIds])];
       if (!allIds.length) return [];
-      const { data } = await supabase.from("profiles").select("*").in("user_id", allIds).order("nome");
+      const { data } = await supabase.from("profiles").select("user_id, nome").in("user_id", allIds).order("nome");
       return data ?? [];
     },
     enabled: canManage,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  const { data: comissoes = [], isLoading } = useQuery({
+    queryKey: ["commissions", activeClinicId],
+    queryFn: async () => {
+      if (!activeClinicId) return [];
+      const { data, error } = await supabase
+        .from("commissions")
+        .select("id, valor, data_gerado, status, profissional_id, profiles(nome)")
+        .eq("clinic_id", activeClinicId)
+        .order("data_gerado", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const filtrados = useMemo(() => {
+    return (comissoes || []).filter((c: any) =>
+      c.profiles?.nome?.toLowerCase().includes(deferredBusca.toLowerCase())
+    );
+  }, [comissoes, deferredBusca]);
 
   const { data: regrasComissao = [] } = useQuery({
     queryKey: ["regras-comissao"],

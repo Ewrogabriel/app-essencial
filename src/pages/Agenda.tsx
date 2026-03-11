@@ -4,9 +4,10 @@ import { ptBR } from "date-fns/locale";
 import { Plus, ChevronLeft, ChevronRight, FileDown, Filter, UserPlus, CalendarCheck, ListChecks } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/modules/auth/hooks/useAuth";
-import { useAgendamentos, useUpdateAgendamentoStatus, useAgendamentoCheckin, useRescheduleAgendamento } from "@/modules/appointments/hooks/useAppointments";
+import { useAgendamentos, useUpdateAgendamentoStatus, useAgendamentoCheckin, useRescheduleAgendamento, useScheduleSlots } from "@/modules/appointments/hooks/useAppointments";
 import { useProfissionaisBasic, buildProfColorMap } from "@/modules/professionals/hooks/useProfessionals";
 import { usePacienteByUserId } from "@/modules/patients/hooks/usePacientes";
+import { useClinic } from "@/modules/clinic/hooks/useClinic";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +27,7 @@ type ViewMode = "diario" | "semanal" | "mensal";
 
 const Agenda = () => {
   const { user, isPatient, isAdmin, isGestor } = useAuth();
+  const { activeClinicId } = useClinic();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = usePersistedFilter<ViewMode>("agenda-view", "semanal");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -52,6 +54,39 @@ const Agenda = () => {
     pacienteId: isPatient ? patientData?.id : undefined,
     enabled: !isPatient || !!patientData?.id,
   });
+
+  // Fetch slots for capacity display
+  const { data: scheduleSlots = [], refetch: refetchSlots } = useScheduleSlots({
+    professionalId: filterProfId === "all" ? undefined : filterProfId,
+    date: viewMode === "semanal"
+      ? format(startOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd")
+      : format(currentDate, "yyyy-MM-dd"),
+    endDate: viewMode === "semanal"
+      ? format(endOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd")
+      : undefined,
+    clinicId: activeClinicId
+  });
+
+  // Realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('agenda-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'schedule_slots' },
+        () => { refetchSlots(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'agendamentos' },
+        () => { refetchAgendamentos(); }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchSlots, refetchAgendamentos]);
 
   // Build display data
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
@@ -111,7 +146,7 @@ const Agenda = () => {
   };
 
   const handleDragDrop = async (agId: string, newDate: Date) => {
-    rescheduleMutation.mutate({ id: agId, newDate }, {
+    rescheduleMutation.mutate({ id: agId, newDate, profissionalId: user?.id || "" }, {
       onSuccess: () => { toast({ title: "Sessão reagendada! 📅", description: format(newDate, "dd/MM/yyyy 'às' HH:mm") }); refetchAgendamentos(); },
     });
   };
@@ -164,20 +199,12 @@ const Agenda = () => {
         )}
       </div>
 
-      {/* Main Tabs: Agenda / Vagas / Lista de Espera */}
       {isStaff && (
         <Tabs value={mainTab} onValueChange={setMainTab}>
           <TabsList>
-            <TabsTrigger value="agenda" className="gap-1.5">
-              <ChevronLeft className="h-3.5 w-3.5 hidden" />
-              Agenda
-            </TabsTrigger>
-            <TabsTrigger value="vagas" className="gap-1.5">
-              <CalendarCheck className="h-3.5 w-3.5" /> Vagas
-            </TabsTrigger>
-            <TabsTrigger value="lista-espera" className="gap-1.5">
-              <ListChecks className="h-3.5 w-3.5" /> Lista de Espera
-            </TabsTrigger>
+            <TabsTrigger value="agenda" className="gap-1.5">Agenda</TabsTrigger>
+            <TabsTrigger value="vagas" className="gap-1.5"><CalendarCheck className="h-3.5 w-3.5" /> Vagas</TabsTrigger>
+            <TabsTrigger value="lista-espera" className="gap-1.5"><ListChecks className="h-3.5 w-3.5" /> Lista de Espera</TabsTrigger>
           </TabsList>
 
           <TabsContent value="vagas" className="mt-4">
@@ -193,112 +220,124 @@ const Agenda = () => {
         </Tabs>
       )}
 
-      {/* Professional Filter + Navigation + View Toggle (only visible on agenda tab) */}
-      {(mainTab === "agenda" || !isStaff) && <>
-      {/* Professional Filter + Navigation + View Toggle */}
-      <div className="flex flex-col gap-3">
-        {/* Navigation row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="icon" onClick={navigatePrev}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={goToToday}>Hoje</Button>
-          <Button variant="outline" size="icon" onClick={navigateNext}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <span className="text-base sm:text-lg font-semibold capitalize">{getTitle()}</span>
-        </div>
-
-        {/* Filters + View Toggle row */}
-        <div className="flex flex-wrap items-center gap-2">
-          {isStaff && (
-            <Select value={filterProfId} onValueChange={setFilterProfId}>
-              <SelectTrigger className="w-full sm:w-[180px] text-sm">
-                <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
-                <SelectValue placeholder="Profissional" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos profissionais</SelectItem>
-                {profissionais.map((p) => (
-                  <SelectItem key={p.user_id} value={p.user_id}>{p.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {isStaff && (
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-[140px] text-sm">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos status</SelectItem>
-                <SelectItem value="agendado">Agendado</SelectItem>
-                <SelectItem value="confirmado">Confirmado</SelectItem>
-                <SelectItem value="realizado">Realizado</SelectItem>
-                <SelectItem value="cancelado">Cancelado</SelectItem>
-                <SelectItem value="falta">Falta</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="ml-auto">
-            <TabsList className="h-8">
-              <TabsTrigger value="diario" className="text-xs px-2.5">Diário</TabsTrigger>
-              <TabsTrigger value="semanal" className="text-xs px-2.5">Semanal</TabsTrigger>
-              <TabsTrigger value="mensal" className="text-xs px-2.5">Mensal</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
-
-      {/* Status + Color Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground font-medium">Status:</span>
-          {[
-            { key: "agendado", label: "Agendado", color: "hsl(199 89% 48%)" },
-            { key: "confirmado", label: "Confirmado", color: "hsl(168 65% 38%)" },
-            { key: "realizado", label: "Realizado", color: "hsl(142 71% 45%)" },
-            { key: "cancelado", label: "Cancelado", color: "hsl(0 72% 51%)" },
-            { key: "falta", label: "Falta", color: "hsl(38 92% 50%)" },
-          ].map(s => (
-            <div key={s.key} className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-              <span>{s.label}</span>
+      {(mainTab === "agenda" || !isStaff) && (
+        <>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="outline" size="icon" onClick={navigatePrev}><ChevronLeft className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={goToToday}>Hoje</Button>
+              <Button variant="outline" size="icon" onClick={navigateNext}><ChevronRight className="h-4 w-4" /></Button>
+              <span className="text-base sm:text-lg font-semibold capitalize">{getTitle()}</span>
             </div>
-          ))}
-        </div>
-        {isStaff && profissionais.length > 0 && (
-          <div className="flex items-center gap-2 border-l border-border pl-4">
-            <span className="text-muted-foreground font-medium">Profissionais:</span>
-            {profissionais.map((p) => (
-              <div key={p.user_id} className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: p.cor_agenda || '#3b82f6' }} />
-                <span>{p.nome}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* Calendar View */}
-      <div>
-        {viewMode === "diario" && (
-          <DailyView agendamentos={filteredAgendamentos} currentDate={currentDate} onSlotClick={handleSlotClick} isPatient={isPatient} onCancel={handleCancelAppointment} onCheckin={handleCheckin} onReschedule={handleReschedule} onAppointmentClick={handleAppointmentClick} profColors={profColors} onDrop={handleDragDrop} />
-        )}
-        {viewMode === "semanal" && (
-          <WeeklyView agendamentos={filteredAgendamentos} currentDate={currentDate} onSlotClick={handleSlotClick} isPatient={isPatient} onCancel={handleCancelAppointment} onCheckin={handleCheckin} onReschedule={handleReschedule} onAppointmentClick={handleAppointmentClick} profColors={profColors} onDrop={handleDragDrop} />
-        )}
-        {viewMode === "mensal" && (
-          <MonthlyView agendamentos={filteredAgendamentos} currentDate={currentDate} onSlotClick={handleSlotClick} isPatient={isPatient} onCancel={handleCancelAppointment} onCheckin={handleCheckin} onReschedule={handleReschedule} onAppointmentClick={handleAppointmentClick} profColors={profColors} onDrop={handleDragDrop} />
-        )}
-      </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {isStaff && (
+                <Select value={filterProfId} onValueChange={setFilterProfId}>
+                  <SelectTrigger className="w-full sm:w-[180px] text-sm">
+                    <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                    <SelectValue placeholder="Profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos profissionais</SelectItem>
+                    {profissionais.map((p) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>{p.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {isStaff && (
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-full sm:w-[140px] text-sm">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos status</SelectItem>
+                    <SelectItem value="agendado">Agendado</SelectItem>
+                    <SelectItem value="confirmado">Confirmado</SelectItem>
+                    <SelectItem value="realizado">Realizado</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                    <SelectItem value="falta">Falta</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="ml-auto">
+                <TabsList className="h-8">
+                  <TabsTrigger value="diario" className="text-xs px-2.5">Diário</TabsTrigger>
+                  <TabsTrigger value="semanal" className="text-xs px-2.5">Semanal</TabsTrigger>
+                  <TabsTrigger value="mensal" className="text-xs px-2.5">Mensal</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground font-medium">Status:</span>
+              {[
+                { key: "agendado", label: "Agendado", color: "hsl(199 89% 48%)" },
+                { key: "confirmado", label: "Confirmado", color: "hsl(168 65% 38%)" },
+                { key: "realizado", label: "Realizado", color: "hsl(142 71% 45%)" },
+                { key: "cancelado", label: "Cancelado", color: "hsl(0 72% 51%)" },
+                { key: "falta", label: "Falta", color: "hsl(38 92% 50%)" },
+              ].map(s => (
+                <div key={s.key} className="flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                  <span>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            {viewMode === "diario" && (
+              <DailyView
+                agendamentos={filteredAgendamentos}
+                slots={scheduleSlots}
+                currentDate={currentDate}
+                onSlotClick={handleSlotClick}
+                isPatient={isPatient}
+                onCancel={handleCancelAppointment}
+                onCheckin={handleCheckin}
+                onReschedule={handleReschedule}
+                onAppointmentClick={handleAppointmentClick}
+                profColors={profColors}
+                onDrop={handleDragDrop}
+              />
+            )}
+            {viewMode === "semanal" && (
+              <WeeklyView
+                agendamentos={filteredAgendamentos}
+                slots={scheduleSlots}
+                currentDate={currentDate}
+                onSlotClick={handleSlotClick}
+                isPatient={isPatient}
+                onCancel={handleCancelAppointment}
+                onCheckin={handleCheckin}
+                onReschedule={handleReschedule}
+                onAppointmentClick={handleAppointmentClick}
+                profColors={profColors}
+                onDrop={handleDragDrop}
+              />
+            )}
+            {viewMode === "mensal" && (
+              <MonthlyView
+                agendamentos={filteredAgendamentos}
+                slots={scheduleSlots}
+                currentDate={currentDate}
+                onSlotClick={handleSlotClick}
+                onAppointmentClick={handleAppointmentClick}
+                profColors={profColors}
+              />
+            )}
+          </div>
+        </>
+      )}
 
       <AgendamentoForm open={formOpen} onOpenChange={setFormOpen} onSuccess={refetchAgendamentos} defaultDate={selectedDate} />
       <RescheduleDialog open={rescheduleOpen} onOpenChange={setRescheduleOpen} agendamento={rescheduleAg} onSuccess={refetchAgendamentos} />
       <AppointmentDetailDialog open={detailOpen} onOpenChange={setDetailOpen} agendamento={detailAg} onCancel={handleCancelAppointment} onCheckin={handleCheckin} onReschedule={handleReschedule} isPatient={isPatient} />
-      </>}
     </div>
   );
 };

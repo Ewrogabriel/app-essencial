@@ -39,3 +39,14 @@ export function usePaciente(pacienteId: string | undefined) {
         enabled: !!pacienteId,
     });
 }
+
+export function usePacienteByUserId(userId: string | undefined) {
+    return useQuery({
+        queryKey: ["paciente-by-userid", userId],
+        queryFn: async () => {
+            if (!userId) return null;
+            return patientService.getPatientByUserId(userId);
+        },
+        enabled: !!userId,
+    });
+}

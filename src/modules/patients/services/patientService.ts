@@ -93,5 +93,21 @@ export const patientService = {
             handleError(error, "Erro ao buscar detalhes do paciente.");
             return null;
         }
-    }
+    },
+
+    async getPatientByUserId(userId: string) {
+        try {
+            const { data, error } = await supabase
+                .from("pacientes")
+                .select("*")
+                .eq("user_id", userId)
+                .maybeSingle();
+
+            if (error) throw error;
+            return data as Paciente | null;
+        } catch (error) {
+            handleError(error, "Erro ao buscar paciente por user_id.");
+            return null;
+        }
+    },
 };

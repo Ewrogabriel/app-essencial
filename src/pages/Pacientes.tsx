@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useDeferredValue, useMemo } from "react";
 import { TableRowSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useNavigate } from "react-router-dom";
@@ -21,13 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Users, Trash2, UserX, Download, FileSpreadsheet, MessageCircle, Copy } from "lucide-react";
+import { Plus, Search, Users, UserX, Download, FileSpreadsheet, MessageCircle, Copy } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { useAuth } from "@/modules/auth/hooks/useAuth";
 import { useClinic } from "@/modules/clinic/hooks/useClinic";
 import { PlanLimitBanner, usePlanLimitCheck } from "@/components/plan/PlanLimitBanner";
 import { toast } from "@/modules/shared/hooks/use-toast";
@@ -50,48 +49,28 @@ const Pacientes = () => {
   const { activeClinicId } = useClinic();
   const { isAtLimit: pacienteLimitReached } = usePlanLimitCheck("pacientes");
   const [busca, setBusca] = useState("");
+  const deferredBusca = useDeferredValue(busca);
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [filtroProfissional, setFiltroProfissional] = useState("todos");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleInativar = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase
-      .from("pacientes")
-      .update({ status: "inativo" })
-      .eq("id", deleteId);
-    if (error) {
-      toast({ title: "Erro ao inativar", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Paciente inativado com sucesso." });
-      queryClient.invalidateQueries({ queryKey: ["pacientes"] });
-    }
-    setDeleteId(null);
-  };
-
   const { data: pacientes = [], isLoading } = useQuery({
     queryKey: ["pacientes", activeClinicId],
     queryFn: async () => {
-      if (activeClinicId) {
-        // Get patient IDs linked to this clinic
-        const { data: cpData } = await (supabase.from("clinic_pacientes") as any)
-          .select("paciente_id")
-          .eq("clinic_id", activeClinicId);
-        const ids = cpData?.map((cp: any) => cp.paciente_id) ?? [];
-        if (!ids.length) return [];
-        const { data, error } = await (supabase.from("pacientes") as any)
-          .select("*")
-          .in("id", ids)
-          .order("nome");
-        if (error) throw error;
-        return data as Paciente[];
-      }
-      const { data, error } = await (supabase.from("pacientes") as any)
-        .select("*")
-        .order("nome");
+      if (!activeClinicId) return [];
+      const { data, error } = await supabase
+        .from("clinic_pacientes")
+        .select(`
+          paciente_id,
+          pacientes (
+            id, nome, telefone, cpf, email, status, tipo_atendimento, profissional_id
+          )
+        `)
+        .eq("clinic_id", activeClinicId);
+
       if (error) throw error;
-      return data as Paciente[];
+      return (data || []).map((item: any) => item.pacientes).filter(Boolean) as Paciente[];
     },
   });
 
@@ -114,43 +93,76 @@ const Pacientes = () => {
     },
   });
 
-  const filtrados = pacientes.filter((p) => {
-    const matchBusca =
-      !busca ||
-      p.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      p.cpf?.includes(busca) ||
-      p.telefone.includes(busca) ||
-      p.email?.toLowerCase().includes(busca.toLowerCase());
-    const matchTipo = filtroTipo === "todos" || p.tipo_atendimento === filtroTipo;
-    const matchStatus = filtroStatus === "todos" || p.status === filtroStatus;
-    const matchProf = filtroProfissional === "todos" || p.profissional_id === filtroProfissional;
-    return matchBusca && matchTipo && matchStatus && matchProf;
-  });
-
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Lista de Pacientes", 14, 15);
-    doc.setFontSize(8);
-    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 22);
-    autoTable(doc, {
-      startY: 28,
-      head: [["Nome", "Telefone", "CPF", "Tipo", "Status"]],
-      body: filtrados.map(p => [p.nome, p.telefone, p.cpf || "—", p.tipo_atendimento, p.status]),
-      styles: { fontSize: 8 },
+  const filtrados = useMemo(() => {
+    return pacientes.filter((p) => {
+      const matchBusca =
+        !deferredBusca ||
+        p.nome.toLowerCase().includes(deferredBusca.toLowerCase()) ||
+        p.cpf?.includes(deferredBusca) ||
+        p.telefone.includes(deferredBusca) ||
+        p.email?.toLowerCase().includes(deferredBusca.toLowerCase());
+      const matchTipo = filtroTipo === "todos" || p.tipo_atendimento === filtroTipo;
+      const matchStatus = filtroStatus === "todos" || p.status === filtroStatus;
+      const matchProf = filtroProfissional === "todos" || p.profissional_id === filtroProfissional;
+      return matchBusca && matchTipo && matchStatus && matchProf;
     });
-    doc.save("pacientes.pdf");
+  }, [pacientes, deferredBusca, filtroTipo, filtroStatus, filtroProfissional]);
+
+  const handleInativar = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("pacientes").update({ status: "inativo" }).eq("id", deleteId);
+    if (error) {
+      toast({ title: "Erro ao inativar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Paciente inativado com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ["pacientes"] });
+    }
+    setDeleteId(null);
   };
 
-  const exportExcel = async () => {
-    const XLSX = await import("xlsx");
-    const ws = XLSX.utils.json_to_sheet(filtrados.map(p => ({
-      Nome: p.nome, Telefone: p.telefone, CPF: p.cpf || "", Email: p.email || "",
-      Tipo: p.tipo_atendimento, Status: p.status,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Pacientes");
-    XLSX.writeFile(wb, "pacientes.xlsx");
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const p = filtrados[index];
+    return (
+      <div style={style} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+        <div
+          className="flex items-center h-full px-4 cursor-pointer"
+          onClick={() => navigate(`/pacientes/${p.id}/detalhes`)}
+        >
+          <div className="flex-1 font-medium truncate pr-4">{p.nome}</div>
+          <div className="hidden sm:block w-[150px] text-sm truncate pr-4">{p.telefone}</div>
+          <div className="hidden md:block w-[140px] text-sm truncate pr-4">{p.cpf || "—"}</div>
+          <div className="w-[120px] pr-4">
+            <Badge variant="secondary" className="truncate max-w-full">
+              {p.tipo_atendimento}
+            </Badge>
+          </div>
+          <div className="w-[100px] pr-4">
+            <Badge variant={p.status === "ativo" ? "default" : "outline"}>
+              {p.status === "ativo" ? "Ativo" : "Inativo"}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {
+              const codes = JSON.parse(localStorage.getItem('paciente_codes') || '{}');
+              const accessCode = codes[p.id] || (p as any).codigo_acesso;
+              if (!accessCode) { toast({ title: "Código não disponível", variant: "destructive" }); return; }
+              const invite = `Olá ${p.nome.split(' ')[0]}! 👋\n\nCódigo: ${accessCode}\nLink: ${window.location.origin}/paciente-access`;
+              navigator.clipboard.writeText(invite);
+              toast({ title: "Convite copiado!" });
+            }}><Copy className="h-4 w-4" /></Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => {
+              const cleanPhone = p.telefone.replace(/\D/g, "");
+              window.open(`https://wa.me/${cleanPhone.startsWith("55") ? cleanPhone : "55" + cleanPhone}`, "_blank");
+            }}><MessageCircle className="h-4 w-4" /></Button>
+            {p.status === "ativo" && (
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(p.id)}>
+                <UserX className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -158,23 +170,12 @@ const Pacientes = () => {
       <PlanLimitBanner resource="pacientes" label="Pacientes" />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight font-[Plus_Jakarta_Sans]">
-            Pacientes
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie os pacientes da clínica
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">Pacientes</h1>
+          <p className="text-sm text-muted-foreground">Gerencie os pacientes da clínica</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={exportPDF}>
-            <Download className="h-4 w-4 mr-1" /> PDF
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportExcel}>
-            <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
-          </Button>
+        <div className="flex gap-2">
           <Button size="sm" onClick={() => navigate("/pacientes/novo")} disabled={pacienteLimitReached}>
-            <Plus className="h-4 w-4 mr-1" />
-            Novo Paciente
+            <Plus className="h-4 w-4 mr-1" /> Novo Paciente
           </Button>
         </div>
       </div>
@@ -191,155 +192,43 @@ const Pacientes = () => {
                 className="pl-9"
               />
             </div>
-            <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todas modalidades</SelectItem>
-                {modalidades.map((m: any) => (
-                  <SelectItem key={m.id} value={m.nome.toLowerCase()}>{m.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filtros Simplificados para este exemplo de virtualização */}
             <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
+              <SelectTrigger className="w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="ativo">Ativo</SelectItem>
                 <SelectItem value="inativo">Inativo</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filtroProfissional} onValueChange={setFiltroProfissional}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Profissional" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos profissionais</SelectItem>
-                {profissionais.map((p: any) => (
-                  <SelectItem key={p.user_id} value={p.user_id}>{p.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 border-t">
           {isLoading ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead className="hidden sm:table-cell">Telefone</TableHead>
-                    <TableHead className="hidden md:table-cell">CPF</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[60px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} cols={6} />)}
-                </TableBody>
-              </Table>
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} cols={6} />)}
             </div>
           ) : filtrados.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-8 w-8 text-muted-foreground/50" />}
-              title="Nenhum paciente encontrado"
-              description={pacientes.length === 0 ? 'Clique em "Novo Paciente" para cadastrar o primeiro' : "Tente ajustar os filtros de busca"}
-              action={pacientes.length === 0 ? <Button onClick={() => navigate("/pacientes/novo")}><Plus className="h-4 w-4 mr-2" /> Novo Paciente</Button> : undefined}
-            />
+            <div className="p-12 text-center text-muted-foreground">Nenhum paciente encontrado.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead className="hidden sm:table-cell">Telefone</TableHead>
-                    <TableHead className="hidden md:table-cell">CPF</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[60px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtrados.map((paciente) => (
-                    <TableRow key={paciente.id} className="cursor-pointer" onClick={() => navigate(`/pacientes/${paciente.id}/detalhes`)}>
-                      <TableCell className="font-medium">{paciente.nome}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{paciente.telefone}</TableCell>
-                      <TableCell className="hidden md:table-cell">{paciente.cpf || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {paciente.tipo_atendimento.charAt(0).toUpperCase() + paciente.tipo_atendimento.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={paciente.status === "ativo" ? "default" : "outline"}
-                        >
-                          {paciente.status === "ativo" ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            title="Copiar convite com código de acesso"
-                            onClick={() => {
-                              // Try to get from localStorage first
-                              const codes = JSON.parse(localStorage.getItem('paciente_codes') || '{}');
-                              let accessCode = codes[paciente.id] || (paciente as any).codigo_acesso;
-                              
-                              if (!accessCode) {
-                                toast({ title: "Código não disponível", variant: "destructive" });
-                                return;
-                              }
-                              const accessLink = `${window.location.origin}/paciente-access`;
-                              const inviteMessage = `Olá ${paciente.nome.split(' ')[0]}! 👋\n\nVocê foi cadastrado(a) em nosso sistema Essencial FisioPilates. Para acessar sua área de atendimento, use o código abaixo:\n\n📱 CÓDIGO DE ACESSO: ${accessCode}\n\n🔗 Link: ${accessLink}\n\nSimplemente acesse o link acima e insira seu código de acesso.\n\nQualquer dúvida, entre em contato conosco! 😊`;
-                              navigator.clipboard.writeText(inviteMessage);
-                              toast({ title: "Convite copiado!", description: "Mensagem pronta para enviar via WhatsApp" });
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                            title="Conversar no WhatsApp"
-                            onClick={() => {
-                              const cleanPhone = paciente.telefone.replace(/\D/g, "");
-                              if (cleanPhone) {
-                                const fullPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-                                window.open(`https://wa.me/${fullPhone}`, "_blank");
-                              } else {
-                                toast({ title: "Paciente sem telefone cadastrado", variant: "destructive" });
-                              }
-                            }}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                          {paciente.status === "ativo" && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive h-8 w-8"
-                              title="Inativar paciente"
-                              onClick={() => setDeleteId(paciente.id)}
-                            >
-                              <UserX className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="w-full">
+              {/* Header da Tabela fixo */}
+              <div className="flex items-center px-4 py-2 border-b bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="flex-1">Nome</div>
+                <div className="hidden sm:block w-[150px]">Telefone</div>
+                <div className="hidden md:block w-[140px]">CPF</div>
+                <div className="w-[120px]">Tipo</div>
+                <div className="w-[100px]">Status</div>
+                <div className="w-[84px] text-right">Ações</div>
+              </div>
+              <List
+                height={500}
+                itemCount={filtrados.length}
+                itemSize={56}
+                width={"100%"}
+              >
+                {Row}
+              </List>
             </div>
           )}
         </CardContent>
@@ -349,15 +238,11 @@ const Pacientes = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Inativar paciente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O paciente será marcado como inativo e não aparecerá nas listas ativas. Esta ação pode ser desfeita editando o paciente.
-            </AlertDialogDescription>
+            <AlertDialogDescription>O paciente será marcado como inativo e não aparecerá nas listas ativas.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleInativar} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Inativar
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleInativar} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Inativar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

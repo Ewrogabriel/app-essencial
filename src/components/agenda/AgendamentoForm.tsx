@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, addWeeks, setHours as setH, setMinutes as setM, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Repeat, DollarSign, AlertTriangle, CheckCircle2, Video, Home } from "lucide-react";
+import { CalendarIcon, Repeat, DollarSign, AlertTriangle, CheckCircle2, Video, Home, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { checkAvailability, getMonthlyAvailability, type AvailabilityCheckResult } from "@/lib/availabilityCheck";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -43,7 +43,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { toast } from "@/modules/shared/hooks/use-toast";
+import { useAgendamentos, useScheduleSlots, useBookAppointment } from "@/modules/appointments/hooks/useAppointments";
+import { toast } from "sonner";
 
 const DIAS_SEMANA = [
   { value: 1, label: "Seg" },
@@ -60,6 +61,7 @@ const formSchema = z.object({
   profissional_id: z.string().min(1, "Selecione um profissional"),
   data: z.date({ required_error: "Selecione a data" }),
   horario: z.string().min(1, "Informe o horário"),
+  slot_id: z.string().optional(),
   duracao_minutos: z.number().min(15).max(120),
   tipo_atendimento: z.string().min(1, "Selecione a modalidade"),
   tipo_sessao: z.enum(["individual", "grupo"]),
@@ -118,8 +120,9 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
     defaultValues: {
       duracao_minutos: 50,
       tipo_atendimento: "",
-      tipo_sessao: "individual",
-      horario: "08:00",
+      tipo_sessao: "grupo",
+      horario: "",
+      slot_id: "",
       observacoes: "",
       recorrente: false,
       dias_semana: [],
@@ -134,17 +137,22 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
     },
   });
 
+  const watchedProfId = form.watch("profissional_id");
+  const watchedDate = form.watch("data");
+  const watchedHorario = form.watch("horario");
+  const watchedSlotId = form.watch("slot_id");
   const isRecorrente = form.watch("recorrente");
   const diasSelecionados = form.watch("dias_semana");
   const freqSemanal = form.watch("frequencia_semanal");
   const tipoAtendimento = form.watch("tipo_atendimento");
-  const watchedProfId = form.watch("profissional_id");
-  const watchedDate = form.watch("data");
-  const watchedHorario = form.watch("horario");
   const isRepetir = form.watch("repetir");
   const repetirTipo = form.watch("repetir_tipo");
   const repetirQuantidade = form.watch("repetir_quantidade");
   const watchedTipoSessao = form.watch("tipo_sessao");
+
+  const formattedDate = watchedDate ? format(watchedDate, "yyyy-MM-dd") : "";
+  const { data: availableSlots, isLoading: isLoadingSlots } = useScheduleSlots(watchedProfId, formattedDate);
+  const bookAppointmentMutation = useBookAppointment();
 
   // Fetch monthly availability summary
   useEffect(() => {
@@ -273,118 +281,35 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
     setLoading(true);
 
     try {
-      // Check if patient enrollment is blocked (only if column exists)
-      // Skip bloqueado_admin check as column may not exist
-
-      if (isRecorrente) {
-        // Validation: days must match frequency
-        if (values.dias_semana.length !== values.frequencia_semanal) {
-          toast({
-            title: "Atenção",
-            description: `Você selecionou ${values.dias_semana.length} dia(s) mas a frequência é ${values.frequencia_semanal}x. Ajuste para que coincidam.`,
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-
-        const dates = generateRecurringDates(values);
-        if (dates.length === 0) {
-          toast({ title: "Nenhuma data gerada", description: "Verifique os dias e o período.", variant: "destructive" });
-          setLoading(false);
-          return;
-        }
-
-        const grupoId = crypto.randomUUID();
-        const records = dates.map((dt) => ({
-          paciente_id: values.paciente_id,
-          profissional_id: values.profissional_id,
-          data_horario: dt.toISOString(),
-          duracao_minutos: values.duracao_minutos,
-          tipo_atendimento: values.tipo_atendimento,
-          tipo_sessao: values.tipo_sessao,
-          observacoes: values.observacoes || null,
-          created_by: user.id,
-          recorrente: true,
-          recorrencia_grupo_id: grupoId,
-          dias_semana: values.dias_semana,
-          frequencia_semanal: values.frequencia_semanal,
-          valor_mensal: values.valor_mensal || null,
-          clinic_id: activeClinicId,
-        }));
-
-        const { error } = await (supabase.from("agendamentos") as any).insert(records);
-        if (error) throw error;
-
-        toast({
-          title: "Agendamentos recorrentes criados!",
-          description: `${dates.length} sessões agendadas.`,
-        });
+      if (values.recorrente) {
+        toast.info("A funcionalidade recorrente está sendo migrada para o novo modelo de slots. Use agendamentos individuais por enquanto para controle de capacidade.");
+        // TODO: Implementar loop de agendamento por slots para recorrência
       } else {
         const [hours, minutes] = values.horario.split(":").map(Number);
         const dataHorario = new Date(values.data);
         dataHorario.setHours(hours, minutes, 0, 0);
 
         if (values.repetir && values.repetir_quantidade > 1) {
-          // Repeat same day/time for X occurrences (weekly interval)
-          const totalOccurrences = values.repetir_tipo === "vezes"
-            ? values.repetir_quantidade
-            : values.repetir_quantidade; // semanas = same number
-          const grupoId = crypto.randomUUID();
-          const records = [];
-          for (let i = 0; i < totalOccurrences; i++) {
-            const dt = addWeeks(dataHorario, i);
-            records.push({
-              paciente_id: values.paciente_id,
-              profissional_id: values.profissional_id,
-              data_horario: dt.toISOString(),
-              duracao_minutos: values.duracao_minutos,
-              tipo_atendimento: values.tipo_atendimento,
-              tipo_sessao: values.tipo_sessao,
-              observacoes: values.observacoes || null,
-              created_by: user.id,
-              recorrente: true,
-              recorrencia_grupo_id: grupoId,
-              valor_sessao: values.valor_sessao || null,
-              clinic_id: activeClinicId,
-            });
-          }
-          const { error } = await (supabase.from("agendamentos") as any).insert(records);
-          if (error) throw error;
-          toast({
-            title: "Sessões repetidas criadas!",
-            description: `${totalOccurrences} sessões agendadas (mesmo dia/horário, semanalmente).`,
-          });
+          toast.info("A repetição simples será migrada para o modelo de slots em breve.");
         } else {
-          const { data: agendamentoData, error } = await (supabase.from("agendamentos") as any).insert({
+          if (!values.slot_id) {
+            toast.error("Selecione um horário (slot) disponível.");
+            setLoading(false);
+            return;
+          }
+
+          await bookAppointmentMutation.mutateAsync({
             paciente_id: values.paciente_id,
             profissional_id: values.profissional_id,
+            slot_id: values.slot_id,
             data_horario: dataHorario.toISOString(),
             duracao_minutos: values.duracao_minutos,
             tipo_atendimento: values.tipo_atendimento,
             tipo_sessao: values.tipo_sessao,
-            observacoes: values.observacoes || null,
+            observacoes: values.observacoes,
             created_by: user.id,
-            valor_sessao: values.valor_sessao || null,
-            clinic_id: activeClinicId,
-          }).select("id").single();
-          if (error) throw error;
-
-          // Auto-create teleconsulta session if marked as teleconsulta
-          if (values.observacoes?.includes("[TELECONSULTA]") && agendamentoData?.id) {
-            const roomId = crypto.randomUUID();
-            const teleconsultaLink = `${window.location.origin}/teleconsulta?session=`;
-            await (supabase.from("teleconsulta_sessions") as any).insert({
-              paciente_id: values.paciente_id,
-              profissional_id: values.profissional_id,
-              agendamento_id: agendamentoData.id,
-              room_id: roomId,
-              status: "aguardando",
-              clinic_id: activeClinicId,
-            });
-          }
-
-          toast({ title: "Agendamento criado com sucesso!" });
+            clinic_id: activeClinicId
+          });
         }
       }
 
@@ -392,13 +317,11 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
       onOpenChange(false);
       onSuccess();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-      toast({ title: "Erro ao criar agendamento", description: errorMessage, variant: "destructive" });
+      console.error("Erro ao salvar agendamento:", error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
-
   const previewCount = isRecorrente && diasSelecionados.length > 0
     ? diasSelecionados.length * form.watch("recorrencia_semanas")
     : 0;
@@ -461,13 +384,47 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="horario"
+                  name="slot_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Horário</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} />
-                      </FormControl>
+                      <FormLabel>Horário (Vagas)</FormLabel>
+                      <Select
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          const slot = availableSlots?.find((s: any) => s.id === val);
+                          if (slot) {
+                            form.setValue("horario", slot.start_time.slice(0, 5));
+                          }
+                        }}
+                        value={field.value}
+                        disabled={isLoadingSlots || !watchedDate || !watchedProfId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={isLoadingSlots ? "Carregando..." : (availableSlots?.length ? "Selecione o horário" : "Sem vagas para este dia")} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableSlots?.map((slot: any) => (
+                            <SelectItem
+                              key={slot.id}
+                              value={slot.id}
+                              disabled={slot.status === 'full' || slot.status === 'blocked'}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3 text-muted-foreground" />
+                                <span className="font-medium">{slot.start_time.slice(0, 5)}</span>
+                                <span className={cn(
+                                  "text-[10px] px-1.5 py-0.5 rounded-full border",
+                                  slot.status === 'full' ? "bg-red-50 text-red-600 border-red-200" : "bg-green-50 text-green-600 border-green-200"
+                                )}>
+                                  {slot.current_capacity}/{slot.max_capacity} pacientes
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

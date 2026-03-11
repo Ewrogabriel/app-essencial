@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,14 +19,10 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/modules/shared/hooks/use-toast";
 import { generateReceiptPDF, getReceiptNumber } from "@/lib/generateReceiptPDF";
 import Despesas from "./Despesas";
-import { CommissionExtract } from "@/components/profissionais/CommissionExtract";
 import { useClinic } from "@/modules/clinic/hooks/useClinic";
 import { FinanceDashboard } from "@/components/reports/FinanceDashboard";
 import { lazy, Suspense } from "react";
@@ -50,6 +46,22 @@ const formaLabel: Record<string, string> = {
   transferencia: "Transferência",
 };
 
+interface PagamentoRow {
+  id: string;
+  valor: number;
+  data_pagamento: string;
+  data_vencimento: string | null;
+  status: string;
+  forma_pagamento: string | null;
+  descricao: string | null;
+  observacoes: string | null;
+  created_at: string;
+  paciente_id: string;
+  profissional_id: string;
+  plano_id: string | null;
+  pacientes: { nome: string } | null;
+}
+
 const Financeiro = () => {
   const { user, isPatient } = useAuth();
   const { activeClinicId } = useClinic();
@@ -69,33 +81,22 @@ const Financeiro = () => {
     observacoes: "",
   });
 
-  interface PagamentoRow {
-    id: string;
-    valor: number;
-    data_pagamento: string;
-    data_vencimento: string | null;
-    status: string;
-    forma_pagamento: string | null;
-    descricao: string | null;
-    observacoes: string | null;
-    created_at: string;
-    paciente_id: string;
-    profissional_id: string;
-    plano_id: string | null;
-    pacientes: { nome: string } | null;
-  }
-
   const { data: pagamentos = [], isLoading } = useQuery<PagamentoRow[]>({
     queryKey: ["pagamentos", activeClinicId],
     queryFn: async () => {
-      let query = supabase
+      if (!activeClinicId) return [];
+      const { data, error } = await supabase
         .from("pagamentos")
-        .select("*, pacientes(nome)");
-      if (activeClinicId) query = query.eq("clinic_id", activeClinicId);
-      const { data, error } = await query.order("data_pagamento", { ascending: false });
+        .select(`
+          id, valor, data_pagamento, data_vencimento, status, forma_pagamento, 
+          descricao, created_at, paciente_id, pacientes (nome)
+        `)
+        .eq("clinic_id", activeClinicId)
+        .order("data_pagamento", { ascending: false });
       if (error) throw error;
-      return data;
+      return data as any;
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: pacientes = [] } = useQuery({
@@ -104,30 +105,31 @@ const Financeiro = () => {
       const { data } = await supabase.from("pacientes").select("id, nome").eq("status", "ativo").order("nome");
       return data ?? [];
     },
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: despesasForDre = [] } = useQuery({
     queryKey: ["despesas-dre", activeClinicId],
     queryFn: async () => {
-      let q = supabase.from("expenses").select("valor, status");
-      if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
-      const { data, error } = await q;
+      if (!activeClinicId) return [];
+      const { data, error } = await supabase.from("expenses").select("valor, status").eq("clinic_id", activeClinicId);
       if (error) throw error;
       return data;
     },
     enabled: !isPatient,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: comissoesForDre = [] } = useQuery({
     queryKey: ["comissoes-dre", activeClinicId],
     queryFn: async () => {
-      let q = supabase.from("commissions").select("valor");
-      if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
-      const { data, error } = await q;
+      if (!activeClinicId) return [];
+      const { data, error } = await supabase.from("commissions").select("valor").eq("clinic_id", activeClinicId);
       if (error) throw error;
       return data;
     },
     enabled: !isPatient,
+    staleTime: 1000 * 60 * 5,
   });
 
   const createPagamento = useMutation({
@@ -158,15 +160,62 @@ const Financeiro = () => {
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  const totalRecebido = pagamentos.filter((p) => p.status === "pago").reduce((sum, p) => sum + Number(p.valor), 0);
-  const totalPendente = pagamentos.filter((p) => p.status === "pendente").reduce((sum, p) => sum + Number(p.valor), 0);
-  const totalDespesas = (despesasForDre || []).filter((d) => d.status === "pago").reduce((sum, d) => sum + Number(d.valor), 0);
-  const totalComissoes = (comissoesForDre || []).reduce((sum, c) => sum + Number(c.valor), 0);
-  
-  const countPagos = pagamentos.filter((p) => p.status === 'pago').length;
-  const countPendentes = pagamentos.filter((p) => p.status === 'pendente').length;
+  const kpis = useMemo(() => {
+    const totalRecebido = pagamentos.filter((p) => p.status === "pago").reduce((sum, p) => sum + Number(p.valor), 0);
+    const totalPendente = pagamentos.filter((p) => p.status === "pendente").reduce((sum, p) => sum + Number(p.valor), 0);
+    const totalDespesas = (despesasForDre || []).filter((d) => d.status === "pago").reduce((sum, d) => sum + Number(d.valor), 0);
+    const totalComissoes = (comissoesForDre || []).reduce((sum, c) => sum + Number(c.valor), 0);
+    const countPagos = pagamentos.filter((p) => p.status === 'pago').length;
+    const countPendentes = pagamentos.filter((p) => p.status === 'pendente').length;
+    const lucroLiquido = totalRecebido - totalDespesas - totalComissoes;
+    return { totalRecebido, totalPendente, totalDespesas, totalComissoes, countPagos, countPendentes, lucroLiquido };
+  }, [pagamentos, despesasForDre, comissoesForDre]);
 
-  const lucroLiquido = totalRecebido - totalDespesas - totalComissoes;
+  const { totalRecebido, totalPendente, totalDespesas, totalComissoes, countPagos, countPendentes, lucroLiquido } = kpis;
+
+  const filteredPagamentos = useMemo(() => {
+    let filtered = pagamentos || [];
+    if (filterMes && filterMes !== "all") {
+      filtered = filtered.filter((p) => p.data_pagamento?.startsWith(filterMes));
+    }
+    if (filterForma && filterForma !== "all") {
+      filtered = filtered.filter((p) => p.forma_pagamento === filterForma);
+    }
+    return filtered;
+  }, [pagamentos, filterMes, filterForma]);
+
+  const PaymentRow = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const pagamento = filteredPagamentos[index];
+    return (
+      <div style={style} className="border-b border-border/50 flex items-center px-4 hover:bg-muted/50 transition-colors">
+        {!isPatient && <div className="flex-1 font-medium truncate pr-4">{pagamento.pacientes?.nome ?? "—"}</div>}
+        <div className="w-[180px] text-sm truncate pr-4">{pagamento.descricao || "—"}</div>
+        <div className="w-[100px] text-sm font-semibold pr-4">R$ {Number(pagamento.valor).toFixed(2)}</div>
+        <div className="w-[120px] text-sm truncate pr-4">{pagamento.forma_pagamento ? formaLabel[pagamento.forma_pagamento] || pagamento.forma_pagamento : "—"}</div>
+        <div className="w-[100px] text-xs pr-4">{pagamento.data_vencimento ? format(new Date(pagamento.data_vencimento), "dd/MM/yyyy") : "—"}</div>
+        <div className="w-[100px] text-xs pr-4">{pagamento.status === 'pago' ? format(new Date(pagamento.data_pagamento), "dd/MM/yyyy") : "—"}</div>
+        <div className="w-[100px] pr-4">
+          <Badge variant={pagamento.status === 'pago' ? 'default' : 'destructive'} className="text-[10px] py-0">
+            {statusBadge[pagamento.status]?.label || pagamento.status}
+          </Badge>
+        </div>
+        <div className="w-[80px] text-right">
+          {pagamento.status === "pago" && (
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={async () => {
+              const numero = getReceiptNumber(pagamento.id, pagamento.created_at);
+              const dataPgto = format(new Date(pagamento.data_pagamento), "dd/MM/yyyy");
+              const ref = pagamento.data_vencimento ? format(new Date(pagamento.data_vencimento), "MMMM/yyyy", { locale: ptBR }) : pagamento.descricao || "Serviço";
+              const pdf = await generateReceiptPDF({ numero, pacienteNome: pagamento.pacientes?.nome || "—", cpf: "", descricao: pagamento.descricao || "Serviço de Pilates/Fisioterapia", valor: Number(pagamento.valor), formaPagamento: pagamento.forma_pagamento || "", dataPagamento: dataPgto, referencia: ref.charAt(0).toUpperCase() + ref.slice(1) });
+              pdf.save(`Recibo_${numero}.pdf`);
+              toast({ title: "Recibo gerado!" });
+            }}>
+              <Download className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -175,20 +224,11 @@ const Financeiro = () => {
         <div className="flex gap-2 flex-wrap">
           {!isPatient && <FinanceExportButton pagamentos={pagamentos} />}
           {!isPatient && (
-          <Dialog open={formOpen} onOpenChange={setFormOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Pagamento
-              </Button>
-            </DialogTrigger>
-            {/* DialogContent is rendered below */}
-          </Dialog>
-        )}
+            <Button onClick={() => setFormOpen(true)}><Plus className="mr-2 h-4 w-4" /> Novo Pagamento</Button>
+          )}
         </div>
       </div>
 
-      {/* KPI */}
       {!isPatient && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
@@ -222,7 +262,6 @@ const Financeiro = () => {
         </div>
       )}
 
-      {/* Tabs */}
       <Tabs defaultValue="fluxo" className="space-y-4">
         {!isPatient && (
           <TabsList className="flex flex-wrap w-full max-w-4xl gap-1 h-auto p-1">
@@ -235,161 +274,76 @@ const Financeiro = () => {
           </TabsList>
         )}
 
-        <TabsContent value="dashboard">
-          <FinanceDashboard />
-        </TabsContent>
+        <TabsContent value="dashboard"><FinanceDashboard /></TabsContent>
 
         <TabsContent value="fluxo" className="space-y-4">
-          {/* Filters */}
           {!isPatient && (
             <div className="flex flex-wrap gap-3 items-center">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={filterMes} onValueChange={setFilterMes}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Todos os meses" />
-                </SelectTrigger>
+                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Todos os meses" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os meses</SelectItem>
                   {Array.from({ length: 12 }, (_, i) => {
                     const d = subMonths(new Date(), i);
-                    return (
-                      <SelectItem key={i} value={format(d, "yyyy-MM")}>
-                        {format(d, "MMMM yyyy", { locale: ptBR })}
-                      </SelectItem>
-                    );
+                    return <SelectItem key={i} value={format(d, "yyyy-MM")}>{format(d, "MMMM yyyy", { locale: ptBR })}</SelectItem>;
                   })}
                 </SelectContent>
               </Select>
               <Select value={filterForma} onValueChange={setFilterForma}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Todas as formas" />
-                </SelectTrigger>
+                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Todas as formas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as formas</SelectItem>
-                  {Object.entries(formaLabel).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
-                  ))}
+                  {Object.entries(formaLabel).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
                 </SelectContent>
               </Select>
               {(filterMes || filterForma !== "all") && (
-                <Button variant="ghost" size="sm" onClick={() => { setFilterMes(""); setFilterForma("all"); }}>
-                  Limpar filtros
-                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setFilterMes(""); setFilterForma("all"); }}>Limpar filtros</Button>
               )}
             </div>
           )}
 
           <Card>
             <CardContent className="p-0">
-              {(() => {
-                let filtered = pagamentos || [];
-                if (filterMes && filterMes !== "all") {
-                  filtered = filtered.filter((p) => p.data_pagamento?.startsWith(filterMes));
-                }
-                if (filterForma && filterForma !== "all") {
-                  filtered = filtered.filter((p) => p.forma_pagamento === filterForma);
-                }
-                
-                if (isLoading) {
-                  return <div className="flex justify-center py-12 text-muted-foreground">Carregando...</div>;
-                }
-                if (filtered.length === 0) {
-                  return (
-                    <div className="flex flex-col items-center py-16 text-muted-foreground">
-                      <DollarSign className="h-12 w-12 mb-4 opacity-40" />
-                      <p className="text-lg font-medium">Nenhum pagamento encontrado</p>
-                      {!isPatient && !filterMes && filterForma === "all" && (
-                        <Button className="mt-4" onClick={() => setFormOpen(true)}>
-                          <Plus className="h-4 w-4 mr-2" /> Registrar pagamento
-                        </Button>
-                      )}
-                    </div>
-                  );
-                }
-                return (
-                <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {!isPatient && <TableHead>Paciente</TableHead>}
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Forma</TableHead>
-                      <TableHead>Vencimento</TableHead>
-                      <TableHead>Data Pgto</TableHead>
-                       <TableHead>Status</TableHead>
-                       <TableHead className="text-right">Recibo</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.map((pagamento) => (
-                      <TableRow key={pagamento.id}>
-                        {!isPatient && <TableCell className="font-medium">{pagamento.pacientes?.nome ?? "—"}</TableCell>}
-                        <TableCell>{pagamento.descricao || "—"}</TableCell>
-                        <TableCell>R$ {Number(pagamento.valor).toFixed(2)}</TableCell>
-                        <TableCell>{pagamento.forma_pagamento ? formaLabel[pagamento.forma_pagamento] || pagamento.forma_pagamento : "—"}</TableCell>
-                        <TableCell>
-                          {pagamento.data_vencimento ? format(new Date(pagamento.data_vencimento), "dd/MM/yyyy") : "—"}
-                        </TableCell>
-                        <TableCell>
-                          {pagamento.status === 'pago' ? format(new Date(pagamento.data_pagamento), "dd/MM/yyyy") : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={pagamento.status === 'pago' ? 'default' : 'destructive'}>
-                            {statusBadge[pagamento.status]?.label || pagamento.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {pagamento.status === "pago" && (
-                            <div className="flex gap-1 justify-end">
-                              <Button size="sm" variant="outline" className="h-8" onClick={async () => {
-                                const numero = getReceiptNumber(pagamento.id, pagamento.created_at);
-                                const dataPgto = format(new Date(pagamento.data_pagamento), "dd/MM/yyyy");
-                                const ref = pagamento.data_vencimento
-                                  ? format(new Date(pagamento.data_vencimento), "MMMM/yyyy", { locale: ptBR })
-                                  : pagamento.descricao || "Serviço";
-                                const pdf = await generateReceiptPDF({
-                                  numero,
-                                  pacienteNome: pagamento.pacientes?.nome || "—",
-                                  cpf: "",
-                                  descricao: pagamento.descricao || "Serviço de Pilates/Fisioterapia",
-                                  valor: Number(pagamento.valor),
-                                  formaPagamento: pagamento.forma_pagamento || "",
-                                  dataPagamento: dataPgto,
-                                  referencia: ref.charAt(0).toUpperCase() + ref.slice(1),
-                                });
-                                pdf.save(`Recibo_${numero}.pdf`);
-                                toast({ title: "Recibo gerado!" });
-                              }}>
-                                <Download className="h-3.5 w-3.5 mr-1" /> PDF
-                              </Button>
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              {isLoading ? (
+                <div className="flex justify-center py-12 text-muted-foreground">Carregando...</div>
+              ) : filteredPagamentos.length === 0 ? (
+                <div className="flex flex-col items-center py-16 text-muted-foreground">
+                  <DollarSign className="h-12 w-12 mb-4 opacity-40" />
+                  <p className="text-lg font-medium">Nenhum pagamento encontrado</p>
                 </div>
-                );
-              })()}
+              ) : (
+                <div className="w-full">
+                  <div className="flex items-center px-4 py-3 border-b bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {!isPatient && <div className="flex-1 pr-4">Paciente</div>}
+                    <div className="w-[180px] pr-4">Descrição</div>
+                    <div className="w-[100px] pr-4">Valor</div>
+                    <div className="w-[120px] pr-4">Forma</div>
+                    <div className="w-[100px] pr-4">Venc.</div>
+                    <div className="w-[100px] pr-4">Pagamento</div>
+                    <div className="w-[100px] pr-4">Status</div>
+                    <div className="w-[80px] text-right">Ação</div>
+                  </div>
+                  <List height={400} itemCount={filteredPagamentos.length} itemSize={56} width={"100%"}>
+                    {PaymentRow}
+                  </List>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="dre" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Demonstrativo de Resultados (DRE)</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Demonstrativo de Resultados (DRE)</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-medium text-green-600">(+) Receita Operacional (Pagamentos Recebidos)</span>
+                  <span className="font-medium text-green-600">(+) Receita Operacional</span>
                   <span className="font-bold text-green-600">R$ {totalRecebido.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-medium text-red-600">(-) Despesas Operacionais (Custos Fixos/Variáveis)</span>
+                  <span className="font-medium text-red-600">(-) Despesas Operacionais</span>
                   <span className="font-bold text-red-600">R$ {totalDespesas.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b">
@@ -398,103 +352,66 @@ const Financeiro = () => {
                 </div>
                 <div className="flex justify-between items-center py-4 bg-muted/50 px-4 rounded-lg">
                   <span className="text-lg font-bold">(=) LUCRO LÍQUIDO NO PERÍODO</span>
-                  <span className={`text-xl font-black ${lucroLiquido >= 0 ? "text-primary" : "text-destructive"}`}>
-                    R$ {lucroLiquido.toFixed(2)}
-                  </span>
+                  <span className={`text-xl font-black ${lucroLiquido >= 0 ? "text-primary" : "text-destructive"}`}>R$ {lucroLiquido.toFixed(2)}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-4 italic">
-                  * Este DRE é baseado em contas pagas (regime de caixa). Pagamentos pendentes não são contabilizados aqui.
-                </p>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="despesas" className="space-y-4">
-          <Despesas />
-        </TabsContent>
-
-        <TabsContent value="comissoes" className="space-y-4">
-          <Suspense fallback={<LazyLoadFallback />}>
-            <Comissoes />
-          </Suspense>
-        </TabsContent>
-
-        <TabsContent value="notas-fiscais" className="space-y-4">
-          <Suspense fallback={<LazyLoadFallback />}>
-            <NotasFiscais />
-          </Suspense>
-        </TabsContent>
+        <TabsContent value="despesas"><Despesas /></TabsContent>
+        <TabsContent value="comissoes"><Suspense fallback={<LazyLoadFallback />}><Comissoes /></Suspense></TabsContent>
+        <TabsContent value="notas-fiscais"><Suspense fallback={<LazyLoadFallback />}><NotasFiscais /></Suspense></TabsContent>
       </Tabs>
 
-      {/* Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-[480px] max-h-[90vh] flex flex-col">
-          <DialogHeader className="shrink-0">
-            <DialogTitle>Novo Pagamento</DialogTitle>
-          </DialogHeader>
+          <DialogHeader className="shrink-0"><DialogTitle>Novo Pagamento</DialogTitle></DialogHeader>
           <ScrollArea className="flex-1 overflow-hidden">
-          <div className="space-y-4 pr-4">
-            <div>
-              <Label>Paciente</Label>
-              <Select value={formData.paciente_id} onValueChange={(v) => setFormData(p => ({ ...p, paciente_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {(pacientes || []).map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 pr-4">
               <div>
-                <Label>Valor (R$)</Label>
-                <Input type="number" step="0.01" placeholder="0,00" value={formData.valor} onChange={(e) => setFormData(p => ({ ...p, valor: e.target.value }))} />
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(v) => setFormData(p => ({ ...p, status: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Label>Paciente</Label>
+                <Select value={formData.paciente_id} onValueChange={(v) => setFormData(p => ({ ...p, paciente_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="pago">Pago</SelectItem>
+                    {pacientes.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <div>
-              <Label>Forma de Pagamento</Label>
-              <Select value={formData.forma_pagamento} onValueChange={(v) => setFormData(p => ({ ...p, forma_pagamento: v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                  <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                  <SelectItem value="boleto">Boleto</SelectItem>
-                  <SelectItem value="transferencia">Transferência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Data Pagamento</Label>
-                <Input type="date" value={formData.data_pagamento} onChange={(e) => setFormData(p => ({ ...p, data_pagamento: e.target.value }))} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Valor (R$)</Label>
+                  <Input type="number" step="0.01" placeholder="0,00" value={formData.valor} onChange={(e) => setFormData(p => ({ ...p, valor: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(v) => setFormData(p => ({ ...p, status: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="pendente">Pendente</SelectItem><SelectItem value="pago">Pago</SelectItem></SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
-                <Label>Vencimento (opcional)</Label>
-                <Input type="date" value={formData.data_vencimento} onChange={(e) => setFormData(p => ({ ...p, data_vencimento: e.target.value }))} />
+                <Label>Forma de Pagamento</Label>
+                <Select value={formData.forma_pagamento} onValueChange={(v) => setFormData(p => ({ ...p, forma_pagamento: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                    <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                    <SelectItem value="transferencia">Transferência</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Data Pagamento</Label><Input type="date" value={formData.data_pagamento} onChange={(e) => setFormData(p => ({ ...p, data_pagamento: e.target.value }))} /></div>
+                <div><Label>Vencimento (opcional)</Label><Input type="date" value={formData.data_vencimento} onChange={(e) => setFormData(p => ({ ...p, data_vencimento: e.target.value }))} /></div>
+              </div>
+              <div><Label>Descrição</Label><Input placeholder="Ex: Pacote 10 sessões Pilates" value={formData.descricao} onChange={(e) => setFormData(p => ({ ...p, descricao: e.target.value }))} /></div>
+              <div><Label>Observações</Label><Textarea placeholder="Observações..." value={formData.observacoes} onChange={(e) => setFormData(p => ({ ...p, observacoes: e.target.value }))} /></div>
             </div>
-            <div>
-              <Label>Descrição</Label>
-              <Input placeholder="Ex: Pacote 10 sessões Pilates" value={formData.descricao} onChange={(e) => setFormData(p => ({ ...p, descricao: e.target.value }))} />
-            </div>
-            <div>
-              <Label>Observações</Label>
-              <Textarea placeholder="Observações..." value={formData.observacoes} onChange={(e) => setFormData(p => ({ ...p, observacoes: e.target.value }))} />
-            </div>
-          </div>
           </ScrollArea>
           <div className="shrink-0 flex justify-end gap-3 pt-4 border-t mt-4">
             <Button variant="outline" onClick={() => setFormOpen(false)}>Cancelar</Button>

@@ -26,6 +26,7 @@ const Despesas = () => {
     const { activeClinicId } = useClinic();
     const queryClient = useQueryClient();
     const [busca, setBusca] = useState("");
+    const deferredBusca = useMemo(() => busca, [busca]); // Placeholder se não quiser useDeferredValue direto
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -39,12 +40,16 @@ const Despesas = () => {
     const { data: despesas = [], isLoading } = useQuery({
         queryKey: ["despesas", activeClinicId],
         queryFn: async () => {
-            let query = supabase.from("expenses").select("*");
-            if (activeClinicId) query = query.eq("clinic_id", activeClinicId);
-            const { data, error } = await query.order("data_vencimento", { ascending: false });
+            if (!activeClinicId) return [];
+            const { data, error } = await supabase
+                .from("expenses")
+                .select("id, descricao, valor, data_vencimento, categoria, status")
+                .eq("clinic_id", activeClinicId)
+                .order("data_vencimento", { ascending: false });
             if (error) throw error;
             return data;
         },
+        staleTime: 1000 * 60 * 5,
     });
 
     const createMutation = useMutation({
