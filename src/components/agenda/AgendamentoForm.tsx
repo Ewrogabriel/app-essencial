@@ -151,7 +151,11 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
   const watchedTipoSessao = form.watch("tipo_sessao");
 
   const formattedDate = watchedDate ? format(watchedDate, "yyyy-MM-dd") : "";
-  const { data: availableSlots, isLoading: isLoadingSlots } = useScheduleSlots(watchedProfId, formattedDate);
+  const { data: availableSlots, isLoading: isLoadingSlots } = useScheduleSlots({
+    professionalId: watchedProfId,
+    date: formattedDate,
+    clinicId: activeClinicId
+  });
   const bookAppointmentMutation = useBookAppointment();
 
   // Fetch monthly availability summary
