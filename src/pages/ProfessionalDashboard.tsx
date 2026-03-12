@@ -81,8 +81,8 @@ const ProfessionalDashboard = () => {
       const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
       const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
 
-      const { data } = await supabase
-        .from("sessoes")
+      const { data } = await (supabase
+        .from("agendamentos") as any)
         .select("valor_sessao, status")
         .eq("profissional_id", user?.id)
         .eq("clinic_id", clinicaAtual?.id)
@@ -90,8 +90,8 @@ const ProfessionalDashboard = () => {
         .lte("data_horario", fimMes.toISOString())
         .eq("status", "realizado");
 
-      const totalSessoes = data?.length || 0;
-      const valorTotal = data?.reduce((acc, s) => acc + (Number(s.valor_sessao) || 0), 0) || 0;
+      const totalSessoes = (data as any[])?.length || 0;
+      const valorTotal = (data as any[])?.reduce((acc: number, s: any) => acc + (Number(s.valor_sessao) || 0), 0) || 0;
       // Assumindo comissão média de 40%
       const comissaoEstimada = valorTotal * 0.4;
 
