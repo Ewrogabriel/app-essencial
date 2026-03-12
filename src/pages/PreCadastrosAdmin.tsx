@@ -57,7 +57,7 @@ const PreCadastrosAdmin = () => {
       let code = "";
       for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
 
-      const { error } = await (supabase.from("pacientes") as any).insert({
+      const { data: newPatient, error } = await (supabase.from("pacientes") as any).insert({
         nome: preCadastro.nome,
         cpf: preCadastro.cpf || null,
         rg: preCadastro.rg || null,
@@ -82,7 +82,8 @@ const PreCadastrosAdmin = () => {
         created_by: user.id,
         profissional_id: user.id,
         codigo_acesso: code,
-      });
+        clinic_id: activeClinicId,
+      }).select().single();
       if (error) throw error;
 
       await (supabase.from("pre_cadastros") as any)
