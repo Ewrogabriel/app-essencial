@@ -27,6 +27,7 @@ import type { Modalidade } from "@/types/entities";
 
 const Modalidades = () => {
   const { user } = useAuth();
+  const { activeClinicId } = useClinic();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nome, setNome] = useState("");
