@@ -120,10 +120,10 @@ const ProfessionalDashboard = () => {
   // Ações rápidas de sessão
   const handleSessionAction = async (sessionId: string, action: "check-in" | "realizado" | "falta" | "cancelado") => {
     try {
-      const updates: Record<string, string> = { status: action === "check-in" ? "confirmado" : action };
+      const newStatus = action === "check-in" ? "confirmado" : action;
       const { error } = await supabase
-        .from("sessoes")
-        .update(updates)
+        .from("agendamentos")
+        .update({ status: newStatus as any })
         .eq("id", sessionId);
 
       if (error) throw error;
@@ -136,7 +136,6 @@ const ProfessionalDashboard = () => {
       };
 
       toast.success(messages[action]);
-      refetchAnalytics();
     } catch {
       toast.error("Erro ao atualizar sessão");
     }
