@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { Plus, ChevronLeft, ChevronRight, FileDown, Filter, UserPlus, CalendarCheck, ListChecks } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/modules/auth/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { useAgendamentos, useUpdateAgendamentoStatus, useAgendamentoCheckin, useRescheduleAgendamento, useScheduleSlots } from "@/modules/appointments/hooks/useAppointments";
 import { useProfissionaisBasic, buildProfColorMap } from "@/modules/professionals/hooks/useProfessionals";
 import { usePacienteByUserId } from "@/modules/patients/hooks/usePacientes";
@@ -61,9 +62,6 @@ const Agenda = () => {
     date: viewMode === "semanal"
       ? format(startOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd")
       : format(currentDate, "yyyy-MM-dd"),
-    endDate: viewMode === "semanal"
-      ? format(endOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd")
-      : undefined,
     clinicId: activeClinicId
   });
 

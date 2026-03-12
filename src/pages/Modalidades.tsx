@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/hooks/useAuth";
+import { useClinic } from "@/modules/clinic/hooks/useClinic";
 import { useModalidades, useCreateModalidade, useUpdateModalidade, useDeleteModalidade } from "@/modules/appointments/hooks/useModalidades";
 import { toast } from "@/modules/shared/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import type { Modalidade } from "@/types/entities";
 
 const Modalidades = () => {
   const { user } = useAuth();
+  const { activeClinicId } = useClinic();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nome, setNome] = useState("");
@@ -51,7 +53,7 @@ const Modalidades = () => {
     if (editingId) {
       updateMutation.mutate({ id: editingId, nome, descricao, ativo }, { onSuccess: () => setDialogOpen(false) });
     } else {
-      createMutation.mutate({ nome, descricao, ativo, userId: user.id }, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate({ nome, descricao, ativo, userId: user.id, clinicId: activeClinicId }, { onSuccess: () => setDialogOpen(false) });
     }
   };
 

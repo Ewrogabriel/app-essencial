@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/hooks/useAuth";
+import { useClinic } from "@/modules/clinic/hooks/useClinic";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { format } from "date-fns";
 
 const PreCadastrosAdmin = () => {
   const { user } = useAuth();
+  const { activeClinicId } = useClinic();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -55,7 +57,7 @@ const PreCadastrosAdmin = () => {
       let code = "";
       for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
 
-      const { error } = await (supabase.from("pacientes") as any).insert({
+      const { data: newPatient, error } = await (supabase.from("pacientes") as any).insert({
         nome: preCadastro.nome,
         cpf: preCadastro.cpf || null,
         rg: preCadastro.rg || null,
@@ -80,8 +82,17 @@ const PreCadastrosAdmin = () => {
         created_by: user.id,
         profissional_id: user.id,
         codigo_acesso: code,
-      });
+        clinic_id: activeClinicId,
+      }).select().single();
       if (error) throw error;
+
+      // Link patient to clinic
+      if (activeClinicId && newPatient?.id) {
+        await supabase.from("clinic_pacientes").insert({
+          clinic_id: activeClinicId,
+          paciente_id: newPatient.id,
+        });
+      }
 
       await (supabase.from("pre_cadastros") as any)
         .update({ status: "aprovado", revisado_por: user.id })

@@ -95,6 +95,7 @@ const FormasPagamento = () => {
       setPixDialogOpen(false);
       setSelectedFormaId(null);
       setPixForm({ chave_pix: "", tipo_chave: "cpf", nome_beneficiario: "" });
+      refetch();
     },
     onError: (err: any) => {
       toast({ title: "Erro", description: err.message, variant: "destructive" });

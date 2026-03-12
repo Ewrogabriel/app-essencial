@@ -42,9 +42,9 @@ const PROF_DEFAULT_CARDS: DashboardCard[] = [
 const ProfessionalDashboard = () => {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
-  const { clinicaAtual } = useClinic();
+  const { activeClinic: clinicaAtual } = useClinic();
   const hoje = new Date();
-  const { kpis, kpisLoading, trends, heatmap, todayAgenda, refetch: refetchAnalytics } = useProfessionalAnalytics();
+  const { kpis, kpisLoading, trends, heatmap, todayAgenda } = useProfessionalAnalytics();
   const { visibleCards, cards, reorderCards, toggleCard, resetToDefault } = useDashboardLayout("professional", PROF_DEFAULT_CARDS);
 
   const saudacao = hoje.getHours() < 12 ? "Bom dia" : hoje.getHours() < 18 ? "Boa tarde" : "Boa noite";
@@ -54,8 +54,8 @@ const ProfessionalDashboard = () => {
     queryKey: ["aniversariantes-prof", clinicaAtual?.id],
     queryFn: async () => {
       const mesAtual = hoje.getMonth() + 1;
-      const { data } = await supabase
-        .from("pacientes")
+      const { data } = await (supabase
+        .from("pacientes") as any)
         .select("id, nome, data_nascimento, telefone")
         .eq("clinic_id", clinicaAtual?.id)
         .not("data_nascimento", "is", null);
@@ -81,8 +81,8 @@ const ProfessionalDashboard = () => {
       const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
       const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
 
-      const { data } = await supabase
-        .from("sessoes")
+      const { data } = await (supabase
+        .from("agendamentos") as any)
         .select("valor_sessao, status")
         .eq("profissional_id", user?.id)
         .eq("clinic_id", clinicaAtual?.id)
@@ -90,8 +90,8 @@ const ProfessionalDashboard = () => {
         .lte("data_horario", fimMes.toISOString())
         .eq("status", "realizado");
 
-      const totalSessoes = data?.length || 0;
-      const valorTotal = data?.reduce((acc, s) => acc + (Number(s.valor_sessao) || 0), 0) || 0;
+      const totalSessoes = (data as any[])?.length || 0;
+      const valorTotal = (data as any[])?.reduce((acc: number, s: any) => acc + (Number(s.valor_sessao) || 0), 0) || 0;
       // Assumindo comissão média de 40%
       const comissaoEstimada = valorTotal * 0.4;
 
@@ -120,10 +120,10 @@ const ProfessionalDashboard = () => {
   // Ações rápidas de sessão
   const handleSessionAction = async (sessionId: string, action: "check-in" | "realizado" | "falta" | "cancelado") => {
     try {
-      const updates: Record<string, string> = { status: action === "check-in" ? "confirmado" : action };
+      const newStatus = action === "check-in" ? "confirmado" : action;
       const { error } = await supabase
-        .from("sessoes")
-        .update(updates)
+        .from("agendamentos")
+        .update({ status: newStatus as any })
         .eq("id", sessionId);
 
       if (error) throw error;
@@ -136,7 +136,6 @@ const ProfessionalDashboard = () => {
       };
 
       toast.success(messages[action]);
-      refetchAnalytics();
     } catch {
       toast.error("Erro ao atualizar sessão");
     }

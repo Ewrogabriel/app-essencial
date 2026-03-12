@@ -296,16 +296,9 @@ export function AgendamentoForm({ open, onOpenChange, onSuccess, defaultDate }: 
         if (values.repetir && values.repetir_quantidade > 1) {
           toast.info("A repetição simples será migrada para o modelo de slots em breve.");
         } else {
-          if (!values.slot_id) {
-            toast.error("Selecione um horário (slot) disponível.");
-            setLoading(false);
-            return;
-          }
-
           await bookAppointmentMutation.mutateAsync({
             paciente_id: values.paciente_id,
             profissional_id: values.profissional_id,
-            slot_id: values.slot_id,
             data_horario: dataHorario.toISOString(),
             duracao_minutos: values.duracao_minutos,
             tipo_atendimento: values.tipo_atendimento,
