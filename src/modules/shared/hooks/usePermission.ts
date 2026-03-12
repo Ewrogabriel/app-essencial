@@ -2,17 +2,12 @@ import { useAuth } from "@/modules/auth/hooks/useAuth";
 import type { AppRole } from "@/types/entities";
 
 export function usePermission() {
-    const { userRole } = useAuth();
+    const { roles, isAdmin, isGestor, isProfissional, isSecretario } = useAuth();
 
     const hasPermission = (allowedRoles: AppRole[]) => {
-        if (!userRole) return false;
-        return allowedRoles.includes(userRole as AppRole);
+        if (!roles || roles.length === 0) return false;
+        return roles.some(r => allowedRoles.includes(r as AppRole));
     };
-
-    const isAdmin = userRole === "admin";
-    const isGestor = userRole === "gestor";
-    const isProfissional = userRole === "profissional";
-    const isSecretario = userRole === "secretario";
 
     return {
         hasPermission,
@@ -20,6 +15,6 @@ export function usePermission() {
         isGestor,
         isProfissional,
         isSecretario,
-        userRole
+        userRole: roles?.[0] || null
     };
 }
