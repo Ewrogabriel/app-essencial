@@ -32,6 +32,7 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 const DEFAULT_CARDS: DashboardCard[] = [
+  { id: "tips", label: "Dica do Dia", visible: true },
   { id: "sessoes", label: "Próximas Sessões", visible: true },
   { id: "exercicios", label: "Exercícios", visible: true },
   { id: "planos", label: "Meus Planos", visible: true },
