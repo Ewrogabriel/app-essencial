@@ -1,6 +1,8 @@
 import { useAuth } from "@/modules/auth/hooks/useAuth";
 import { useClinic } from "@/modules/clinic/hooks/useClinic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DailyTipsCard } from "@/components/dashboard/DailyTipsCard";
+import { ConvenioCard } from "@/components/dashboard/ConvenioCard";
 import { GamificationDashboard } from "@/components/gamification/GamificationDashboard";
 import {
   AlertCircle, Calendar, CreditCard, Trophy, Dumbbell,
