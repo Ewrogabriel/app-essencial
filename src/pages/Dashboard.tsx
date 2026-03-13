@@ -527,21 +527,22 @@ const Dashboard = () => {
                       </p>
                       <p className="text-xs text-muted-foreground capitalize">{item.tipo_atendimento} • {item.status}</p>
                     </div>
-                    <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1">
                       {item.status === "agendado" && (
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-primary" onClick={() => updateStatus.mutate({ id: item.id, status: "confirmado" })}><CheckCircle2 className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-primary" onClick={() => updateStatus.mutate({ id: item.id, status: "confirmado" })} title="Confirmar"><CheckCircle2 className="h-4 w-4" /></Button>
                       )}
                       {(item.status === "agendado" || item.status === "confirmado") && (
                         <>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-600" onClick={() => updateStatus.mutate({ id: item.id, status: "realizado" })}><CheckCircle2 className="h-4 w-4" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => updateStatus.mutate({ id: item.id, status: "falta" })}><XCircle className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-600" onClick={() => updateStatus.mutate({ id: item.id, status: "realizado" })} title="Realizado"><CheckCircle2 className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-600" onClick={() => updateStatus.mutate({ id: item.id, status: "falta" })} title="Falta"><XCircle className="h-4 w-4" /></Button>
                         </>
                       )}
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-600" onClick={() => {
                         const cleanPhone = item.pacientes?.telefone?.replace(/\D/g, "");
                         if (cleanPhone) window.open(`https://wa.me/${cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`}`, "_blank");
                       }}><MessageCircle className="h-4 w-4" /></Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground" onClick={() => updateStatus.mutate({ id: item.id, status: "cancelado" })}><XCircle className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => updateStatus.mutate({ id: item.id, status: "cancelado" })} title="Cancelar"><XCircle className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground" onClick={() => navigate("/agenda")} title="Reagendar"><RefreshCw className="h-4 w-4" /></Button>
                     </div>
                   </div>
                 ))}
