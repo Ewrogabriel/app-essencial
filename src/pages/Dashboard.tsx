@@ -565,9 +565,18 @@ const Dashboard = () => {
                       <p className="font-medium text-sm">{format(new Date(item.data_horario), "HH:mm")} - {item.pacientes?.nome}</p>
                       <Badge variant={item.status === "realizado" ? "default" : item.status === "falta" ? "destructive" : "outline"} className="text-[10px] h-4 px-1">{item.status}</Badge>
                     </div>
-                    {item.status === "falta" && (
-                      <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={() => navigate(`/pacientes/${item.paciente_id}/detalhes`)}><RefreshCw className="h-3 w-3 mr-1" /> Reagendar</Button>
-                    )}
+                    <div className="flex gap-1">
+                      {item.status !== "realizado" && item.status !== "falta" && item.status !== "cancelado" && (
+                        <>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-600" onClick={() => updateStatus.mutate({ id: item.id, status: "realizado" })} title="Realizado"><CheckCircle2 className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-600" onClick={() => updateStatus.mutate({ id: item.id, status: "falta" })} title="Falta"><XCircle className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => updateStatus.mutate({ id: item.id, status: "cancelado" })} title="Cancelar"><XCircle className="h-4 w-4" /></Button>
+                        </>
+                      )}
+                      {item.status === "falta" && (
+                        <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={() => navigate(`/pacientes/${item.paciente_id}/detalhes`)}><RefreshCw className="h-3 w-3 mr-1" /> Reagendar</Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
