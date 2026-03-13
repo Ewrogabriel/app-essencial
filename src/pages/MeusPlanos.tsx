@@ -575,7 +575,7 @@ const MeusPlanos = () => {
                         return (
                           <div className="relative w-full h-full flex flex-col items-center justify-center">
                             <span>{dayDate.getDate()}</span>
-                            {isCurrentMonth && !isPast && (
+                            {isCurrentMonth && !isPast && !!activeProfId && (
                               <span className={cn(
                                 "text-[9px] mt-0.5 px-1 rounded-full",
                                 vacancies && vacancies > 0
