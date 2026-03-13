@@ -225,6 +225,7 @@ export function AppSidebar() {
         {isMaster && renderGroup(t("group.master"), menuMaster)}
         {(isAdmin || isGestor) ? (
           <>
+            {renderGroup("Início", [{ title: t("nav.home"), url: "/dashboard", icon: LayoutDashboard }])}
             {renderGroup("Clínico", menuClinico)}
             {renderGroup("Administrativo", menuAdministrativo)}
             {renderGroup("Financeiro", menuFinanceiro)}
