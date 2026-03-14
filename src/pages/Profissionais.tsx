@@ -192,7 +192,7 @@ const Profissionais = () => {
     setTipoContratacao(null); setCnpj(""); setCpf(""); setRg("");
     setDataNascimento(""); setEstadoCivil(null);
     setEndereco(""); setNumero(""); setBairro(""); setCidade(""); setEstado(""); setCep("");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // State setters from useState are guaranteed stable references — empty deps is intentional.
   }, []);
 
   const openCreate = () => {
