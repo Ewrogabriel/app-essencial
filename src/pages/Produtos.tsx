@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, ShoppingCart, Trash2, Edit2, Package, History, TrendingUp, Sparkles, Image, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/modules/auth/hooks/useAuth";
+import { useClinic } from "@/modules/clinic/hooks/useClinic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,8 @@ import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const Produtos = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isProfissional } = useAuth();
+  const { activeClinicId } = useClinic();
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,11 +46,25 @@ const Produtos = () => {
   });
 
   const { data: pacientes = [] } = useQuery({
-    queryKey: ["pacientes-select"],
+    queryKey: ["pacientes-select", activeClinicId],
     queryFn: async () => {
-      const { data } = await supabase.from("pacientes").select("id, nome").eq("status", "ativo").order("nome");
+      if (!activeClinicId) return [];
+      const { data: clinicPacientes, error: cpError } = await supabase
+        .from("clinic_pacientes")
+        .select("paciente_id")
+        .eq("clinic_id", activeClinicId);
+      if (cpError) throw cpError;
+      const ids = clinicPacientes?.map((cp: { paciente_id: string }) => cp.paciente_id) ?? [];
+      if (!ids.length) return [];
+      const { data } = await supabase
+        .from("pacientes")
+        .select("id, nome")
+        .in("id", ids)
+        .eq("status", "ativo")
+        .order("nome");
       return data || [];
     },
+    enabled: !!activeClinicId,
   });
 
   const { data: vendas = [] } = useQuery({
@@ -248,6 +264,11 @@ const Produtos = () => {
               <Package className="h-4 w-4" /> Entrada Estoque
             </Button>
           </div>
+        )}
+        {!isAdmin && isProfissional && (
+          <Button variant="outline" onClick={() => setSaleOpen(true)} className="gap-2">
+            <ShoppingCart className="h-4 w-4" /> Registrar Venda
+          </Button>
         )}
       </div>
 
