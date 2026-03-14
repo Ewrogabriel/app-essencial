@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { format, addMonths } from "date-fns";
 import { Plus, Trash2, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,9 +11,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getMonthlyAvailability } from "@/lib/availabilityCheck";
 import { cn } from "@/lib/utils";
-import { startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
+import { isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "@/modules/shared/hooks/use-toast";
+import { useWeekdaySlots } from "@/modules/appointments/hooks/useAppointments";
+import { useClinic } from "@/modules/clinic/hooks/useClinic";
 
 export type WeeklyScheduleEntry = {
     weekday: number;
@@ -65,14 +66,28 @@ type Props = {
 };
 
 export function EnrollmentForm({ formData, setFormData, pacientes, profissionais }: Props) {
+    const { activeClinicId } = useClinic();
     const [newWeekday, setNewWeekday] = useState<string>("");
-    const [newTime, setNewTime] = useState("08:00");
+    const [newTime, setNewTime] = useState("");
     const [newProfessional, setNewProfessional] = useState("");
     const [newDuration, setNewDuration] = useState("60");
     const [modalidades, setModalidades] = useState<{ id: string; nome: string }[]>([]);
     const [precosPlanos, setPrecosPlanos] = useState<any[]>([]);
     const [monthlyAvail, setMonthlyAvail] = useState<Record<number, number>>({});
     const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+
+    const weekdayNum = newWeekday !== "" ? Number(newWeekday) : undefined;
+
+    const { data: weekdaySlots = [], isLoading: isLoadingSlots } = useWeekdaySlots({
+        professionalId: newProfessional || undefined,
+        weekday: weekdayNum,
+        clinicId: activeClinicId,
+        durationMin: 60,
+    });
+
+    useEffect(() => {
+        setNewTime("");
+    }, [newProfessional, newWeekday]);
 
     useEffect(() => {
         if (!newProfessional || !newTime) {
@@ -174,7 +189,7 @@ export function EnrollmentForm({ formData, setFormData, pacientes, profissionais
         ];
         setFormData({ ...formData, weekly_schedules: updated });
         setNewWeekday("");
-        setNewTime("08:00");
+        setNewTime("");
         setNewProfessional("");
         setNewDuration("60");
     };
@@ -338,64 +353,47 @@ export function EnrollmentForm({ formData, setFormData, pacientes, profissionais
                         </Select>
                     </div>
                     <div>
-                        <Label className="text-xs">Horário</Label>
-                        <Input type="time" className="mt-1" value={newTime} onChange={(e) => setNewTime(e.target.value)} />
+                        <Label className="text-xs">Profissional</Label>
+                        <Select value={newProfessional} onValueChange={setNewProfessional}>
+                            <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Selecione..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {profissionais.map((p) => (
+                                    <SelectItem key={p.user_id} value={p.user_id}>{p.nome}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div className="col-span-2">
-                        <Label className="text-xs">Profissional</Label>
-                        <div className="flex gap-2">
-                            <Select value={newProfessional} onValueChange={setNewProfessional}>
-                                <SelectTrigger className="mt-1 flex-1">
-                                    <SelectValue placeholder="Selecione..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {profissionais.map((p) => (
-                                        <SelectItem key={p.user_id} value={p.user_id}>{p.nome}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" size="sm" className="mt-1 gap-2" disabled={!newProfessional}>
-                                        <CalendarIcon className="h-4 w-4" />
-                                        Ver Vagas
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="end">
-                                    <div className="p-3 border-b bg-muted/50 space-y-1">
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Grade de Vagas por Dia</p>
-                                        <p className="text-xs text-muted-foreground">Horário: <span className="font-semibold">{newTime}</span></p>
-                                    </div>
-                                    <Calendar
-                                        mode="single"
-                                        locale={ptBR}
-                                        onMonthChange={setCurrentMonth}
-                                        className="rounded-md"
-                                        components={{
-                                            DayContent: ({ date }) => {
-                                                const v = monthlyAvail[date.getDate()];
-                                                const isCurrentM = isSameMonth(date, currentMonth);
-                                                const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-                                                return (
-                                                    <div className="relative w-full h-full flex flex-col items-center justify-center">
-                                                        <span className={!isCurrentM ? "opacity-30" : ""}>{date.getDate()}</span>
-                                                        {isCurrentM && !isPast && (
-                                                            <span className={cn(
-                                                                "text-[8px] px-1 rounded-full",
-                                                                v > 0 ? "bg-green-100 text-green-700 font-bold" : "bg-red-100 text-red-600"
-                                                            )}>
-                                                                {v}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                );
-                                            }
-                                        }}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
+                        <Label className="text-xs">Horário</Label>
+                        <Select
+                            value={newTime}
+                            onValueChange={setNewTime}
+                            disabled={isLoadingSlots || !newProfessional || newWeekday === ""}
+                        >
+                            <SelectTrigger className="mt-1">
+                                <SelectValue placeholder={
+                                    isLoadingSlots ? "Carregando..." :
+                                    (!newProfessional || newWeekday === "") ? "Selecione o dia e o profissional" :
+                                    weekdaySlots.length === 0 ? "Sem horários disponíveis" :
+                                    "Selecione o horário"
+                                } />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {weekdaySlots.map((slot) => (
+                                    <SelectItem key={slot.time} value={slot.time}>
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-3 w-3 text-muted-foreground" />
+                                            <span className="font-medium">{slot.time}</span>
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded-full border bg-green-50 text-green-600 border-green-200">
+                                                até {slot.max_capacity} pacientes
+                                            </span>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div>
                         <Label className="text-xs">Duração (min)</Label>
@@ -407,6 +405,48 @@ export function EnrollmentForm({ formData, setFormData, pacientes, profissionais
                             step={15}
                             onChange={(e) => setNewDuration(e.target.value)}
                         />
+                    </div>
+                    <div className="flex items-end">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm" className="w-full gap-2" disabled={!newProfessional || newWeekday === "" || !newTime}>
+                                    <CalendarIcon className="h-4 w-4" />
+                                    Ver Vagas
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <div className="p-3 border-b bg-muted/50 space-y-1">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Grade de Vagas por Dia</p>
+                                    <p className="text-xs text-muted-foreground">Horário: <span className="font-semibold">{newTime}</span></p>
+                                </div>
+                                <Calendar
+                                    mode="single"
+                                    locale={ptBR}
+                                    onMonthChange={setCurrentMonth}
+                                    className="rounded-md"
+                                    components={{
+                                        DayContent: ({ date }) => {
+                                            const v = monthlyAvail[date.getDate()];
+                                            const isCurrentM = isSameMonth(date, currentMonth);
+                                            const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                                            return (
+                                                <div className="relative w-full h-full flex flex-col items-center justify-center">
+                                                    <span className={!isCurrentM ? "opacity-30" : ""}>{date.getDate()}</span>
+                                                    {isCurrentM && !isPast && (
+                                                        <span className={cn(
+                                                            "text-[8px] px-1 rounded-full",
+                                                            v > 0 ? "bg-green-100 text-green-700 font-bold" : "bg-red-100 text-red-600"
+                                                        )}>
+                                                            {v}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+                                    }}
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
 

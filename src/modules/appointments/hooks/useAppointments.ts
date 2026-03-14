@@ -133,6 +133,58 @@ export function useScheduleSlots(options: { professionalId?: string; date: strin
     });
 }
 
+export function useWeekdaySlots(options: {
+    professionalId?: string;
+    weekday?: number; // 0=Sun … 6=Sat
+    clinicId: string | null;
+    durationMin?: number; // step between slots (default 60)
+}) {
+    return useQuery({
+        queryKey: ["weekday_slots", options.professionalId, options.weekday, options.clinicId, options.durationMin ?? 60],
+        queryFn: async () => {
+            if (options.weekday === undefined || !options.professionalId) return [];
+
+            let query = supabase
+                .from("disponibilidade_profissional")
+                .select("id, hora_inicio, hora_fim, max_pacientes")
+                .eq("profissional_id", options.professionalId)
+                .eq("dia_semana", options.weekday)
+                .eq("ativo", true)
+                .order("hora_inicio");
+
+            if (options.clinicId) {
+                query = query.eq("clinic_id", options.clinicId);
+            }
+
+            const { data: windows, error } = await query;
+            if (error || !windows || windows.length === 0) return [];
+
+            const step = options.durationMin ?? 60;
+            const slots: Array<{ time: string; max_capacity: number }> = [];
+
+            for (const win of windows) {
+                const [sh, sm] = win.hora_inicio.split(":").map(Number);
+                const [eh, em] = win.hora_fim.split(":").map(Number);
+                let cur = sh * 60 + sm;
+                const end = eh * 60 + em;
+                while (cur + step <= end) {
+                    const h = Math.floor(cur / 60);
+                    const m = cur % 60;
+                    slots.push({
+                        time: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+                        max_capacity: win.max_pacientes,
+                    });
+                    cur += step;
+                }
+            }
+
+            return slots;
+        },
+        enabled: options.weekday !== undefined && !!options.professionalId,
+        staleTime: 1000 * 60 * 5,
+    });
+}
+
 export function useBookAppointment() {
     const queryClient = useQueryClient();
 
