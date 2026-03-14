@@ -16,7 +16,7 @@ export const professionalService = {
             const { data, error } = await supabase
                 .from("profiles")
                 .select("user_id, nome, cor_agenda")
-                .neq("cor_agenda", null);
+                .order("nome");
 
             if (error) throw error;
             return (data || []) as ProfissionalBasic[];

@@ -224,7 +224,13 @@ function AppointmentCard({
 }
 
 // ─── Calendar Legend ──────────────────────────────────────────
-export function CalendarLegend() {
+export function CalendarLegend({
+  profissionais = [],
+}: {
+  profissionais?: Array<{ user_id: string; nome: string; cor_agenda?: string | null }>;
+}) {
+  const profsWithColor = profissionais.filter((p) => p.cor_agenda);
+
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground px-1">
       <span className="font-medium text-foreground mr-1">Status:</span>
@@ -241,6 +247,21 @@ export function CalendarLegend() {
           {cfg.label}
         </span>
       ))}
+      {profsWithColor.length > 0 && (
+        <>
+          <span className="font-medium text-foreground mx-1">·</span>
+          <span className="font-medium text-foreground mr-1">Profissional:</span>
+          {profsWithColor.map((p) => (
+            <span key={p.user_id} className="flex items-center gap-1">
+              <span
+                className="w-2.5 h-2.5 rounded-sm border-l-2 inline-block bg-muted/30"
+                style={{ borderLeftColor: p.cor_agenda ?? "#3b82f6" }}
+              />
+              {p.nome.split(" ")[0] || p.nome}
+            </span>
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -502,14 +523,13 @@ export function MonthlyView({
               </div>
               {dayAgs.slice(0, 3).map((ag) => {
                 const borderColor = profColors[ag.profissional_id] || statusBorderColors[ag.status] || "#3b82f6";
-                const bgColor = statusBorderColors[ag.status] || "#3b82f6";
                 return (
                   <div
                     key={ag.id}
                     className="truncate rounded px-1 py-0.5 mb-0.5 text-[10px] border-l-2"
                     style={{
                       borderLeftColor: borderColor,
-                      backgroundColor: bgColor + "15",
+                      backgroundColor: borderColor + "15",
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
