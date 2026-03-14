@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { patientService } from "../services/patientService";
 import { useClinic } from "@/modules/clinic/hooks/useClinic";
+import { queryKeys } from "@/modules/shared/constants/queryKeys";
 
 interface UsePacientesOptions {
     status?: "ativo" | "inativo";
@@ -12,7 +13,7 @@ export function usePacientes(options: UsePacientesOptions = {}) {
     const { activeClinicId } = useClinic();
 
     return useQuery({
-        queryKey: ["pacientes", status, activeClinicId],
+        queryKey: queryKeys.patients.list(activeClinicId, status),
         queryFn: () => patientService.getPatients(activeClinicId, status),
         enabled,
     });
@@ -23,7 +24,7 @@ export function usePacientesBasic(options: UsePacientesOptions = {}) {
     const { activeClinicId } = useClinic();
 
     return useQuery({
-        queryKey: ["pacientes-basic", status, activeClinicId],
+        queryKey: [...queryKeys.patients.list(activeClinicId, status), "basic"],
         queryFn: () => patientService.getPatientBasic(activeClinicId, status),
         enabled,
     });
@@ -31,7 +32,7 @@ export function usePacientesBasic(options: UsePacientesOptions = {}) {
 
 export function usePaciente(pacienteId: string | undefined) {
     return useQuery({
-        queryKey: ["paciente", pacienteId],
+        queryKey: pacienteId ? queryKeys.patients.detail(pacienteId) : queryKeys.patients.all,
         queryFn: async () => {
             if (!pacienteId) return null;
             return patientService.getPatientById(pacienteId);
@@ -42,7 +43,7 @@ export function usePaciente(pacienteId: string | undefined) {
 
 export function usePacienteByUserId(userId: string | undefined) {
     return useQuery({
-        queryKey: ["paciente-by-userid", userId],
+        queryKey: userId ? ["paciente-by-userid", userId] : queryKeys.patients.all,
         queryFn: async () => {
             if (!userId) return null;
             return patientService.getPatientByUserId(userId);

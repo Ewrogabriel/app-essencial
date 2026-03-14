@@ -2,8 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { handleError } from "../../shared/utils/errorHandler";
 import type { Paciente, PacienteBasic } from "@/types/entities";
 
+/**
+ * Column list for full patient queries.
+ * Matches the Paciente interface (avoids SELECT *).
+ */
+const PATIENT_COLUMNS =
+    "id, nome, email, telefone, cpf, data_nascimento, status, tipo_atendimento, profissional_id, user_id, observacoes, foto_url, created_at, updated_at" as const;
+
 export const patientService = {
-    async getPatients(activeClinicId: string | null, status: "ativo" | "inativo" = "ativo") {
+    async getPatients(activeClinicId: string | null, status: "ativo" | "inativo" = "ativo"): Promise<Paciente[]> {
         try {
             if (activeClinicId) {
                 const { data: clinicPacientes, error: cpError } = await supabase
@@ -18,7 +25,7 @@ export const patientService = {
 
                 const { data, error } = await supabase
                     .from("pacientes")
-                    .select("*")
+                    .select(PATIENT_COLUMNS)
                     .in("id", ids)
                     .eq("status", status)
                     .order("nome");
@@ -29,7 +36,7 @@ export const patientService = {
 
             const { data, error } = await supabase
                 .from("pacientes")
-                .select("*")
+                .select(PATIENT_COLUMNS)
                 .eq("status", status)
                 .order("nome");
 
@@ -41,7 +48,7 @@ export const patientService = {
         }
     },
 
-    async getPatientBasic(activeClinicId: string | null, status: "ativo" | "inativo" = "ativo") {
+    async getPatientBasic(activeClinicId: string | null, status: "ativo" | "inativo" = "ativo"): Promise<PacienteBasic[]> {
         try {
             if (activeClinicId) {
                 const { data: clinicPacientes, error: cpError } = await supabase
@@ -79,11 +86,11 @@ export const patientService = {
         }
     },
 
-    async getPatientById(id: string) {
+    async getPatientById(id: string): Promise<Paciente | null> {
         try {
             const { data, error } = await supabase
                 .from("pacientes")
-                .select("*")
+                .select(PATIENT_COLUMNS)
                 .eq("id", id)
                 .single();
 
@@ -95,11 +102,11 @@ export const patientService = {
         }
     },
 
-    async getPatientByUserId(userId: string) {
+    async getPatientByUserId(userId: string): Promise<Paciente | null> {
         try {
             const { data, error } = await supabase
                 .from("pacientes")
-                .select("*")
+                .select(PATIENT_COLUMNS)
                 .eq("user_id", userId)
                 .maybeSingle();
 

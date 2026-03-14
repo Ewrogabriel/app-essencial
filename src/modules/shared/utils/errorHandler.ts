@@ -11,6 +11,16 @@ export class AppError extends Error {
     }
 }
 
+/** Type guard that safely checks whether an unknown value carries a `code` string property. */
+function isErrorWithCode(value: unknown): value is { code: string } {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        "code" in value &&
+        typeof (value as Record<string, unknown>).code === "string"
+    );
+}
+
 export const handleError = (error: unknown, customMessage?: string) => {
     console.error("App Error:", error);
 
@@ -22,7 +32,7 @@ export const handleError = (error: unknown, customMessage?: string) => {
         message = error.message;
     }
 
-    const code = (error as { code?: string })?.code;
+    const code = isErrorWithCode(error) ? error.code : undefined;
 
     toast.error(message, {
         description: code ? `Código: ${code}` : undefined,
