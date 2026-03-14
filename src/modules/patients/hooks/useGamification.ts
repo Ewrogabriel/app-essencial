@@ -50,7 +50,7 @@ export const useGamification = (pacienteId: string | null, enabled = true) => {
         queryFn: async () => {
             const { data } = await supabase
                 .from("achievements")
-                .select("id, titulo, descricao, pontos, ativo, badge_icon, condicao_tipo, condicao_valor")
+                .select("id, nome, descricao, pontos, ativo, icone, categoria, condicao")
                 .eq("ativo", true)
                 .order("pontos", { ascending: true });
             return data || [];
