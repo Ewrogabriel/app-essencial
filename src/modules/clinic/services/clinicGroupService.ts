@@ -27,7 +27,7 @@ export const clinicGroupService = {
      */
     async getClinicGroupByClinicId(clinicId: string): Promise<ClinicGroup | null> {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from("clinicas")
                 .select(`
                     clinic_group_id,
