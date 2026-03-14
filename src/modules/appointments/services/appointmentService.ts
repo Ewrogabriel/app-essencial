@@ -58,7 +58,7 @@ export const appointmentService = {
         clinicId: string | null
     }): Promise<ScheduleSlot[]> {
         try {
-            let query = supabase
+            let query = (supabase as any)
                 .from("schedule_slots")
                 .select(SCHEDULE_SLOT_COLUMNS)
                 .eq("date", options.date)
@@ -86,7 +86,7 @@ export const appointmentService = {
         clinicId: string;
     }): Promise<void> {
         try {
-            const { error } = await supabase.rpc("generate_day_slots", {
+            const { error } = await (supabase as any).rpc("generate_day_slots", {
                 p_professional_id: options.professionalId,
                 p_date: options.date,
                 p_clinic_id: options.clinicId,
@@ -115,7 +115,7 @@ export const appointmentService = {
             // locks the slot row (FOR UPDATE) and validates capacity in one transaction.
             // This is the only safe path for group sessions and concurrent bookings.
             if (params.slot_id) {
-                const { data, error } = await supabase.rpc("book_appointment", {
+                const { data, error } = await (supabase as any).rpc("book_appointment", {
                     p_paciente_id: params.paciente_id,
                     p_profissional_id: params.profissional_id,
                     p_slot_id: params.slot_id,
@@ -161,7 +161,7 @@ export const appointmentService = {
 
     async cancelAppointment(appointmentId: string): Promise<void> {
         try {
-            const { error } = await supabase.rpc("cancel_appointment", {
+            const { error } = await (supabase as any).rpc("cancel_appointment", {
                 p_agendamento_id: appointmentId,
             });
             if (error) throw error;
