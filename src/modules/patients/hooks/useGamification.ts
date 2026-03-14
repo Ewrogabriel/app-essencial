@@ -63,9 +63,9 @@ export const useGamification = (pacienteId: string | null, enabled = true) => {
         queryKey: ["patient-active-challenges", pacienteId],
         queryFn: async () => {
             const today = new Date().toISOString().split("T")[0];
-            const { data: challenges } = await supabase
+            const { data: challenges } = await (supabase as any)
                 .from("challenges")
-                .select("id, titulo, descricao, pontos_recompensa, ativo, data_inicio, data_fim, tipo, meta_valor, badge_icon")
+                .select("id, titulo, descricao, pontos_recompensa, ativo, data_inicio, data_fim, tipo, meta, badge_icon")
                 .eq("ativo", true)
                 .lte("data_inicio", today)
                 .gte("data_fim", today);
