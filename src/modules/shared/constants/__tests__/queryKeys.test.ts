@@ -194,4 +194,65 @@ describe("queryKeys", () => {
         const list = queryKeys.appointments.list("clinic-1");
         expect(list.slice(0, all.length)).toEqual(all);
     });
+
+    // ── Clinic Groups ─────────────────────────────────────────────────────────
+    describe("clinicGroups", () => {
+        it("all is a stable constant tuple", () => {
+            expect(queryKeys.clinicGroups.all).toEqual(["clinic-groups"]);
+        });
+
+        it("list returns the all key", () => {
+            expect(queryKeys.clinicGroups.list()).toEqual(["clinic-groups"]);
+        });
+
+        it("detail includes group id", () => {
+            expect(queryKeys.clinicGroups.detail("g-1")).toEqual([
+                "clinic-groups",
+                "detail",
+                "g-1",
+            ]);
+        });
+
+        it("members includes group id", () => {
+            expect(queryKeys.clinicGroups.members("g-1")).toEqual([
+                "clinic-groups",
+                "members",
+                "g-1",
+            ]);
+        });
+
+        it("byClinic includes clinic id", () => {
+            expect(queryKeys.clinicGroups.byClinic("clinic-1")).toEqual([
+                "clinic-groups",
+                "by-clinic",
+                "clinic-1",
+            ]);
+        });
+    });
+
+    // ── Inventory ─────────────────────────────────────────────────────────────
+    describe("inventory", () => {
+        it("all is a stable constant tuple", () => {
+            expect(queryKeys.inventory.all).toEqual(["inventario"]);
+        });
+
+        it("list with clinicId", () => {
+            expect(queryKeys.inventory.list("clinic-1")).toEqual([
+                "inventario",
+                "clinic-1",
+            ]);
+        });
+
+        it("list with null clinicId", () => {
+            expect(queryKeys.inventory.list(null)).toEqual(["inventario", null]);
+        });
+
+        it("detail includes id", () => {
+            expect(queryKeys.inventory.detail("item-1")).toEqual([
+                "inventario",
+                "detail",
+                "item-1",
+            ]);
+        });
+    });
 });

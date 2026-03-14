@@ -20,6 +20,7 @@ export const auditService = {
                     tabela: options.resource,
                     registro_id: options.resourceId,
                     dados_novos: options.details ?? null,
+                    clinic_id: options.clinicId ?? null,
                 }]);
 
             if (error) {

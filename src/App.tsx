@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/modules/auth/hooks/useAuth";
 import { ClinicProvider } from "@/modules/clinic/hooks/useClinic";
 import { I18nProvider } from "@/modules/shared/hooks/useI18n";
 import { ProtectedRoute } from "@/modules/auth/components/ProtectedRoute";
+import { RequireRole } from "@/modules/auth/components/RequireRole";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LazyLoadFallback } from "@/components/LazyLoadFallback";
@@ -127,12 +128,12 @@ const App = () => (
                         <Route path="/inventario" element={<Inventario />} />
                         <Route path="/produtos" element={<Inventario />} />
                         <Route path="/equipamentos" element={<Inventario />} />
-                        <Route path="/financeiro" element={<Financeiro />} />
-                        <Route path="/relatorios" element={<Relatorios />} />
+                        <Route path="/financeiro" element={<RequireRole roles={["admin", "gestor", "master", "secretario"]}><Financeiro /></RequireRole>} />
+                        <Route path="/relatorios" element={<RequireRole roles={["admin", "gestor", "master"]}><Relatorios /></RequireRole>} />
                         <Route path="/aniversariantes" element={<Dashboard />} />
                         <Route path="/modalidades" element={<Modalidades />} />
-                        <Route path="/profissionais" element={<Profissionais />} />
-                        <Route path="/automacoes" element={<Automacoes />} />
+                        <Route path="/profissionais" element={<RequireRole roles={["admin", "gestor", "master"]}><Profissionais /></RequireRole>} />
+                        <Route path="/automacoes" element={<RequireRole roles={["admin", "gestor", "master"]}><Automacoes /></RequireRole>} />
                         <Route path="/dicas-diarias" element={<Dashboard />} />
                         <Route path="/avisos" element={<AvisosAdmin />} />
                         <Route path="/disponibilidade" element={<DisponibilidadeProfissional />} />
@@ -140,22 +141,22 @@ const App = () => (
                         <Route path="/comissoes" element={<Comissoes />} />
                         <Route path="/perfil-profissional" element={<PerfilProfissional />} />
                         <Route path="/profissional/:userId" element={<PerfilProfissionalPublico />} />
-                        <Route path="/clinica" element={<ClinicSettings />} />
+                        <Route path="/clinica" element={<RequireRole roles={["admin", "gestor", "master"]}><ClinicSettings /></RequireRole>} />
                         <Route path="/mensagens" element={<MensagensInternas />} />
-                        <Route path="/solicitacoes-alteracao" element={<SolicitacoesAlteracao />} />
-                        <Route path="/formas-pagamento" element={<ClinicSettings />} />
+                        <Route path="/solicitacoes-alteracao" element={<RequireRole roles={["admin", "gestor", "master", "secretario"]}><SolicitacoesAlteracao /></RequireRole>} />
+                        <Route path="/formas-pagamento" element={<RequireRole roles={["admin", "gestor", "master"]}><ClinicSettings /></RequireRole>} />
                         <Route path="/lista-espera" element={<Agenda />} />
-                        <Route path="/convenios" element={<Convenios />} />
+                        <Route path="/convenios" element={<RequireRole roles={["admin", "gestor", "master"]}><Convenios /></RequireRole>} />
                         <Route path="/vagas" element={<Agenda />} />
-                        <Route path="/pre-cadastros" element={<PreCadastrosAdmin />} />
-                        <Route path="/notas-fiscais" element={<Financeiro />} />
-                        <Route path="/gestao-clinicas" element={<GestaoClinicas />} />
-                        <Route path="/master" element={<MasterPanel />} />
-                        <Route path="/importacao" element={<ImportacaoMassa />} />
-                        <Route path="/metas" element={<MetasGamificacao />} />
-                        <Route path="/gamificacao-admin" element={<GamificationAdminPanel />} />
+                        <Route path="/pre-cadastros" element={<RequireRole roles={["admin", "gestor", "master", "secretario"]}><PreCadastrosAdmin /></RequireRole>} />
+                        <Route path="/notas-fiscais" element={<RequireRole roles={["admin", "gestor", "master"]}><Financeiro /></RequireRole>} />
+                        <Route path="/gestao-clinicas" element={<RequireRole roles={["admin", "master"]}><GestaoClinicas /></RequireRole>} />
+                        <Route path="/master" element={<RequireRole roles={["master"]}><MasterPanel /></RequireRole>} />
+                        <Route path="/importacao" element={<RequireRole roles={["admin", "gestor", "master"]}><ImportacaoMassa /></RequireRole>} />
+                        <Route path="/metas" element={<RequireRole roles={["admin", "gestor", "master"]}><MetasGamificacao /></RequireRole>} />
+                        <Route path="/gamificacao-admin" element={<RequireRole roles={["admin", "gestor", "master"]}><GamificationAdminPanel /></RequireRole>} />
                         <Route path="/documentos-clinicos" element={<DocumentosClinicos />} />
-                        <Route path="/marketing" element={<Marketing />} />
+                        <Route path="/marketing" element={<RequireRole roles={["admin", "gestor", "master"]}><Marketing /></RequireRole>} />
                         <Route path="/teleconsulta" element={<Teleconsulta />} />
                         <Route path="/teleconsulta-hub" element={<TeleconsultaHub />} />
                         <Route path="/planos-exercicios" element={<PlanosExercicios />} />

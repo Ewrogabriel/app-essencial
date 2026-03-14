@@ -74,6 +74,22 @@ export const queryKeys = {
       ["clinica-settings", clinicId] as const,
   },
 
+  // ── Clinic Groups ─────────────────────────────────────────────────────────
+  clinicGroups: {
+    all: ["clinic-groups"] as const,
+    list: () => ["clinic-groups"] as const,
+    detail: (id: string) => ["clinic-groups", "detail", id] as const,
+    members: (groupId: string) => ["clinic-groups", "members", groupId] as const,
+    byClinic: (clinicId: string) => ["clinic-groups", "by-clinic", clinicId] as const,
+  },
+
+  // ── Inventory ─────────────────────────────────────────────────────────────
+  inventory: {
+    all: ["inventario"] as const,
+    list: (clinicId: string | null) => ["inventario", clinicId] as const,
+    detail: (id: string) => ["inventario", "detail", id] as const,
+  },
+
   // ── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
     all: ["dashboard"] as const,
