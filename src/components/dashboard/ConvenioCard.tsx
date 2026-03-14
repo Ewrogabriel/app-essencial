@@ -47,7 +47,7 @@ export function ConvenioCard() {
   // Auto-rotate every 8 seconds – pauses while detail dialog is open
   useEffect(() => {
     if (convenios.length <= 1 || detailOpen) return;
-    setCurrentIndex(Math.floor(Math.random() * convenios.length));
+    // Resume rotation from the current index without jumping to a random position
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % convenios.length);
     }, 8000);

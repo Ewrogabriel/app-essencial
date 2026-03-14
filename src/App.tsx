@@ -147,7 +147,7 @@ const App = () => (
                         <Route path="/solicitacoes-alteracao" element={<RequireRole roles={["admin", "gestor", "master", "secretario"]}><SolicitacoesAlteracao /></RequireRole>} />
                         <Route path="/formas-pagamento" element={<RequireRole roles={["admin", "gestor", "master"]}><ClinicSettings /></RequireRole>} />
                         <Route path="/lista-espera" element={<Agenda />} />
-                        <Route path="/convenios" element={<RequireRole roles={["admin", "gestor", "master"]}><Convenios /></RequireRole>} />
+                        <Route path="/convenios" element={<Convenios />} />
                         <Route path="/vagas" element={<Agenda />} />
                         <Route path="/pre-cadastros" element={<RequireRole roles={["admin", "gestor", "master", "secretario"]}><PreCadastrosAdmin /></RequireRole>} />
                         <Route path="/notas-fiscais" element={<RequireRole roles={["admin", "gestor", "master"]}><Financeiro /></RequireRole>} />
