@@ -7,8 +7,9 @@ import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Phone, Mail, MapPin, FileText, Edit2, Save, X, AlertCircle, CheckCircle2, Camera, Upload, FileDown, Clock } from "lucide-react";
+import { User, Phone, Mail, MapPin, FileText, Edit2, Save, X, AlertCircle, CheckCircle2, Camera, Upload, FileDown, Clock, RotateCcw } from "lucide-react";
 import { PatientAttachments } from "@/components/clinical/PatientAttachments";
+import { RescheduleDialog } from "@/components/agenda/RescheduleDialog";
 import { toast } from "@/modules/shared/hooks/use-toast";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ const MeuPerfil = () => {
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [rescheduleSession, setRescheduleSession] = useState<any>(null);
 
   const { data: paciente, isLoading, refetch } = useQuery({
     queryKey: ["patient-profile-self", patientId],
@@ -56,6 +58,32 @@ const MeuPerfil = () => {
         return [];
       }
       return data ?? [];
+    },
+    enabled: !!patientId,
+  });
+
+  // Fetch cancelled/falta sessions for rescheduling
+  const { data: cancelledSessions = [], refetch: refetchCancelled } = useQuery({
+    queryKey: ["patient-cancelled-sessions", patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+      const { data, error } = await (supabase
+        .from("agendamentos")
+        .select("id, data_horario, tipo_atendimento, duracao_minutos, status, observacoes, profissional_id, paciente_id")
+        .eq("paciente_id", patientId)
+        .in("status", ["cancelado", "falta"])
+        .order("data_horario", { ascending: false })
+        .limit(15) as any);
+      if (error) throw error;
+      const sessions = data || [];
+      // Enrich with professional names
+      const profIds = [...new Set(sessions.map((s: any) => s.profissional_id))] as string[];
+      const profMap: Record<string, string> = {};
+      if (profIds.length > 0) {
+        const { data: profs } = await supabase.from("profiles").select("user_id, nome").in("user_id", profIds);
+        (profs || []).forEach((p: { user_id: string; nome: string }) => { profMap[p.user_id] = p.nome; });
+      }
+      return sessions.map((s: any) => ({ ...s, profissional_nome: profMap[s.profissional_id] || "Profissional" }));
     },
     enabled: !!patientId,
   });
@@ -514,8 +542,64 @@ const MeuPerfil = () => {
         </Card>
       )}
 
+      {/* Cancelled Sessions - Reschedule Requests */}
+      {cancelledSessions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-amber-600" />
+              Sessões Desmarcadas
+            </CardTitle>
+            <CardDescription>
+              Solicite o reagendamento de sessões canceladas ou perdidas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {cancelledSessions.map((session: any) => (
+                <div key={session.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-muted/30">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {format(new Date(session.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {session.profissional_nome} • {session.tipo_atendimento} • {session.duracao_minutos}min
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant={session.status === "falta" ? "destructive" : "outline"} className="text-xs">
+                      {session.status === "falta" ? "Falta" : "Cancelado"}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs gap-1 text-amber-700 border-amber-300 hover:bg-amber-50"
+                      onClick={() => setRescheduleSession(session)}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Reagendar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Documents */}
       <PatientAttachments pacienteId={patientId!} />
+
+      {/* Reschedule Dialog */}
+      <RescheduleDialog
+        open={!!rescheduleSession}
+        onOpenChange={(open) => !open && setRescheduleSession(null)}
+        agendamento={rescheduleSession}
+        onSuccess={() => {
+          setRescheduleSession(null);
+          refetchCancelled();
+        }}
+      />
 
       {/* Floating WhatsApp button */}
       {clinicSettings?.whatsapp && (

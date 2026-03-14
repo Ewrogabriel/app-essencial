@@ -22,7 +22,11 @@ export const authService = {
                 .eq("user_id", userId)
                 .maybeSingle();
 
-            if (error) throw error;
+            if (error) {
+                // PGRST116 means "0 rows" with .single()-style call – treat as not found, no toast
+                if (error.code === "PGRST116") return null;
+                throw error;
+            }
             return data ?? null;
         } catch (error) {
             handleError(error, "Erro ao buscar perfil do usuário.");
@@ -38,7 +42,10 @@ export const authService = {
                 .eq("user_id", userId)
                 .maybeSingle();
 
-            if (error) throw error;
+            if (error) {
+                if (error.code === "PGRST116") return null;
+                throw error;
+            }
             return data?.id || null;
         } catch (error) {
             // maybeSingle doesn't throw on 0 results, but other errors might occur
