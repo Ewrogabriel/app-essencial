@@ -1,12 +1,32 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleError } from "../../shared/utils/errorHandler";
 
+/** Column lists (avoids SELECT *). */
+const PAGAMENTO_COLUMNS =
+    "id, paciente_id, valor, status, data_vencimento, data_pagamento, descricao, forma_pagamento, clinic_id" as const;
+
+const FORMA_PAGAMENTO_COLUMNS =
+    "id, nome, tipo, ativo, ordem" as const;
+
+const MENSALIDADE_COLUMNS =
+    "id, paciente_id, valor, status, mes_referencia, data_vencimento, data_pagamento" as const;
+
+const SESSAO_PAGAMENTO_COLUMNS =
+    "id, paciente_id, agendamento_id, valor, status, data_pagamento, created_at" as const;
+
+export type ConfigPixEntry = {
+    forma_pagamento_id: string;
+    chave_pix: string | null;
+    tipo_chave: string | null;
+    nome_beneficiario: string | null;
+};
+
 export const financeService = {
     async getPatientPendencias(patientId: string) {
         try {
             const { data, error } = await supabase
                 .from("pagamentos")
-                .select("*")
+                .select(PAGAMENTO_COLUMNS)
                 .eq("paciente_id", patientId)
                 .eq("status", "pendente")
                 .order("data_vencimento", { ascending: true });
@@ -23,7 +43,7 @@ export const financeService = {
         try {
             const { data, error } = await supabase
                 .from("formas_pagamento")
-                .select("*")
+                .select(FORMA_PAGAMENTO_COLUMNS)
                 .eq("ativo", true)
                 .order("ordem");
 
@@ -39,7 +59,7 @@ export const financeService = {
         try {
             const { data, error } = await supabase
                 .from("pagamentos_mensalidade")
-                .select("*")
+                .select(MENSALIDADE_COLUMNS)
                 .eq("paciente_id", patientId)
                 .order("mes_referencia", { ascending: false });
 
@@ -55,7 +75,7 @@ export const financeService = {
         try {
             const { data, error } = await supabase
                 .from("pagamentos_sessoes")
-                .select("*")
+                .select(SESSAO_PAGAMENTO_COLUMNS)
                 .eq("paciente_id", patientId)
                 .order("created_at", { ascending: false });
 
@@ -75,14 +95,14 @@ export const financeService = {
 
             if (error) throw error;
 
-            const map: Record<string, any> = {};
+            const map: Record<string, ConfigPixEntry> = {};
             (data || []).forEach((p) => {
                 map[p.forma_pagamento_id] = p;
             });
             return map;
         } catch (error) {
             handleError(error, "Erro ao buscar configuração PIX.");
-            return {};
+            return {} as Record<string, ConfigPixEntry>;
         }
-    }
+    },
 };

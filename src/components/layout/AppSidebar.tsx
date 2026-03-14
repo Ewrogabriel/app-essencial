@@ -4,7 +4,9 @@ import {
   FileText, Tag, CreditCard, User, Calculator, MessageSquare,
   FileCheck, Handshake, Video,
   Building2, Crown, Upload, Trophy, Stethoscope, Target, Dumbbell,
+  Clock, Settings2,
 } from "lucide-react";
+import { memo } from "react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/modules/auth/hooks/useAuth";
@@ -32,7 +34,7 @@ const RESOURCE_ROUTES: Record<string, string> = {
 
 const RESOURCE_ICONS: Record<string, any> = {
   agenda: Calendar, pacientes: Users, prontuarios: ClipboardList,
-  modalidades: Layers, profissionais: UserCog, disponibilidade: Calendar,
+  modalidades: Layers, profissionais: UserCog, disponibilidade: Clock,
   financeiro: DollarSign, matriculas: Receipt, comissoes: Calculator,
   contratos: FileText, relatorios: BarChart3, avisos: Megaphone,
   mensagens: MessageSquare, aniversariantes: Users, clinica: Activity,
@@ -52,7 +54,7 @@ const RESOURCE_I18N_KEYS: Record<string, string> = {
   precos_planos: "nav.prices", produtos: "nav.products",
 };
 
-export function AppSidebar() {
+export const AppSidebar = memo(function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
@@ -68,56 +70,56 @@ export function AppSidebar() {
     navigate("/login");
   };
 
-  /* ── Menus organizados por área ── */
-  
-  // Área Clínica
-  const menuClinico = [
-    { title: t("nav.agenda"), url: "/agenda", icon: Calendar },
+  /* ── Menus by prescribed UX structure ── */
+
+  // Patients group
+  const menuPacientes = [
     { title: t("nav.patients"), url: "/pacientes", icon: Users },
     { title: t("nav.records"), url: "/prontuarios", icon: ClipboardList },
     { title: t("nav.documents"), url: "/documentos-clinicos", icon: Stethoscope },
-    { title: "Planos de Exercícios", url: "/planos-exercicios", icon: Dumbbell },
-    { title: "Teleconsulta", url: "/teleconsulta-hub", icon: Video },
   ];
 
-  // Área Administrativa
-  const menuAdministrativo = [
+  // Scheduling group
+  const menuAgendamentos = [
+    { title: t("nav.agenda"), url: "/agenda", icon: Calendar },
     { title: t("nav.enrollments"), url: "/matriculas", icon: Receipt },
+    { title: t("nav.modalities"), url: "/modalidades", icon: Layers },
+    { title: t("nav.availability"), url: "/disponibilidade", icon: Clock },
+  ];
+
+  // Professionals group
+  const menuProfissionais = [
     { title: t("nav.team"), url: "/profissionais", icon: UserCog },
+    { title: "Check-in", url: "/check-in", icon: FileCheck },
+  ];
+
+  // Finance group
+  const menuFinanceiro = [
+    { title: t("nav.finance"), url: "/financeiro", icon: DollarSign },
+    { title: t("nav.commissions"), url: "/comissoes", icon: Calculator },
+    { title: t("nav.reports"), url: "/relatorios", icon: BarChart3 },
+  ];
+
+  // Clinic group
+  const menuClinica = [
+    { title: t("nav.clinic_payment"), url: "/clinica", icon: Activity },
+    { title: t("nav.units"), url: "/gestao-clinicas", icon: Building2 },
     { title: t("nav.pre_registrations"), url: "/pre-cadastros", icon: UserCog },
     { title: t("nav.requests"), url: "/solicitacoes-alteracao", icon: FileCheck },
     { title: t("nav.inventory"), url: "/inventario", icon: Tag },
   ];
 
-  // Área Financeira
-  const menuFinanceiro = [
-    { title: t("nav.finance"), url: "/financeiro", icon: DollarSign },
-    { title: t("nav.commissions"), url: "/comissoes", icon: Calculator },
-  ];
-
-  // Relatórios e Inteligência
-  const menuRelatorios = [
-    { title: t("nav.reports"), url: "/relatorios", icon: BarChart3 },
-    { title: t("nav.goals"), url: "/metas", icon: Trophy },
-    { title: t("nav.gamification"), url: "/gamificacao-admin", icon: Trophy },
-    { title: t("nav.import"), url: "/importacao", icon: Upload },
-  ];
-
-  // Comunicação
-  const menuComunicacao = [
-    { title: t("nav.messages"), url: "/mensagens", icon: MessageSquare },
-    { title: t("nav.notices"), url: "/avisos", icon: Megaphone },
-    { title: "Marketing", url: "/marketing", icon: Target },
-  ];
-
-  // Configurações
-  const menuConfig = [
-    { title: t("nav.modalities"), url: "/modalidades", icon: Layers },
+  // Settings group
+  const menuConfiguracoes = [
     { title: t("nav.partners"), url: "/convenios", icon: Handshake },
     { title: t("nav.contracts"), url: "/contratos", icon: FileText },
     { title: t("nav.automations"), url: "/automacoes", icon: Send },
-    { title: t("nav.clinic_payment"), url: "/clinica", icon: Activity },
-    { title: t("nav.units"), url: "/gestao-clinicas", icon: Building2 },
+    { title: "Marketing", url: "/marketing", icon: Target },
+    { title: t("nav.goals"), url: "/metas", icon: Trophy },
+    { title: t("nav.gamification"), url: "/gamificacao-admin", icon: Trophy },
+    { title: t("nav.import"), url: "/importacao", icon: Upload },
+    { title: t("nav.messages"), url: "/mensagens", icon: MessageSquare },
+    { title: t("nav.notices"), url: "/avisos", icon: Megaphone },
   ];
 
   const menuMaster = [
@@ -130,10 +132,11 @@ export function AppSidebar() {
     { title: t("nav.my_plans"), url: "/meus-planos", icon: ClipboardList },
     { title: t("nav.my_history"), url: "/meu-historico", icon: ClipboardList },
     { title: t("nav.my_payments"), url: "/meus-pagamentos", icon: CreditCard },
+    { title: "Planos de Exercícios", url: "/planos-exercicios", icon: Dumbbell },
+    { title: "Teleconsulta", url: "/teleconsulta-hub", icon: Video },
     { title: t("nav.partners"), url: "/convenios", icon: Handshake },
     { title: t("nav.messages"), url: "/mensagens", icon: MessageSquare },
     { title: t("nav.my_contract"), url: "/contratos", icon: FileText },
-    { title: "Planos de Exercícios", url: "/planos-exercicios", icon: Activity },
     { title: t("nav.my_profile"), url: "/meu-perfil", icon: Users },
   ];
 
@@ -157,7 +160,7 @@ export function AppSidebar() {
     </SidebarGroup>
   );
 
-  // Menu completo do profissional com todos os recursos necessários
+  // Professional menu groups
   const menuProfissionalClinico = [
     { title: t("nav.home"), url: "/dashboard", icon: LayoutDashboard },
     { title: t("nav.agenda"), url: "/agenda", icon: Calendar },
@@ -179,14 +182,11 @@ export function AppSidebar() {
     { title: "Minhas Comissões", url: "/comissoes", icon: Calculator },
   ];
 
-  const menuProfissionalComunicacao = [
-    { title: t("nav.messages"), url: "/mensagens", icon: MessageSquare },
-    { title: t("nav.notices"), url: "/avisos", icon: Megaphone },
-  ];
-
   const menuProfissionalConfig = [
     { title: t("nav.partners"), url: "/convenios", icon: Handshake },
     { title: t("nav.contracts"), url: "/contratos", icon: FileText },
+    { title: t("nav.messages"), url: "/mensagens", icon: MessageSquare },
+    { title: t("nav.notices"), url: "/avisos", icon: Megaphone },
     { title: t("nav.my_profile"), url: "/perfil-profissional", icon: User },
   ];
 
@@ -227,12 +227,12 @@ export function AppSidebar() {
         {(isAdmin || isGestor) ? (
           <>
             {renderGroup("Início", [{ title: t("nav.home"), url: "/dashboard", icon: LayoutDashboard }])}
-            {renderGroup("Clínico", menuClinico)}
-            {renderGroup("Administrativo", menuAdministrativo)}
+            {renderGroup("Pacientes", menuPacientes)}
+            {renderGroup("Agendamentos", menuAgendamentos)}
+            {renderGroup("Profissionais", menuProfissionais)}
             {renderGroup("Financeiro", menuFinanceiro)}
-            {renderGroup("Relatórios", menuRelatorios)}
-            {renderGroup(t("group.communication"), menuComunicacao)}
-            {renderGroup(t("group.settings"), menuConfig)}
+            {renderGroup("Clínica", menuClinica)}
+            {renderGroup("Configurações", menuConfiguracoes)}
             {isProfissional && renderGroup(t("group.profile"), [
               { title: t("nav.my_profile"), url: "/perfil-profissional", icon: User },
             ])}
@@ -242,8 +242,7 @@ export function AppSidebar() {
             {renderGroup("Clínico", menuProfissionalClinico)}
             {renderGroup("Administrativo", menuProfissionalAdmin)}
             {renderGroup("Financeiro", menuProfissionalFinanceiro)}
-            {renderGroup(t("group.communication"), menuProfissionalComunicacao)}
-            {renderGroup(t("group.settings"), menuProfissionalConfig)}
+            {renderGroup("Configurações", menuProfissionalConfig)}
           </>
         ) : isSecretario ? (
           <>
@@ -271,4 +270,4 @@ export function AppSidebar() {
       </SidebarFooter>
     </Sidebar>
   );
-}
+});

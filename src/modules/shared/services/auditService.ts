@@ -8,7 +8,7 @@ export const auditService = {
         action: AuditAction,
         resource: string,
         resourceId: string,
-        details?: any,
+        details?: Record<string, unknown>,
         clinicId?: string
     }) {
         try {
@@ -20,6 +20,7 @@ export const auditService = {
                     tabela: options.resource,
                     registro_id: options.resourceId,
                     dados_novos: options.details ?? null,
+                    clinic_id: options.clinicId ?? null,
                 }]);
 
             if (error) {
