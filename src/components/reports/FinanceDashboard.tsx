@@ -2,18 +2,40 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useClinic } from "@/modules/clinic/hooks/useClinic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TrendingUp, TrendingDown, DollarSign, Target } from "lucide-react";
+import { useMemo } from "react";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--destructive))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+
+const formaLabels: Record<string, string> = {
+  pix: "PIX", dinheiro: "Dinheiro", cartao_credito: "Cartão Crédito",
+  cartao_debito: "Cartão Débito", boleto: "Boleto", transferencia: "Transferência", outros: "Outros",
+};
 
 export const FinanceDashboard = () => {
   const { activeClinicId } = useClinic();
 
+  // Fetch formas_pagamento for FK lookup
+  const { data: formasPagamentoList = [] } = useQuery({
+    queryKey: ["formas-pagamento-dashboard"],
+    queryFn: async () => {
+      const { data } = await supabase.from("formas_pagamento").select("id, nome").eq("ativo", true);
+      return data ?? [];
+    },
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const formasMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    formasPagamentoList.forEach((f) => { map[f.id] = f.nome; });
+    return map;
+  }, [formasPagamentoList]);
+
   const { data: monthlyData = [] } = useQuery({
-    queryKey: ["finance-dashboard-monthly", activeClinicId],
+    queryKey: ["finance-dashboard-monthly-unified", activeClinicId],
     queryFn: async () => {
       const months = Array.from({ length: 6 }, (_, i) => {
         const d = subMonths(new Date(), 5 - i);
@@ -21,30 +43,45 @@ export const FinanceDashboard = () => {
           start: startOfMonth(d).toISOString(),
           end: endOfMonth(d).toISOString(),
           label: format(d, "MMM", { locale: ptBR }),
-          month: format(d, "yyyy-MM"),
         };
       });
 
       const results = [];
       for (const m of months) {
-        let pQuery = supabase.from("pagamentos").select("valor, status").gte("data_pagamento", m.start).lte("data_pagamento", m.end);
-        if (activeClinicId) pQuery = pQuery.eq("clinic_id", activeClinicId);
-        const { data: pagamentos } = await pQuery;
+        // pagamentos
+        let q1 = supabase.from("pagamentos").select("valor, status").gte("data_pagamento", m.start).lte("data_pagamento", m.end);
+        if (activeClinicId) q1 = q1.eq("clinic_id", activeClinicId);
+        const { data: pgtos } = await q1;
 
+        // pagamentos_mensalidade
+        let q2 = supabase.from("pagamentos_mensalidade").select("valor, status").gte("data_pagamento", m.start).lte("data_pagamento", m.end);
+        if (activeClinicId) q2 = q2.eq("clinic_id", activeClinicId);
+        const { data: mens } = await q2;
+
+        // pagamentos_sessoes
+        let q3 = supabase.from("pagamentos_sessoes").select("valor, status").gte("data_pagamento", m.start).lte("data_pagamento", m.end);
+        if (activeClinicId) q3 = q3.eq("clinic_id", activeClinicId);
+        const { data: sess } = await q3;
+
+        // expenses
         let eQuery = supabase.from("expenses").select("valor, status").gte("created_at", m.start).lte("created_at", m.end);
         if (activeClinicId) eQuery = eQuery.eq("clinic_id", activeClinicId);
         const { data: despesas } = await eQuery;
 
-        const receita = (pagamentos || []).filter(p => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0);
+        const allPagos = [
+          ...(pgtos || []).filter(p => p.status === "pago"),
+          ...(mens || []).filter(p => p.status === "pago"),
+          ...(sess || []).filter(p => p.status === "pago"),
+        ];
+        const receita = allPagos.reduce((s, p) => s + Number(p.valor), 0);
         const despesa = (despesas || []).filter(d => d.status === "pago").reduce((s, d) => s + Number(d.valor), 0);
-        const countPagos = (pagamentos || []).filter(p => p.status === "pago").length;
 
         results.push({
           mes: m.label,
           receita: Math.round(receita),
           despesa: Math.round(despesa),
           lucro: Math.round(receita - despesa),
-          ticketMedio: countPagos > 0 ? Math.round(receita / countPagos) : 0,
+          ticketMedio: allPagos.length > 0 ? Math.round(receita / allPagos.length) : 0,
         });
       }
       return results;
@@ -52,28 +89,43 @@ export const FinanceDashboard = () => {
   });
 
   const { data: formaDistribution = [] } = useQuery({
-    queryKey: ["finance-dashboard-formas", activeClinicId],
+    queryKey: ["finance-dashboard-formas-unified", activeClinicId, formasMap],
     queryFn: async () => {
-      let q = supabase.from("pagamentos").select("forma_pagamento, valor").eq("status", "pago");
-      if (activeClinicId) q = q.eq("clinic_id", activeClinicId);
-      const { data } = await q;
-
       const map: Record<string, number> = {};
-      (data || []).forEach((p: any) => {
-        const key = p.forma_pagamento || "outros";
+
+      // pagamentos (text field)
+      let q1 = supabase.from("pagamentos").select("forma_pagamento, valor").eq("status", "pago" as any);
+      if (activeClinicId) q1 = q1.eq("clinic_id", activeClinicId);
+      const { data: d1 } = await q1;
+      (d1 || []).forEach((p: any) => {
+        const key = formaLabels[p.forma_pagamento] || p.forma_pagamento || "Outros";
         map[key] = (map[key] || 0) + Number(p.valor);
       });
 
-      const labels: Record<string, string> = {
-        pix: "PIX", dinheiro: "Dinheiro", cartao_credito: "Cartão Crédito",
-        cartao_debito: "Cartão Débito", boleto: "Boleto", transferencia: "Transferência", outros: "Outros",
-      };
+      // pagamentos_mensalidade (FK)
+      let q2 = supabase.from("pagamentos_mensalidade").select("forma_pagamento_id, valor").eq("status", "pago");
+      if (activeClinicId) q2 = q2.eq("clinic_id", activeClinicId);
+      const { data: d2 } = await q2;
+      (d2 || []).forEach((p: any) => {
+        const key = p.forma_pagamento_id ? (formasMap[p.forma_pagamento_id] || "Outros") : "Outros";
+        map[key] = (map[key] || 0) + Number(p.valor);
+      });
 
-      return Object.entries(map).map(([key, value]) => ({
-        name: labels[key] || key,
+      // pagamentos_sessoes (FK)
+      let q3 = supabase.from("pagamentos_sessoes").select("forma_pagamento_id, valor").eq("status", "pago");
+      if (activeClinicId) q3 = q3.eq("clinic_id", activeClinicId);
+      const { data: d3 } = await q3;
+      (d3 || []).forEach((p: any) => {
+        const key = p.forma_pagamento_id ? (formasMap[p.forma_pagamento_id] || "Outros") : "Outros";
+        map[key] = (map[key] || 0) + Number(p.valor);
+      });
+
+      return Object.entries(map).map(([name, value]) => ({
+        name,
         value: Math.round(value),
       }));
     },
+    enabled: Object.keys(formasMap).length > 0 || formasPagamentoList.length === 0,
   });
 
   const lastMonth = monthlyData[monthlyData.length - 1];
@@ -84,7 +136,6 @@ export const FinanceDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
@@ -122,9 +173,7 @@ export const FinanceDashboard = () => {
         </Card>
       </div>
 
-      {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue vs Expenses */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base">Receita vs Despesas (6 meses)</CardTitle>
@@ -143,7 +192,6 @@ export const FinanceDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Payment Methods Pie */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Formas de Pagamento</CardTitle>
@@ -163,7 +211,6 @@ export const FinanceDashboard = () => {
         </Card>
       </div>
 
-      {/* Profit trend */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Evolução do Lucro Líquido</CardTitle>
