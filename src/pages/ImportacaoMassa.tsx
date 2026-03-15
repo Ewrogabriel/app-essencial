@@ -172,6 +172,8 @@ const ImportacaoMassa = () => {
             descricao: row.descricao || "Importado via planilha",
             status: row.status || "pago",
             created_by: user.id,
+            clinic_id: activeClinicId,
+            origem_tipo: "manual",
           });
           if (error) throw error;
           success++;
