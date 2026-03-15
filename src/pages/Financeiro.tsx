@@ -326,21 +326,22 @@ const Financeiro = () => {
   }, [previsaoPagamentos]);
 
   const confirmPayment = useMutation({
-    mutationFn: async ({ id, source }: { id: string; source: string }) => {
+    mutationFn: async ({ id, source, data_pagamento, forma_pagamento_id }: { id: string; source: string; data_pagamento: string; forma_pagamento_id: string }) => {
       const table = source as "pagamentos" | "pagamentos_mensalidade" | "pagamentos_sessoes";
       if (table === "pagamentos") {
-        const { error } = await supabase.from("pagamentos").update({ status: "pago" as any, data_pagamento: format(new Date(), "yyyy-MM-dd") }).eq("id", id);
+        const { error } = await supabase.from("pagamentos").update({ status: "pago" as any, data_pagamento, forma_pagamento: formasPagamentoList.find(f => f.id === forma_pagamento_id)?.tipo || "pix" } as any).eq("id", id);
         if (error) throw error;
       } else if (table === "pagamentos_mensalidade") {
-        const { error } = await supabase.from("pagamentos_mensalidade").update({ status: "pago", data_pagamento: format(new Date(), "yyyy-MM-dd") }).eq("id", id);
+        const { error } = await supabase.from("pagamentos_mensalidade").update({ status: "pago", data_pagamento, forma_pagamento_id: forma_pagamento_id || null }).eq("id", id);
         if (error) throw error;
       } else if (table === "pagamentos_sessoes") {
-        const { error } = await supabase.from("pagamentos_sessoes").update({ status: "pago", data_pagamento: format(new Date(), "yyyy-MM-dd") }).eq("id", id);
+        const { error } = await supabase.from("pagamentos_sessoes").update({ status: "pago", data_pagamento, forma_pagamento_id: forma_pagamento_id || null }).eq("id", id);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-payments-unified"] });
+      setConfirmDialog(null);
       toast({ title: "Pagamento confirmado!" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
