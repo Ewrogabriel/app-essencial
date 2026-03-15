@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, addMonths, startOfMonth } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Plus, DollarSign, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,19 +39,12 @@ const STATUS_BADGE: Record<string, { label: string; variant: "default" | "second
   anulado: { label: "Anulado", variant: "outline" },
 };
 
-const buildMensalidadeDescricao = (mesRef: string) =>
-  `Mensalidade - ${format(new Date(mesRef + "T12:00:00"), "MMMM/yyyy", { locale: ptBR })}`;
-
-const toDateString = (dateValue?: string) =>
-  dateValue ? dateValue.split("T")[0] : new Date().toISOString().split("T")[0];
-
 export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: MatriculaPaymentsProps) {
   const { user } = useAuth();
   const { activeClinicId } = useClinic();
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ id: string; open: boolean } | null>(null);
-  const [confirmData, setConfirmData] = useState({ data_pagamento: format(new Date(), "yyyy-MM-dd"), forma_pagamento_id: "" });
 
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
@@ -66,14 +59,24 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
     observacoes: "",
     status: "aberto",
   });
+  
+  const [confirmData, setConfirmData] = useState({ 
+    data_pagamento: format(new Date(), "yyyy-MM-dd"), 
+    forma_pagamento_id: "" 
+  });
 
   const { data: pagamentos = [], isLoading } = useQuery({
     queryKey: ["pagamentos-matricula", matriculaId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("pagamentos_mensalidade") as any)
-        .select("*, formas_pagamento:forma_pagamento_id(nome)")
+      const { data, error } = await supabase
+        .from("pagamentos_mensalidade")
+        .select(`
+          *,
+          formas_pagamento:forma_pagamento_id(nome)
+        `)
         .eq("matricula_id", matriculaId)
         .order("mes_referencia", { ascending: false });
+        
       if (error) throw error;
       return data ?? [];
     },
@@ -82,7 +85,11 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
   const { data: formasPagamento = [] } = useQuery({
     queryKey: ["formas-pagamento-ativas"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("formas_pagamento").select("*").eq("ativo", true).order("ordem");
+      const { data, error } = await supabase
+        .from("formas_pagamento")
+        .select("*")
+        .eq("ativo", true)
+        .order("ordem");
       if (error) throw error;
       return data ?? [];
     },
@@ -91,23 +98,50 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
   const createPayment = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Não autenticado");
+      if (!activeClinicId) throw new Error("Clínica não identificada");
 
       const mesRef = `${formData.mes_referencia_year}-${String(Number(formData.mes_referencia_month) + 1).padStart(2, "0")}-01`;
       const valor = parseFloat(formData.valor) || 0;
       const desconto = parseFloat(formData.desconto) || 0;
       const valorFinal = Math.max(0, valor - desconto);
 
-      const { error } = await (supabase.from("pagamentos_mensalidade") as any).insert({
-        matricula_id: matriculaId,
-        paciente_id: pacienteId,
-        mes_referencia: mesRef,
-        valor: valorFinal,
-        status: formData.status,
-        data_pagamento: formData.data_pagamento || null,
-        forma_pagamento_id: formData.forma_pagamento_id || null,
-        observacoes: formData.observacoes || null,
-      });
-      if (error) throw error;
+      // 1. Inserir na tabela de pagamentos da mensalidade
+      const { data: mensalidadePgto, error: mensalidadeError } = await supabase
+        .from("pagamentos_mensalidade")
+        .insert({
+          matricula_id: matriculaId,
+          paciente_id: pacienteId,
+          mes_referencia: mesRef,
+          valor: valorFinal,
+          status: formData.status,
+          data_pagamento: formData.data_pagamento || null,
+          forma_pagamento_id: formData.forma_pagamento_id || null,
+          observacoes: formData.observacoes || null,
+          created_by: user.id,
+          clinic_id: activeClinicId
+        })
+        .select()
+        .single();
+
+      if (mensalidadeError) throw mensalidadeError;
+
+      // 2. Se estiver PAGO ou PENDENTE, reflete no fluxo de caixa geral (pagamentos)
+      if (mensalidadePgto) {
+        const descricaoMensalidade = `Mensalidade Pilates - ${format(new Date(mesRef + "T12:00:00"), "MMM/yyyy", { locale: ptBR })}`;
+        
+        await supabase.from("pagamentos").insert({
+          paciente_id: pacienteId,
+          valor: valorFinal,
+          data_vencimento: mesRef,
+          data_pagamento: formData.data_pagamento || null,
+          status: formData.status === "pago" ? "pago" : "pendente",
+          descricao: descricaoMensalidade,
+          origem_tipo: "matricula",
+          origem_id: mensalidadePgto.id,
+          created_by: user.id,
+          clinic_id: activeClinicId
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pagamentos-matricula", matriculaId] });
@@ -115,9 +149,9 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
       queryClient.invalidateQueries({ queryKey: ["all-payments-unified"] });
       setFormOpen(false);
       resetForm();
-      toast({ title: "Pagamento registrado!" });
+      toast({ title: "Pagamento registrado com sucesso!" });
     },
-    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Erro ao registrar pagamento", description: e.message, variant: "destructive" }),
   });
 
   const updateStatus = useMutation({
@@ -125,16 +159,32 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
       const updates: any = { status };
       if (data_pagamento) updates.data_pagamento = data_pagamento;
       if (forma_pagamento_id) updates.forma_pagamento_id = forma_pagamento_id;
-      if (status === "anulado") updates.data_pagamento = null;
-      const { error } = await (supabase.from("pagamentos_mensalidade") as any).update(updates).eq("id", id);
+      if (status === "anulado") {
+          updates.data_pagamento = null;
+          updates.forma_pagamento_id = null;
+      }
+      
+      const { error } = await supabase.from("pagamentos_mensalidade").update(updates).eq("id", id);
       if (error) throw error;
+
+      // Atualiza também no caixa principal (tabela pagamentos) para bater o DRE
+      if (status === "pago" && data_pagamento) {
+         await supabase.from("pagamentos")
+          .update({ 
+            status: "pago", 
+            data_pagamento: data_pagamento 
+          })
+          .eq("origem_id", id)
+          .eq("origem_tipo", "matricula");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pagamentos-matricula", matriculaId] });
       queryClient.invalidateQueries({ queryKey: ["pagamentos"] });
       queryClient.invalidateQueries({ queryKey: ["all-payments-unified"] });
-      toast({ title: "Status atualizado!" });
+      toast({ title: "Status atualizado com sucesso!" });
     },
+    onError: (e: Error) => toast({ title: "Erro ao atualizar status", description: e.message, variant: "destructive" }),
   });
 
   const resetForm = () => {
@@ -215,8 +265,8 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
                         variant="outline"
                         className="text-xs h-7"
                         onClick={() => {
-                          setConfirmData({ data_pagamento: format(new Date(), "yyyy-MM-dd"), forma_pagamento_id: "" });
-                          setConfirmDialog({ id: p.id, open: true });
+                            setConfirmData({ data_pagamento: format(new Date(), "yyyy-MM-dd"), forma_pagamento_id: "" });
+                            setConfirmDialog({ id: p.id, open: true });
                         }}
                       >
                         Confirmar Pgto
@@ -351,7 +401,7 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
           </div>
         </DialogContent>
       </Dialog>
-
+      
       <Dialog open={!!confirmDialog?.open} onOpenChange={(open) => !open && setConfirmDialog(null)}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader><DialogTitle>Confirmar Recebimento</DialogTitle></DialogHeader>
@@ -393,6 +443,7 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
           </div>
         </DialogContent>
       </Dialog>
+      
     </div>
   );
 }
