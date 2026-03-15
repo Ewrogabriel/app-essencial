@@ -75,9 +75,11 @@ const Financeiro = () => {
   const { activeClinicId } = useClinic();
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
-  const [filterMes, setFilterMes] = useState("");
+  const [filterMes, setFilterMes] = useState(format(new Date(), "yyyy-MM"));
   const [filterForma, setFilterForma] = useState("all");
   const [filterOrigem, setFilterOrigem] = useState("all");
+  const [confirmDialog, setConfirmDialog] = useState<{ id: string; source: string; open: boolean } | null>(null);
+  const [confirmData, setConfirmData] = useState({ data_pagamento: format(new Date(), "yyyy-MM-dd"), forma_pagamento_id: "" });
   const [formData, setFormData] = useState({
     paciente_id: "",
     plano_id: "",
@@ -324,21 +326,22 @@ const Financeiro = () => {
   }, [previsaoPagamentos]);
 
   const confirmPayment = useMutation({
-    mutationFn: async ({ id, source }: { id: string; source: string }) => {
+    mutationFn: async ({ id, source, data_pagamento, forma_pagamento_id }: { id: string; source: string; data_pagamento: string; forma_pagamento_id: string }) => {
       const table = source as "pagamentos" | "pagamentos_mensalidade" | "pagamentos_sessoes";
       if (table === "pagamentos") {
-        const { error } = await supabase.from("pagamentos").update({ status: "pago" as any, data_pagamento: format(new Date(), "yyyy-MM-dd") }).eq("id", id);
+        const { error } = await supabase.from("pagamentos").update({ status: "pago" as any, data_pagamento, forma_pagamento: formasPagamentoList.find(f => f.id === forma_pagamento_id)?.tipo || "pix" } as any).eq("id", id);
         if (error) throw error;
       } else if (table === "pagamentos_mensalidade") {
-        const { error } = await supabase.from("pagamentos_mensalidade").update({ status: "pago", data_pagamento: format(new Date(), "yyyy-MM-dd") }).eq("id", id);
+        const { error } = await supabase.from("pagamentos_mensalidade").update({ status: "pago", data_pagamento, forma_pagamento_id: forma_pagamento_id || null }).eq("id", id);
         if (error) throw error;
       } else if (table === "pagamentos_sessoes") {
-        const { error } = await supabase.from("pagamentos_sessoes").update({ status: "pago", data_pagamento: format(new Date(), "yyyy-MM-dd") }).eq("id", id);
+        const { error } = await supabase.from("pagamentos_sessoes").update({ status: "pago", data_pagamento, forma_pagamento_id: forma_pagamento_id || null }).eq("id", id);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-payments-unified"] });
+      setConfirmDialog(null);
       toast({ title: "Pagamento confirmado!" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
@@ -433,8 +436,8 @@ const Financeiro = () => {
                   <SelectItem value="manual">Manual</SelectItem>
                 </SelectContent>
               </Select>
-              {(filterMes || filterOrigem !== "all") && (
-                <Button variant="ghost" size="sm" onClick={() => { setFilterMes(""); setFilterOrigem("all"); }}>Limpar filtros</Button>
+              {(filterMes !== format(new Date(), "yyyy-MM") || filterOrigem !== "all") && (
+                <Button variant="ghost" size="sm" onClick={() => { setFilterMes(format(new Date(), "yyyy-MM")); setFilterOrigem("all"); }}>Limpar filtros</Button>
               )}
             </div>
           )}
@@ -500,8 +503,10 @@ const Financeiro = () => {
                                   size="sm"
                                   variant="outline"
                                   className="h-7 text-xs"
-                                  disabled={confirmPayment.isPending}
-                                  onClick={() => confirmPayment.mutate({ id: pagamento.id, source: pagamento.source_table })}
+                                  onClick={() => {
+                                    setConfirmData({ data_pagamento: format(new Date(), "yyyy-MM-dd"), forma_pagamento_id: "" });
+                                    setConfirmDialog({ id: pagamento.id, source: pagamento.source_table, open: true });
+                                  }}
                                 >
                                   Confirmar
                                 </Button>
@@ -608,8 +613,10 @@ const Financeiro = () => {
                                   size="sm"
                                   variant="outline"
                                   className="h-7 text-xs"
-                                  disabled={confirmPayment.isPending}
-                                  onClick={() => confirmPayment.mutate({ id: pagamento.id, source: pagamento.source_table })}
+                                  onClick={() => {
+                                    setConfirmData({ data_pagamento: format(new Date(), "yyyy-MM-dd"), forma_pagamento_id: "" });
+                                    setConfirmDialog({ id: pagamento.id, source: pagamento.source_table, open: true });
+                                  }}
                                 >
                                   Confirmar
                                 </Button>
@@ -711,6 +718,44 @@ const Financeiro = () => {
             <Button onClick={() => createPagamento.mutate()} disabled={!formData.paciente_id || !formData.valor || createPagamento.isPending}>
               {createPagamento.isPending ? "Salvando..." : "Registrar"}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Payment Dialog */}
+      <Dialog open={!!confirmDialog?.open} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader><DialogTitle>Confirmar Pagamento</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Data do Pagamento</Label>
+              <Input type="date" value={confirmData.data_pagamento} onChange={(e) => setConfirmData(p => ({ ...p, data_pagamento: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Forma de Pagamento</Label>
+              <Select value={confirmData.forma_pagamento_id} onValueChange={(v) => setConfirmData(p => ({ ...p, forma_pagamento_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione a forma de pagamento" /></SelectTrigger>
+                <SelectContent>
+                  {formasPagamentoList.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setConfirmDialog(null)}>Cancelar</Button>
+              <Button
+                disabled={!confirmData.data_pagamento || !confirmData.forma_pagamento_id || confirmPayment.isPending}
+                onClick={() => confirmDialog && confirmPayment.mutate({
+                  id: confirmDialog.id,
+                  source: confirmDialog.source,
+                  data_pagamento: confirmData.data_pagamento,
+                  forma_pagamento_id: confirmData.forma_pagamento_id,
+                })}
+              >
+                {confirmPayment.isPending ? "Confirmando..." : "Confirmar Pagamento"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
