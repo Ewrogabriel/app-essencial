@@ -50,6 +50,8 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
   const { activeClinicId } = useClinic();
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{ id: string; open: boolean } | null>(null);
+  const [confirmData, setConfirmData] = useState({ data_pagamento: format(new Date(), "yyyy-MM-dd"), forma_pagamento_id: "" });
 
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
@@ -106,13 +108,11 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
         observacoes: formData.observacoes || null,
       });
       if (error) throw error;
-
-      // Mensalidade payments are now queried directly from pagamentos_mensalidade
-      // No need to sync to pagamentos table
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pagamentos-matricula", matriculaId] });
       queryClient.invalidateQueries({ queryKey: ["pagamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["all-payments-unified"] });
       setFormOpen(false);
       resetForm();
       toast({ title: "Pagamento registrado!" });
@@ -121,19 +121,18 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status, data_pagamento }: { id: string; status: string; data_pagamento?: string }) => {
+    mutationFn: async ({ id, status, data_pagamento, forma_pagamento_id }: { id: string; status: string; data_pagamento?: string; forma_pagamento_id?: string }) => {
       const updates: any = { status };
       if (data_pagamento) updates.data_pagamento = data_pagamento;
+      if (forma_pagamento_id) updates.forma_pagamento_id = forma_pagamento_id;
       if (status === "anulado") updates.data_pagamento = null;
       const { error } = await (supabase.from("pagamentos_mensalidade") as any).update(updates).eq("id", id);
       if (error) throw error;
-
-      // Mensalidade payments are now queried directly from pagamentos_mensalidade
-      // No need to sync to pagamentos table
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pagamentos-matricula", matriculaId] });
       queryClient.invalidateQueries({ queryKey: ["pagamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["all-payments-unified"] });
       toast({ title: "Status atualizado!" });
     },
   });
@@ -215,11 +214,10 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
                         size="sm"
                         variant="outline"
                         className="text-xs h-7"
-                        onClick={() => updateStatus.mutate({
-                          id: p.id,
-                          status: "pago",
-                          data_pagamento: new Date().toISOString(),
-                        })}
+                        onClick={() => {
+                          setConfirmData({ data_pagamento: format(new Date(), "yyyy-MM-dd"), forma_pagamento_id: "" });
+                          setConfirmDialog({ id: p.id, open: true });
+                        }}
                       >
                         Confirmar Pgto
                       </Button>
@@ -348,6 +346,48 @@ export function MatriculaPayments({ matriculaId, pacienteId, valorMensal }: Matr
               <Button variant="outline" onClick={() => setFormOpen(false)}>Cancelar</Button>
               <Button onClick={() => createPayment.mutate()} disabled={createPayment.isPending}>
                 {createPayment.isPending ? "Salvando..." : "Registrar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!confirmDialog?.open} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader><DialogTitle>Confirmar Recebimento</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Data do Pagamento</Label>
+              <Input type="date" value={confirmData.data_pagamento} onChange={(e) => setConfirmData(p => ({ ...p, data_pagamento: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Forma de Pagamento</Label>
+              <Select value={confirmData.forma_pagamento_id} onValueChange={(v) => setConfirmData(p => ({ ...p, forma_pagamento_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  {formasPagamento.map((f: any) => (
+                    <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setConfirmDialog(null)}>Cancelar</Button>
+              <Button
+                disabled={!confirmData.data_pagamento || !confirmData.forma_pagamento_id || updateStatus.isPending}
+                onClick={() => {
+                  if (confirmDialog) {
+                    updateStatus.mutate({
+                      id: confirmDialog.id,
+                      status: "pago",
+                      data_pagamento: confirmData.data_pagamento,
+                      forma_pagamento_id: confirmData.forma_pagamento_id,
+                    });
+                    setConfirmDialog(null);
+                  }
+                }}
+              >
+                Confirmar
               </Button>
             </div>
           </div>
